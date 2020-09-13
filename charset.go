@@ -1,8 +1,9 @@
 package gpeg
 
 type charset struct {
-	ascii [2]uint64
-	other []rune
+	ascii      [2]uint64
+	other      []rune
+	complement bool
 }
 
 func Charset(chars []rune) charset {
@@ -12,10 +13,10 @@ func Charset(chars []rune) charset {
 	for _, r := range chars {
 		switch {
 		case r < 64:
-			bit := uint64(1) << int(r)
+			bit := uint64(1) << uint32(r)
 			set.ascii[0] |= bit
 		case r < 128:
-			bit := uint64(1) << int(r-64)
+			bit := uint64(1) << uint32(r-64)
 			set.ascii[1] |= bit
 		default:
 			set.other = append(set.other, r)
@@ -33,6 +34,14 @@ func CharsetRange(low, high rune) charset {
 	return Charset(chars)
 }
 
+func (c charset) Complement() charset {
+	return charset{
+		ascii:      [2]uint64{^c.ascii[0], ^c.ascii[1]},
+		other:      c.other,
+		complement: true,
+	}
+}
+
 func (c charset) Add(c1 charset) charset {
 	return charset{
 		ascii: [2]uint64{c1.ascii[0] | c.ascii[0], c1.ascii[1] | c.ascii[1]},
@@ -43,17 +52,17 @@ func (c charset) Add(c1 charset) charset {
 func (c charset) Has(r rune) bool {
 	switch {
 	case r < 64:
-		bit := uint64(1) << int32(r)
+		bit := uint64(1) << uint32(r)
 		return c.ascii[0]&bit != 0
 	case r < 128:
-		bit := uint64(1) << int32(r-64)
+		bit := uint64(1) << uint32(r-64)
 		return c.ascii[1]&bit != 0
 	default:
 		for _, char := range c.other {
 			if r == char {
-				return true
+				return !c.complement
 			}
 		}
 	}
-	return false
+	return c.complement
 }

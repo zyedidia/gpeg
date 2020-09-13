@@ -33,3 +33,12 @@ func TestCharsetRange(t *testing.T) {
 
 	inSet(set, in, notin, t)
 }
+
+func TestCharsetComplement(t *testing.T) {
+	in := []rune{'a', 'b', 'c', 'd', '{', '}', '😀', 'τ', 'ι', 'α'}
+	notin := []rune{'x', 'y', 'z', '[', ']', 'γ', 'ν', 'ω', 'ρ'}
+
+	set := Charset(in).Complement()
+
+	inSet(set, notin, in, t)
+}
