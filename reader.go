@@ -10,13 +10,20 @@ const (
 	SeekEnd     = 2 // seek relative to the end
 )
 
+// A Reader defines the interface needed for a pattern to match some input.
 type Reader interface {
+	// PeekRune returns the next rune in the reader without advancing
+	// and the number of bytes reader would advance if that rune was read.
 	PeekRune() (rune, int)
+	// SeekBytes seeks the reader to a new byte offset.
 	SeekBytes(off, whence int)
+	// Offset returns the current byte offset of the reader.
 	Offset() int
+	// Len returns the number of bytes in the reader.
 	Len() int
 }
 
+// StringReader implements the reader interface for strings.
 type StringReader struct {
 	data string
 	pos  int
@@ -52,6 +59,7 @@ func (s *StringReader) Len() int {
 	return len(s.data)
 }
 
+// ByteReader implements the Reader interface for byte slices.
 type ByteReader struct {
 	data []byte
 	pos  int
@@ -66,7 +74,6 @@ func NewByteReader(b []byte) *ByteReader {
 
 func (s *ByteReader) PeekRune() (rune, int) {
 	return utf8.DecodeRune(s.data[s.pos:])
-	// return rune(s.data[s.pos]), 1
 }
 
 func (s *ByteReader) SeekBytes(off, whence int) {

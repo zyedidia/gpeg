@@ -6,8 +6,11 @@ import (
 	"unicode/utf8"
 )
 
+// A Pattern is a set of instructions that can be used to
+// match an input Reader.
 type Pattern []instr
 
+// String returns the string representation of a pattern
 func (p Pattern) String() string {
 	s := ""
 	for i, instr := range p {
@@ -16,11 +19,15 @@ func (p Pattern) String() string {
 	return s
 }
 
+// Match returns the number of characters that this pattern
+// matched in the input from the beginning.
+// Returns -1 if the match failed.
 func (p Pattern) Match(r Reader) int {
 	vm := NewVM(r)
 	return vm.exec(p)
 }
 
+// Literal matches a given string literal
 func Literal(s string) Pattern {
 	code := make([]instr, utf8.RuneCountInString(s))
 	for i, r := range s {
@@ -29,22 +36,27 @@ func Literal(s string) Pattern {
 	return code
 }
 
+// Set matches any character in the given set.
 func Set(chars charset) Pattern {
 	return []instr{
 		iCharset{chars},
 	}
 }
 
+// Any consumes n characters, and only fails if there
+// aren't enough input characters left.
 func Any(n int) Pattern {
 	return []instr{
 		iAny{n},
 	}
 }
 
+// Concat concatenates two patterns: `p1 p2`.
 func Concat(p1 Pattern, p2 Pattern) Pattern {
 	return append(p1, p2...)
 }
 
+// Or returns the ordered choice between two patterns: `p1 / p2`.
 func Or(p1 Pattern, p2 Pattern) Pattern {
 	// optimization: if p1 and p2 are charsets, return the union
 	if len(p1) == 1 && len(p2) == 1 {
@@ -72,6 +84,7 @@ func Or(p1 Pattern, p2 Pattern) Pattern {
 	return code
 }
 
+// Star returns the Kleene star repetition of a pattern: `p*`.
 func Star(p Pattern) Pattern {
 	// optimization: repeating a charset uses the dedicated
 	// instruction 'span'
@@ -91,11 +104,13 @@ func Star(p Pattern) Pattern {
 	return code
 }
 
+// Plus returns the Kleene plus repetition of a pattern: `p+`.
 func Plus(p Pattern) Pattern {
 	code := append(p, Star(p)...)
 	return code
 }
 
+// Not returns the not predicate applied to a pattern: `!p`.
 func Not(p Pattern) Pattern {
 	var firsti instr = iChoice{len(p) + 2}
 	testi, choicei, match := optHeadFail(p, len(p)+2)
@@ -111,6 +126,8 @@ func Not(p Pattern) Pattern {
 	return code
 }
 
+// And returns the and predicate applied to a pattern: `&p`.
+// This is equivalent to `!!p`.
 func And(p Pattern) Pattern {
 	var firsti instr = iChoice{len(p) + 2}
 	testi, choicei, match := optHeadFail(p, len(p)+2)
@@ -126,12 +143,16 @@ func And(p Pattern) Pattern {
 	return code
 }
 
+// NonTerm builds an unresolved non-terminal with a given name
 func NonTerm(name string) Pattern {
 	return []instr{
 		iOpenCall{name},
 	}
 }
 
+// Grammar builds a grammar from a map of non-terminal patterns.
+// Any unresolved non-terminals are resolved with their definitions
+// in the map.
 func Grammar(start string, nonterminals map[string]Pattern) Pattern {
 	code := []instr{}
 

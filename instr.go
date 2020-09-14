@@ -216,16 +216,22 @@ func (i iCharset) exec(vm *vmstate) {
 }
 
 func (i iAny) exec(vm *vmstate) {
-	if vm.input.Offset()+i.n < vm.input.Len() {
-		for j := 0; j < i.n; j++ {
-			_, size := vm.input.PeekRune()
-			vm.input.SeekBytes(size, SeekCurrent)
-		}
-		vm.ip++
-		return
-	}
+	start := vm.input.Offset()
+	length := vm.input.Len()
+	total := 0
+	for j := 0; j < i.n; j++ {
+		_, size := vm.input.PeekRune()
+		total += size
 
-	vm.ip = ipFail
+		if start+total >= length {
+			// fail
+			vm.input.SeekBytes(start, SeekStart)
+			vm.ip = ipFail
+			return
+		}
+		vm.input.SeekBytes(size, SeekCurrent)
+	}
+	vm.ip++
 }
 
 func (i iPartialCommit) exec(vm *vmstate) {
@@ -288,16 +294,22 @@ func (i iTestCharset) exec(vm *vmstate) {
 }
 
 func (i iTestAny) exec(vm *vmstate) {
-	if vm.input.Offset()+i.n < vm.input.Len() {
-		for j := 0; j < i.n; j++ {
-			_, size := vm.input.PeekRune()
-			vm.input.SeekBytes(size, SeekCurrent)
-		}
-		vm.ip++
-		return
-	}
+	start := vm.input.Offset()
+	length := vm.input.Len()
+	total := 0
+	for j := 0; j < i.n; j++ {
+		_, size := vm.input.PeekRune()
+		total += size
 
-	vm.ip += i.label
+		if start+total >= length {
+			// fail
+			vm.input.SeekBytes(start, SeekStart)
+			vm.ip += i.label
+			return
+		}
+		vm.input.SeekBytes(size, SeekCurrent)
+	}
+	vm.ip++
 }
 
 func (i iChoice2) exec(vm *vmstate) {
