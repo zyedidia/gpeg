@@ -122,6 +122,17 @@ func TestAny(t *testing.T) {
 	check(p, tests, t)
 }
 
+func TestOptional(t *testing.T) {
+	p := Concat(Literal("ana"), Optional(Literal("hello")))
+	tests := []PatternTest{
+		{"ana", 3},
+		{"anahe", 3},
+		{"hello", -1},
+		{"anahello", 8},
+	}
+	check(p, tests, t)
+}
+
 func TestSet(t *testing.T) {
 	p := Plus(Set(CharsetRange('0', '9')))
 	tests := []PatternTest{

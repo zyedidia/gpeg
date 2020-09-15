@@ -85,6 +85,7 @@ func Or(p1 Pattern, p2 Pattern) Pattern {
 }
 
 // Star returns the Kleene star repetition of a pattern: `p*`.
+// This matches zero or more occurrences of p.
 func Star(p Pattern) Pattern {
 	// optimization: repeating a charset uses the dedicated
 	// instruction 'span'
@@ -105,12 +106,20 @@ func Star(p Pattern) Pattern {
 }
 
 // Plus returns the Kleene plus repetition of a pattern: `p+`.
+// This matches one or more occurrences of p.
 func Plus(p Pattern) Pattern {
 	code := append(p, Star(p)...)
 	return code
 }
 
+// Optional matches at most 1 occurrence of p: `p?`.
+func Optional(p Pattern) Pattern {
+	return Or(p, []instr{})
+}
+
 // Not returns the not predicate applied to a pattern: `!p`.
+// The not predicate succeeds if matching `p` at the current position
+// fails, and does not consume any input.
 func Not(p Pattern) Pattern {
 	var firsti instr = iChoice{len(p) + 2}
 	testi, choicei, match := optHeadFail(p, len(p)+2)
@@ -127,6 +136,8 @@ func Not(p Pattern) Pattern {
 }
 
 // And returns the and predicate applied to a pattern: `&p`.
+// The and predicate succeeds if matching `p` at the current position
+// succeeds and does not consume any input.
 // This is equivalent to `!!p`.
 func And(p Pattern) Pattern {
 	var firsti instr = iChoice{len(p) + 2}
@@ -143,7 +154,9 @@ func And(p Pattern) Pattern {
 	return code
 }
 
-// NonTerm builds an unresolved non-terminal with a given name
+// NonTerm builds an unresolved non-terminal with a given name.
+// NonTerms should be used together with `Grammar` to build a recursive
+// grammar.
 func NonTerm(name string) Pattern {
 	return []instr{
 		iOpenCall{name},
@@ -177,6 +190,7 @@ func Grammar(start string, nonterminals map[string]Pattern) Pattern {
 			}
 
 			var replace instr = iCall{off - i}
+			// tail call optimization
 			if i+1 < len(code) {
 				if _, ok := code[i+1].(iReturn); ok {
 					replace = iJump{off - i}
@@ -194,6 +208,11 @@ func Grammar(start string, nonterminals map[string]Pattern) Pattern {
 	return code
 }
 
+// Applies head-fail optimizations to patterns. Returns the corresponding
+// TestXXX and Choice2 instructions, and an indicator that the input pattern
+// is amenable to the head-fail optimization. The `chLabel` input should be
+// the label that the TestXXX instruction and subsequent Choice2 instruction
+// should jump to if the test fails.
 func optHeadFail(p Pattern, chLabel int) (instr, instr, bool) {
 	var testi instr
 	var choicei instr
