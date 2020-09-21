@@ -187,6 +187,19 @@ func TestUnionSet(t *testing.T) {
 	check(p, tests, t)
 }
 
+func TestBibleQuery(t *testing.T) {
+	p := Concat(Plus(Set(CharsetRange('a', 'z').Add(CharsetRange('A', 'Z')))), Literal(" Abram"))
+	p = Grammar("S", map[string]Pattern{
+		"S": Or(p, Concat(Any(1), NonTerm("S"))),
+	})
+	p = Optimize(Star(p))
+	tests := []PatternTest{
+		{"begat Abram", 11},
+		{"helloAbram", 0},
+	}
+	check(p, tests, t)
+}
+
 func TestArithmeticGrammar(t *testing.T) {
 	// grammar:
 	// Expr   <- <Factor> ([+-] <Factor>)*
@@ -199,6 +212,7 @@ func TestArithmeticGrammar(t *testing.T) {
 		"Term":   Or(NonTerm("Number"), Concat(Concat(Literal("("), NonTerm("Expr")), Literal(")"))),
 		"Number": Plus(Set(CharsetRange('0', '9'))),
 	})
+	p = Optimize(p)
 	tests := []PatternTest{
 		{"13+(22-15)", 10},
 		{"24*5+3", 6},

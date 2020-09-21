@@ -208,6 +208,32 @@ func Grammar(start string, nonterminals map[string]Pattern) Pattern {
 	return code
 }
 
+func Optimize(p Pattern) Pattern {
+	for i, insn := range p {
+		if j, ok := insn.(iJump); ok {
+			addr := i + j.label
+			if addr < len(p) {
+				target := p[addr]
+				switch t := target.(type) {
+				case iCall:
+					p[i] = iCall{addr - i + t.label}
+				case iPartialCommit:
+					p[i] = iPartialCommit{addr - i + t.label}
+				case iBackCommit:
+					p[i] = iBackCommit{addr - i + t.label}
+				case iCommit:
+					p[i] = iCommit{addr - i + t.label}
+				case iJump:
+					p[i] = iJump{addr - i + t.label}
+				case iReturn, iFail, iFailTwice:
+					p[i] = target
+				}
+			}
+		}
+	}
+	return p
+}
+
 // Applies head-fail optimizations to patterns. Returns the corresponding
 // TestXXX and Choice2 instructions, and an indicator that the input pattern
 // is amenable to the head-fail optimization. The `chLabel` input should be
