@@ -11,10 +11,10 @@ func NewCharset(chars []byte) Charset {
 	for _, r := range chars {
 		switch {
 		case r < 64:
-			bit := uint64(1) << uint32(r)
+			bit := uint64(1) << r
 			set.Bits[0] |= bit
 		case r < 128:
-			bit := uint64(1) << uint32(r-64)
+			bit := uint64(1) << (r - 64)
 			set.Bits[1] |= bit
 		}
 	}
@@ -29,10 +29,10 @@ func CharsetRange(low, high byte) Charset {
 	for c := low; c <= high; c++ {
 		switch {
 		case c < 64:
-			bit := uint64(1) << uint32(c)
+			bit := uint64(1) << c
 			set.Bits[0] |= bit
 		case c < 128:
-			bit := uint64(c) << uint32(c-64)
+			bit := uint64(c) << (c - 64)
 			set.Bits[1] |= bit
 		}
 	}

@@ -4,16 +4,6 @@ import (
 	"io"
 )
 
-// // Pos represents a position in the reader in question. This might be
-// // simply a string offset, or something more complex like a line and
-// // column number or other representation.
-// type Pos interface {
-// 	// Distance returns the number of bytes between this position and p.
-// 	Distance(p Pos) int
-// 	// Advance moves this position forward byte n bytes.
-// 	Advance(n int) Pos
-// }
-
 type Pos int
 
 // A Reader is an interface for reading bytes in chunks from a document
@@ -44,7 +34,6 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 		base: start,
 		off:  0,
 	}
-	// TODO: instead of copying just copy the slice/pointer
 	br.chunk, _ = r.ReadAtPos(start)
 	return &br
 }

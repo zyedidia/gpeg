@@ -179,15 +179,8 @@ func decodeByte(b []byte) byte {
 
 func decodeU32(b []byte) uint32 {
 	return *(*uint32)(unsafe.Pointer(&b[0]))
-	// return uint32(b[0]) | (uint32(b[1]) << 8) | (uint32(b[2]) << 16) | (uint32(b[3]) << 24)
 }
 
 func decodeSet(b []byte) isa.Charset {
 	return *(*isa.Charset)(unsafe.Pointer(&b[0]))
-	// first := uint64(decodeU32(b)) | (uint64(decodeU32(b[4:])) << 32)
-	// second := uint64(decodeU32(b[8:])) | (uint64(decodeU32(b[12:])) << 32)
-	//
-	// return isa.Charset{
-	// 	Bits: [2]uint64{first, second},
-	// }
 }
