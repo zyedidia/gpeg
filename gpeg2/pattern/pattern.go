@@ -185,14 +185,46 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 
 	// total number of instructions is roughly body instructions, labels,
 	// return instructions, and the starter code to call the start symbol
+	// this slice may need to expand itself if we do a lot of inlining
 	code := make(Pattern, 0, size+2*len(nonterms)+2)
 	// add a call for the starting symbol
 	LEnd := isa.NewLabel()
 	code = append(code, openCall{name: start}, isa.Jump{Lbl: LEnd})
 
-	// place all functions into the code
+	inlinable := make(map[string]bool)
+
+	// TODO: more aggressive inlining
+	for k, v := range nonterms {
+		inlinable[k] = true
+		for i, insn := range v {
+			if oc, ok := insn.(openCall); ok {
+				// If we see an openCall this generally means the function is
+				// not inlinable. The only exception is a recursive tail-call.
+				// It's possible that more aggressive inlining than this could
+				// be done.
+				_, ok := nextInsn(v[i+1:])
+				// recursive tail-call is ok to inline
+				inlinable[k] = oc.name == k && !ok
+				if !inlinable[k] {
+					break
+				}
+			}
+		}
+
+		if inlinable[k] {
+			// if this function is inlinable we need to copy it because we
+			// will modify the inline code
+			fn := v.Copy()
+			nonterms[k] = fn
+		}
+	}
+
+	// place all non-inlined functions into the code
 	labels := make(map[string]isa.Label)
 	for k, v := range nonterms {
+		if inlinable[k] {
+			continue
+		}
 		label := isa.NewLabel()
 		labels[k] = label
 		code = append(code, label)
@@ -200,9 +232,44 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 		code = append(code, isa.Return{})
 	}
 
+	// do tail-call optimization for inlinable functions
+	for k, fn := range nonterms {
+		if !inlinable[k] {
+			continue
+		}
+		for i, insn := range fn {
+			if oc, ok := insn.(openCall); ok {
+				if oc.name == k {
+					// recursive tail-call
+					label := isa.NewLabel()
+					fn[i] = isa.Jump{Lbl: label}
+					nonterms[k] = append(Pattern{label}, fn...)
+					break
+				}
+
+				// technically we have support for optimizing tail-calls to
+				// non-inlinable functions but this should never happens
+				// because this would cause this current function to become
+				// non-inlinable
+				lbl, ok := labels[oc.name]
+				if ok {
+					fn[i] = isa.Jump{Lbl: lbl}
+					log.Println("???: Tail-call to non-inlinable function")
+				} else {
+					log.Fatal("Error: inlinable function has non-recursive openCall")
+				}
+			}
+		}
+	}
+
 	// resolve calls to openCall and do tail call optimization
 	for i, insn := range code {
 		if oc, ok := insn.(openCall); ok {
+			if inlinable[oc.name] {
+				code = append(code[:i], append(nonterms[oc.name].Copy(), code[i+1:]...)...)
+				continue
+			}
+
 			lbl, ok := labels[oc.name]
 			if !ok {
 				log.Fatal("Undefined non-terminal in grammar:", oc.name)
