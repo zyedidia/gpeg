@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-type Pos int
+type Pos interface{}
 
 // A Reader is an interface for reading bytes in chunks from a document
 // that may have a more complex position representation.
@@ -14,6 +14,7 @@ type Reader interface {
 	// in memory, and as a result the slice that is returned does not cause
 	// any allocation apart from the fat pointer for the slice itself.
 	ReadAtPos(p Pos) (b []byte, err error)
+	Advance(p Pos, n int) Pos
 }
 
 // A BufferedReader is an efficient wrapper of a Reader which provides
@@ -60,12 +61,12 @@ func (br *BufferedReader) Advance(n int) error {
 	br.off += n
 
 	if br.off >= len(br.chunk) {
-		return br.SeekTo(br.base + Pos(br.off))
+		return br.SeekTo(br.r.Advance(br.base, br.off))
 	}
 	return nil
 }
 
 // Offset returns the current position of the reader.
 func (br *BufferedReader) Offset() Pos {
-	return br.base + Pos(br.off)
+	return br.r.Advance(br.base, br.off)
 }

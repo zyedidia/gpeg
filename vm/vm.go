@@ -25,7 +25,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 	}
 }
 
-func (vm *VM) Exec(code VMCode) int {
+func (vm *VM) Exec(code VMCode) input.Pos {
 loop:
 	for {
 		if vm.ip == ipFail {
@@ -160,7 +160,7 @@ loop:
 		case opChoice2:
 			lbl := decodeU32(code[vm.ip+1:])
 			back := decodeByte(code[vm.ip+1+4:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()-input.Pos(back)))
+			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset().(uint32)-uint32(back)))
 			vm.ip += 6
 		case opNop:
 			vm.ip += 1
@@ -170,7 +170,8 @@ loop:
 	}
 
 	// return vm.input.Offset().Distance(vm.start)
-	return int(vm.input.Offset() - vm.start)
+	// return int(vm.input.Offset() - vm.start)
+	return vm.input.Offset()
 }
 
 func decodeByte(b []byte) byte {
