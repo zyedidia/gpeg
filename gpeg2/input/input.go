@@ -46,6 +46,7 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 		base: start,
 		off:  0,
 	}
+	// TODO: instead of copying just copy the slice/pointer
 	br.size, _ = r.ReadAtPos(br.chunk[:], start)
 	br.end = br.base.Advance(br.size)
 	return &br

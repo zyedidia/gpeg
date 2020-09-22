@@ -2,9 +2,15 @@ package pattern
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/zyedidia/gpeg/isa"
 )
+
+type openCall struct {
+	name string
+	isa.Call
+}
 
 // A Pattern is a set of instructions that can be used to
 // match an input Reader.
@@ -60,7 +66,7 @@ func Or(p1, p2 Pattern) Pattern {
 		}
 	}
 
-	code := make(Pattern, 0, len(p1)+len(p2)+1+1+1+1)
+	code := make(Pattern, 0, len(p1)+len(p2)+4)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
 	code = append(code, isa.Choice{Lbl: L1})
@@ -141,5 +147,65 @@ func And(p Pattern) Pattern {
 	code = append(code, L3)
 	code = append(code, isa.Fail{})
 	code = append(code, L1)
+	return code
+}
+
+// NonTerm builds an unresolved non-terminal with a given name.
+// NonTerms should be used together with `Grammar` to build a recursive
+// grammar.
+func NonTerm(name string) Pattern {
+	return Pattern{
+		openCall{name: name},
+	}
+}
+
+// Grammar builds a grammar from a map of non-terminal patterns.
+// Any unresolved non-terminals are resolved with their definitions
+// in the map.
+func Grammar(start string, nonterms map[string]Pattern) Pattern {
+	size := 0
+	for _, v := range nonterms {
+		size += len(v)
+	}
+
+	// total number of instructions is roughly body instructions, labels,
+	// return instructions, and the starter code to call the start symbol
+	code := make(Pattern, 0, size+2*len(nonterms)+2)
+	// add a call for the starting symbol
+	code = append(code, openCall{name: start}, isa.End{})
+
+	// place all functions into the code
+	labels := make(map[string]isa.Label)
+	for k, v := range nonterms {
+		label := isa.NewLabel()
+		labels[k] = label
+		code = append(code, label)
+		code = append(code, v...)
+		code = append(code, isa.Return{})
+	}
+
+	// resolve calls to openCall and do tail call optimization
+	for i, insn := range code {
+		if oc, ok := insn.(openCall); ok {
+			lbl, ok := labels[oc.name]
+			if !ok {
+				log.Fatal("Undefined non-terminal in grammar:", oc.name)
+			}
+
+			// replace this placeholder instruction with a normal call
+			var replace isa.Insn = isa.Call{Lbl: lbl}
+			// if a call is immediately followed by a return, optimize to
+			// a jump for tail call optimization.
+			if i+1 < len(code) {
+				if _, ok := code[i+1].(isa.Return); ok {
+					replace = isa.Jump{Lbl: lbl}
+				}
+			}
+
+			// perform the replacement of the opencall by either a call or jump
+			code[i] = replace
+		}
+	}
+
 	return code
 }

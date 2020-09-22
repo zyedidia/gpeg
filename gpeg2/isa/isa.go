@@ -130,6 +130,10 @@ type TestAny struct {
 	jump
 }
 
+type End struct {
+	basic
+}
+
 type Choice2 struct {
 	Lbl  Label
 	Back byte
@@ -212,4 +216,8 @@ func (i TestSet) String() string {
 
 func (i TestAny) String() string {
 	return fmt.Sprintf("TestAny %v %v", i.N, i.Lbl)
+}
+
+func (i End) String() string {
+	return "End"
 }

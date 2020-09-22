@@ -18,4 +18,5 @@ const (
 	opTestSet
 	opTestAny
 	opChoice2
+	opEnd
 )

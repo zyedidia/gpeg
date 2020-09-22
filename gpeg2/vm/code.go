@@ -92,6 +92,8 @@ func Encode(insns []isa.Insn) VMCode {
 		case isa.Choice2:
 			op = opChoice2
 			args = append(encodeU32(labels[t.Lbl.Id]), t.Back)
+		case isa.End:
+			op = opEnd
 		default:
 			log.Println("Invalid instruction", t)
 			continue

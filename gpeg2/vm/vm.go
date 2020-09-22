@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"log"
+
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
 )
@@ -22,6 +24,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 }
 
 func (vm *VM) Exec(code VMCode) (input.Pos, bool) {
+loop:
 	for vm.ip < len(code) {
 		if vm.ip == ipFail {
 			ent, ok := vm.st.pop()
@@ -57,7 +60,7 @@ func (vm *VM) Exec(code VMCode) (input.Pos, bool) {
 			vm.ip += 5
 		case opCall:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(vm.st.retaddr(vm.ip + 1))
+			vm.st.push(vm.st.retaddr(vm.ip + 5))
 			vm.ip = int(lbl)
 		case opCommit:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -96,7 +99,10 @@ func (vm *VM) Exec(code VMCode) (input.Pos, bool) {
 			set := decodeSet(code[vm.ip+1:])
 			in := vm.input.Peek()
 			for set.Has(in) {
-				vm.input.Advance(1)
+				err := vm.input.Advance(1)
+				if err != nil {
+					break
+				}
 				in = vm.input.Peek()
 			}
 			vm.ip += 17
@@ -137,9 +143,14 @@ func (vm *VM) Exec(code VMCode) (input.Pos, bool) {
 			if err != nil {
 				vm.ip = int(lbl)
 			}
+		case opEnd:
+			// ends the machine with a success
+			break loop
 		case opChoice2:
 			// lbl := decodeU32(code[vm.ip+1:])
 			// back := decodeByte(code[vm.ip+1+4:])
+		default:
+			log.Fatal("Invalid opcode")
 		}
 	}
 
@@ -151,7 +162,7 @@ func decodeByte(b []byte) byte {
 }
 
 func decodeU32(b []byte) uint32 {
-	return uint32(b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24))
+	return uint32(b[0]) | (uint32(b[1]) << 8) | (uint32(b[2]) << 16) | (uint32(b[3]) << 24)
 }
 
 func decodeSet(b []byte) isa.Charset {

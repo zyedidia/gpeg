@@ -1,5 +1,7 @@
 package input
 
+import "io"
+
 // BytePos implements the Pos interface using a simple byte offset.
 type BytePos int
 
@@ -36,7 +38,7 @@ type ByteReader []byte
 func (b ByteReader) ReadAtPos(p []byte, pos Pos) (int, error) {
 	bp := pos.(BytePos)
 	if int(bp) >= len(b) {
-		return 0, nil
+		return 0, io.EOF
 	}
 	return copy(p, b[bp:]), nil
 }
