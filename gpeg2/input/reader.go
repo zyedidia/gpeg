@@ -7,16 +7,6 @@ type BytePos int
 
 const BytePosStart = BytePos(0)
 
-// Less returns b < p.
-func (b BytePos) Less(p Pos) bool {
-	return b < p.(BytePos)
-}
-
-// GreaterEqual returns b >= p.
-func (b BytePos) GreaterEqual(p Pos) bool {
-	return b >= p.(BytePos)
-}
-
 // Distance returns the number of bytes between b and p (always positive).
 func (b BytePos) Distance(p Pos) int {
 	if b > p.(BytePos) {
@@ -35,10 +25,10 @@ type ByteReader []byte
 
 // ReadAtPos reads up to len(p) bytes into p starting at Pos. Pos must be a
 // BytePos.
-func (b ByteReader) ReadAtPos(p []byte, pos Pos) (int, error) {
+func (b ByteReader) ReadAtPos(pos Pos) ([]byte, error) {
 	bp := pos.(BytePos)
 	if int(bp) >= len(b) {
-		return 0, io.EOF
+		return []byte{}, io.EOF
 	}
-	return copy(p, b[bp:]), nil
+	return b[bp:], nil
 }

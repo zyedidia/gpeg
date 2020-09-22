@@ -6,11 +6,6 @@ import "io"
 // simply a string offset, or something more complex like a line and
 // column number or other representation.
 type Pos interface {
-	// Less returns true if this position is less than p.
-	Less(p Pos) bool
-	// GreaterEqual returns true if this position is greater than or equal
-	// to p.
-	GreaterEqual(p Pos) bool
 	// Distance returns the number of bytes between this position and p.
 	Distance(p Pos) int
 	// Advance moves this position forward byte n bytes.
@@ -20,12 +15,11 @@ type Pos interface {
 // A Reader is an interface for reading bytes in chunks from a document
 // that may have a more complex position representation.
 type Reader interface {
-	// ReadAtPos reads up to len(b) bytes into b starting at the
-	// position p. It returns the number of bytes read, and a possible
-	// error. It is perfectly valid for the function to return
-	// n < len(b) bytes and a nil error. For efficiency, the reader
-	// should try to read as many bytes as possible into b.
-	ReadAtPos(b []byte, p Pos) (n int, err error)
+	// ReadAtPos reads as many bytes as possible from p and returns the
+	// result as a slice. It is expected that the data being read is already
+	// in memory, and as a result the slice that is returned does not cause
+	// any allocation apart from the fat pointer for the slice itself.
+	ReadAtPos(p Pos) (b []byte, err error)
 }
 
 // A BufferedReader is an efficient wrapper of a Reader which provides
@@ -34,10 +28,8 @@ type Reader interface {
 type BufferedReader struct {
 	r     Reader
 	base  Pos
-	end   Pos
 	off   int
-	chunk [4096]byte
-	size  int
+	chunk []byte
 }
 
 // NewBufferedReader returns a new buffered reader from a general reader
@@ -49,14 +41,13 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 		off:  0,
 	}
 	// TODO: instead of copying just copy the slice/pointer
-	br.size, _ = r.ReadAtPos(br.chunk[:], start)
-	br.end = br.base.Advance(br.size)
+	br.chunk, _ = r.ReadAtPos(start)
 	return &br
 }
 
 // Peek returns the next byte but does not consume it.
 func (br *BufferedReader) Peek() (byte, error) {
-	if br.off >= br.size {
+	if br.off >= len(br.chunk) {
 		return 0, io.EOF
 	}
 	return br.chunk[br.off], nil
@@ -65,18 +56,9 @@ func (br *BufferedReader) Peek() (byte, error) {
 // SeekTo moves the reader to a new position.
 func (br *BufferedReader) SeekTo(pos Pos) error {
 	var err error
-	// if the requested position lies inside the current chunk just adjust
-	// the offset
-	if pos.GreaterEqual(br.base) && pos.Less(br.end) {
-		br.off = br.base.Distance(pos)
-		return nil
-	}
-
-	// otherwise we need to read a new chunk
 	br.base = pos
 	br.off = 0
-	br.size, err = br.r.ReadAtPos(br.chunk[:], br.base)
-	br.end = br.base.Advance(br.size)
+	br.chunk, err = br.r.ReadAtPos(br.base)
 	return err
 }
 
@@ -84,8 +66,8 @@ func (br *BufferedReader) SeekTo(pos Pos) error {
 func (br *BufferedReader) Advance(n int) error {
 	br.off += n
 
-	if br.off >= br.size {
-		return br.SeekTo(br.end.Advance(br.off - br.size))
+	if br.off >= len(br.chunk) {
+		return br.SeekTo(br.base.Advance(br.off))
 	}
 	return nil
 }
