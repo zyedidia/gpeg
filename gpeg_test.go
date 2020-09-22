@@ -2,6 +2,11 @@ package gpeg
 
 import (
 	"testing"
+
+	"github.com/zyedidia/gpeg/input"
+	"github.com/zyedidia/gpeg/isa"
+	. "github.com/zyedidia/gpeg/pattern"
+	"github.com/zyedidia/gpeg/vm"
 )
 
 type PatternTest struct {
@@ -10,24 +15,14 @@ type PatternTest struct {
 }
 
 func check(p Pattern, tests []PatternTest, t *testing.T) {
+	code := vm.Encode(p)
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			r := NewStringReader(tt.in)
-			match := p.Match(r)
-			if tt.match != match {
-				t.Errorf("%v returned %v", tt.in, match)
-			}
-		})
-	}
-}
-
-func checkByteReader(p Pattern, tests []PatternTest, t *testing.T) {
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			r := NewByteReader([]byte(tt.in))
-			match := p.Match(r)
-			if tt.match != match {
-				t.Errorf("%v returned %v", tt.in, match)
+			var bytes input.ByteReader = []byte(tt.in)
+			machine := vm.NewVM(bytes, 0)
+			nchars := machine.Exec(code)
+			if tt.match != nchars {
+				t.Errorf("%v returned %v", string(bytes), nchars)
 			}
 		})
 	}
@@ -81,7 +76,7 @@ func TestRepeat(t *testing.T) {
 	}
 	check(p, tests, t)
 
-	p = Concat(Plus(Set(Charset([]rune{'0', '1'}))), Star(Set(Charset([]rune{'a', 'b', 'c'}))))
+	p = Concat(Plus(Set(isa.NewCharset([]byte{'0', '1'}))), Star(Set(isa.NewCharset([]byte{'a', 'b', 'c'}))))
 	tests = []PatternTest{
 		{"01", 2},
 		{"01abaabbc", 9},
@@ -134,7 +129,7 @@ func TestOptional(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	p := Plus(Set(CharsetRange('0', '9')))
+	p := Plus(Set(isa.CharsetRange('0', '9')))
 	tests := []PatternTest{
 		{"hi", -1},
 		{"1002", 4},
@@ -148,7 +143,7 @@ func TestGrammar(t *testing.T) {
 	// grammar:
 	// S <- <B> / (![()] .)*
 	// B <- '(' <S> ')'
-	S := Or(NonTerm("B"), Plus(Concat(Not(Set(Charset([]rune{'(', ')'}))), Any(1))))
+	S := Or(NonTerm("B"), Plus(Concat(Not(Set(isa.NewCharset([]byte{'(', ')'}))), Any(1))))
 	B := Concat(Concat(Literal("("), NonTerm("S")), Literal(")"))
 
 	p := Grammar("S", map[string]Pattern{
@@ -178,24 +173,11 @@ func TestTailCall(t *testing.T) {
 }
 
 func TestUnionSet(t *testing.T) {
-	p := Plus(Or(Set(CharsetRange('a', 'z')), Set(CharsetRange('A', 'Z'))))
+	p := Plus(Or(Set(isa.CharsetRange('a', 'z')), Set(isa.CharsetRange('A', 'Z'))))
 	tests := []PatternTest{
 		{"Hello", 5},
 		{"123", -1},
 		{"Hello1", 5},
-	}
-	check(p, tests, t)
-}
-
-func TestBibleQuery(t *testing.T) {
-	p := Concat(Plus(Set(CharsetRange('a', 'z').Add(CharsetRange('A', 'Z')))), Literal(" Abram"))
-	p = Grammar("S", map[string]Pattern{
-		"S": Or(p, Concat(Any(1), NonTerm("S"))),
-	})
-	p = Optimize(Star(p))
-	tests := []PatternTest{
-		{"begat Abram", 11},
-		{"helloAbram", 0},
 	}
 	check(p, tests, t)
 }
@@ -207,12 +189,11 @@ func TestArithmeticGrammar(t *testing.T) {
 	// Term   <- <Number> / '(' <Expr> ')'
 	// Number <- [0-9]+
 	p := Grammar("Expr", map[string]Pattern{
-		"Expr":   Concat(NonTerm("Factor"), Star(Concat(Set(Charset([]rune{'+', '-'})), NonTerm("Factor")))),
-		"Factor": Concat(NonTerm("Term"), Star(Concat(Set(Charset([]rune{'*', '/'})), NonTerm("Term")))),
+		"Expr":   Concat(NonTerm("Factor"), Star(Concat(Set(isa.NewCharset([]byte{'+', '-'})), NonTerm("Factor")))),
+		"Factor": Concat(NonTerm("Term"), Star(Concat(Set(isa.NewCharset([]byte{'*', '/'})), NonTerm("Term")))),
 		"Term":   Or(NonTerm("Number"), Concat(Concat(Literal("("), NonTerm("Expr")), Literal(")"))),
-		"Number": Plus(Set(CharsetRange('0', '9'))),
+		"Number": Plus(Set(isa.CharsetRange('0', '9'))),
 	})
-	p = Optimize(p)
 	tests := []PatternTest{
 		{"13+(22-15)", 10},
 		{"24*5+3", 6},
@@ -220,5 +201,4 @@ func TestArithmeticGrammar(t *testing.T) {
 		{"10*(43", 2},
 	}
 	check(p, tests, t)
-	checkByteReader(p, tests, t)
 }
