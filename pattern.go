@@ -87,8 +87,7 @@ func Or(p1 Pattern, p2 Pattern) Pattern {
 // Star returns the Kleene star repetition of a pattern: `p*`.
 // This matches zero or more occurrences of p.
 func Star(p Pattern) Pattern {
-	// optimization: repeating a charset uses the dedicated
-	// instruction 'span'
+	// optimization: repeating a charset uses the dedicated instruction 'span'
 	if len(p) == 1 {
 		s, ok := p[0].(iCharset)
 		if ok {

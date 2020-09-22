@@ -1,69 +1,121 @@
 package vm
 
-import "github.com/zyedidia/gpeg/isa"
+import (
+	"log"
 
-type VMCode struct {
-	code []byte
-}
+	"github.com/zyedidia/gpeg/isa"
+)
 
-func (v VMCode) Serialize() []byte {
-	return v.code
-}
-
-func Deserialize(b []byte) VMCode {
-	return VMCode{
-		code: b,
-	}
-}
+type VMCode []byte
 
 func Encode(insns []isa.Insn) VMCode {
 	var code []byte
 
-	// resolve labels
-	icount := 0
-	labels := make(map[int]int)
+	// for label resolution
+	var bcount uint32
+	labels := make(map[int]uint32)
 	for _, insn := range insns {
 		switch t := insn.(type) {
 		case isa.Label:
-			labels[t.Id] = icount + 1
+			labels[t.Id] = bcount
+			continue
+		case isa.JumpType:
+			// op is 1 btye, label is 4 bytes
+			bcount += 5
 		default:
-			icount++
+			// op is 1 byte
+			bcount += 1
+		}
+
+		// handle extra arg sizes
+		switch insn.(type) {
+		case isa.Char, isa.Any, isa.TestChar, isa.TestAny, isa.Choice2:
+			// arg is 1 byte
+			bcount += 1
+		case isa.Set, isa.Span, isa.TestSet:
+			// arg is 16 bytes
+			bcount += 16
 		}
 	}
 
-	// generate vm code
 	for _, insn := range insns {
-		code = append(code, encodeInsn(insn, labels)...)
+		var op byte
+		var args []byte
+		switch t := insn.(type) {
+		case isa.Label:
+			continue
+		case isa.Char:
+			op = opChar
+			args = []byte{t.Byte}
+		case isa.Jump:
+			op = opJump
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.Choice:
+			op = opChoice
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.Call:
+			op = opCall
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.Commit:
+			op = opCommit
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.Return:
+			op = opReturn
+		case isa.Fail:
+			op = opFail
+		case isa.Set:
+			op = opSet
+			args = encodeSet(t.Chars)
+		case isa.Any:
+			op = opAny
+			args = []byte{t.N}
+		case isa.PartialCommit:
+			op = opPartialCommit
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.Span:
+			op = opSpan
+			args = encodeSet(t.Chars)
+		case isa.BackCommit:
+			op = opBackCommit
+			args = encodeU32(labels[t.Lbl.Id])
+		case isa.FailTwice:
+			op = opFailTwice
+		case isa.TestChar:
+			op = opTestChar
+			args = append(encodeU32(labels[t.Lbl.Id]), t.Byte)
+		case isa.TestSet:
+			op = opTestSet
+			args = append(encodeU32(labels[t.Lbl.Id]), encodeSet(t.Chars)...)
+		case isa.TestAny:
+			op = opTestAny
+			args = append(encodeU32(labels[t.Lbl.Id]), t.N)
+		case isa.Choice2:
+			op = opChoice2
+			args = append(encodeU32(labels[t.Lbl.Id]), t.Back)
+		default:
+			log.Println("Invalid instruction", t)
+			continue
+		}
+		code = append(code, op)
+		code = append(code, args...)
 	}
 
-	return VMCode{
-		code: code,
-	}
+	return code
 }
 
-func encodeInsn(insn isa.Insn, labels map[int]int) []byte {
-	switch t := insn.(type) {
-	case isa.Char:
-	case isa.Jump:
-	case isa.Choice:
-	case isa.Call:
-	case isa.Commit:
-	case isa.Return:
-	case isa.Fail:
-	case isa.Set:
-	case isa.Any:
-	case isa.PartialCommit:
-	case isa.Span:
-	case isa.BackCommit:
-	case isa.FailTwice:
-	case isa.TestChar:
-	case isa.TestSet:
-	case isa.TestAny:
-	case isa.Choice2:
-	}
-	return []byte{}
+func encodeSet(set isa.Charset) []byte {
+	var b []byte
+	b = append(b, encodeU32(uint32(set.Bits[0]&0xffffffff))...)
+	b = append(b, encodeU32(uint32((set.Bits[0]>>32)&0xffffffff))...)
+	b = append(b, encodeU32(uint32(set.Bits[1]&0xffffffff))...)
+	b = append(b, encodeU32(uint32((set.Bits[1]>>32)&0xffffffff))...)
+	return b
 }
 
-func setToBytes(set isa.Charset) []byte {
-
+func encodeU32(l uint32) []byte {
+	b1 := byte(l & 0xff)
+	b2 := byte((l >> 8) & 0xff)
+	b3 := byte((l >> 16) & 0xff)
+	b4 := byte((l >> 24) & 0xff)
+	return []byte{b1, b2, b3, b4}
 }
