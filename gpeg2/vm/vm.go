@@ -12,6 +12,7 @@ const ipFail = -1
 type VM struct {
 	ip    int
 	st    *stack
+	start input.Pos
 	input *input.BufferedReader
 }
 
@@ -19,18 +20,19 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 	return &VM{
 		ip:    0,
 		st:    newStack(),
+		start: start,
 		input: input.NewBufferedReader(r, start),
 	}
 }
 
-func (vm *VM) Exec(code VMCode) (input.Pos, bool) {
+func (vm *VM) Exec(code VMCode) int {
 loop:
 	for vm.ip < len(code) {
 		if vm.ip == ipFail {
 			ent, ok := vm.st.pop()
 			if !ok {
 				// match failed
-				return vm.input.Offset(), false
+				return -1
 			}
 			if !ent.isRet() {
 				vm.ip = ent.btrack.ip
@@ -44,8 +46,8 @@ loop:
 		switch op {
 		case opChar:
 			b := decodeByte(code[vm.ip+1:])
-			in := vm.input.Peek()
-			if b == in {
+			in, eof := vm.input.Peek()
+			if eof == nil && b == in {
 				vm.input.Advance(1)
 				vm.ip += 2
 			} else {
@@ -70,13 +72,15 @@ loop:
 			ent, ok := vm.st.pop()
 			if ok && ent.isRet() {
 				vm.ip = ent.retaddr
+			} else {
+				panic("Return failed")
 			}
 		case opFail:
 			vm.ip = ipFail
 		case opSet:
 			set := decodeSet(code[vm.ip+1:])
-			in := vm.input.Peek()
-			if set.Has(in) {
+			in, eof := vm.input.Peek()
+			if eof == nil && set.Has(in) {
 				vm.input.Advance(1)
 				vm.ip += 17
 			} else {
@@ -87,6 +91,8 @@ loop:
 			err := vm.input.Advance(int(n))
 			if err != nil {
 				vm.ip = ipFail
+			} else {
+				vm.ip += 2
 			}
 		case opPartialCommit:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -94,16 +100,15 @@ loop:
 			if ent != nil && !ent.isRet() {
 				ent.btrack.off = vm.input.Offset()
 				vm.ip = int(lbl)
+			} else {
+				panic("PartialCommit failed")
 			}
 		case opSpan:
 			set := decodeSet(code[vm.ip+1:])
-			in := vm.input.Peek()
-			for set.Has(in) {
-				err := vm.input.Advance(1)
-				if err != nil {
-					break
-				}
-				in = vm.input.Peek()
+			in, eof := vm.input.Peek()
+			for eof == nil && set.Has(in) {
+				vm.input.Advance(1)
+				in, eof = vm.input.Peek()
 			}
 			vm.ip += 17
 		case opBackCommit:
@@ -112,6 +117,8 @@ loop:
 			if ok && !ent.isRet() {
 				vm.input.SeekTo(ent.btrack.off)
 				vm.ip = int(lbl)
+			} else {
+				panic("BackCommit failed")
 			}
 		case opFailTwice:
 			vm.st.pop()
@@ -119,8 +126,8 @@ loop:
 		case opTestChar:
 			lbl := decodeU32(code[vm.ip+1:])
 			b := decodeByte(code[vm.ip+1+4:])
-			in := vm.input.Peek()
-			if in == b {
+			in, eof := vm.input.Peek()
+			if eof == nil && in == b {
 				vm.input.Advance(1)
 				vm.ip += 6
 			} else {
@@ -129,8 +136,8 @@ loop:
 		case opTestSet:
 			lbl := decodeU32(code[vm.ip+1:])
 			set := decodeSet(code[vm.ip+1+4:])
-			in := vm.input.Peek()
-			if set.Has(in) {
+			in, eof := vm.input.Peek()
+			if eof == nil && set.Has(in) {
 				vm.input.Advance(1)
 				vm.ip += 21
 			} else {
@@ -142,6 +149,8 @@ loop:
 			err := vm.input.Advance(int(n))
 			if err != nil {
 				vm.ip = int(lbl)
+			} else {
+				vm.ip += 6
 			}
 		case opEnd:
 			// ends the machine with a success
@@ -154,7 +163,7 @@ loop:
 		}
 	}
 
-	return vm.input.Offset(), true
+	return vm.input.Offset().Distance(vm.start)
 }
 
 func decodeByte(b []byte) byte {

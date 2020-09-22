@@ -1,5 +1,7 @@
 package input
 
+import "io"
+
 // Pos represents a position in the reader in question. This might be
 // simply a string offset, or something more complex like a line and
 // column number or other representation.
@@ -53,8 +55,11 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 }
 
 // Peek returns the next byte but does not consume it.
-func (br *BufferedReader) Peek() byte {
-	return br.chunk[br.off]
+func (br *BufferedReader) Peek() (byte, error) {
+	if br.off >= br.size {
+		return 0, io.EOF
+	}
+	return br.chunk[br.off], nil
 }
 
 // SeekTo moves the reader to a new position.
