@@ -222,6 +222,10 @@ func (i TestAny) String() string {
 	return fmt.Sprintf("TestAny %v %v", i.N, i.Lbl)
 }
 
+func (i Choice2) String() string {
+	return fmt.Sprintf("Choice2 %v %v", i.Back, i.Lbl)
+}
+
 func (i End) String() string {
 	return "End"
 }

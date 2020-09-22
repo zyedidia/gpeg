@@ -2,13 +2,17 @@ package vm
 
 import (
 	"log"
+	"unsafe"
 
 	"github.com/zyedidia/gpeg/isa"
+	"github.com/zyedidia/gpeg/pattern"
 )
 
 type VMCode []byte
 
-func Encode(insns []isa.Insn) VMCode {
+func Encode(insns pattern.Pattern) VMCode {
+	insns.Optimize()
+
 	var code []byte
 
 	// for label resolution
@@ -106,18 +110,22 @@ func Encode(insns []isa.Insn) VMCode {
 }
 
 func encodeSet(set isa.Charset) []byte {
-	var b []byte
-	b = append(b, encodeU32(uint32(set.Bits[0]&0xffffffff))...)
-	b = append(b, encodeU32(uint32((set.Bits[0]>>32)&0xffffffff))...)
-	b = append(b, encodeU32(uint32(set.Bits[1]&0xffffffff))...)
-	b = append(b, encodeU32(uint32((set.Bits[1]>>32)&0xffffffff))...)
-	return b
+	bytes := *(*[16]byte)(unsafe.Pointer(&set.Bits[0]))
+	return bytes[:]
+	// var b []byte
+	// b = append(b, encodeU32(uint32(set.Bits[0]&0xffffffff))...)
+	// b = append(b, encodeU32(uint32((set.Bits[0]>>32)&0xffffffff))...)
+	// b = append(b, encodeU32(uint32(set.Bits[1]&0xffffffff))...)
+	// b = append(b, encodeU32(uint32((set.Bits[1]>>32)&0xffffffff))...)
+	// return b
 }
 
 func encodeU32(l uint32) []byte {
-	b1 := byte(l & 0xff)
-	b2 := byte((l >> 8) & 0xff)
-	b3 := byte((l >> 16) & 0xff)
-	b4 := byte((l >> 24) & 0xff)
-	return []byte{b1, b2, b3, b4}
+	bytes := *(*[4]byte)(unsafe.Pointer(&l))
+	return bytes[:]
+	// b1 := byte(l & 0xff)
+	// b2 := byte((l >> 8) & 0xff)
+	// b3 := byte((l >> 16) & 0xff)
+	// b4 := byte((l >> 24) & 0xff)
+	// return []byte{b1, b2, b3, b4}
 }

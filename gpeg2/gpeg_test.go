@@ -1,10 +1,11 @@
-package pattern
+package gpeg
 
 import (
 	"testing"
 
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
+	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -18,7 +19,7 @@ func check(p Pattern, tests []PatternTest, t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
 			var bytes input.ByteReader = []byte(tt.in)
-			machine := vm.NewVM(bytes, input.BytePosStart)
+			machine := vm.NewVM(bytes, 0)
 			nchars := machine.Exec(code)
 			if tt.match != nchars {
 				t.Errorf("%v returned %v", string(bytes), nchars)

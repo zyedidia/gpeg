@@ -59,10 +59,10 @@ func (c Charset) Add(c1 Charset) Charset {
 func (c Charset) Has(r byte) bool {
 	switch {
 	case r < 64:
-		bit := uint64(1) << uint32(r)
+		bit := uint64(1) << r
 		return c.Bits[0]&bit != 0
 	case r < 128:
-		bit := uint64(1) << uint32(r-64)
+		bit := uint64(1) << (r - 64)
 		return c.Bits[1]&bit != 0
 	}
 	return false

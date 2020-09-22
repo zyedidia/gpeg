@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"log"
+	"unsafe"
 
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
@@ -27,7 +27,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 
 func (vm *VM) Exec(code VMCode) int {
 loop:
-	for vm.ip < len(code) {
+	for {
 		if vm.ip == ipFail {
 			ent, ok := vm.st.pop()
 			if !ok {
@@ -40,6 +40,8 @@ loop:
 			}
 			// try again with new ip/stack
 			continue
+		} else if vm.ip >= len(code) {
+			break
 		}
 
 		op := code[vm.ip]
@@ -156,16 +158,19 @@ loop:
 			// ends the machine with a success
 			break loop
 		case opChoice2:
-			// lbl := decodeU32(code[vm.ip+1:])
-			// back := decodeByte(code[vm.ip+1+4:])
+			lbl := decodeU32(code[vm.ip+1:])
+			back := decodeByte(code[vm.ip+1+4:])
+			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()-input.Pos(back)))
+			vm.ip += 6
 		case opNop:
 			vm.ip += 1
 		default:
-			log.Fatal("Invalid opcode")
+			panic("Invalid opcode")
 		}
 	}
 
-	return vm.input.Offset().Distance(vm.start)
+	// return vm.input.Offset().Distance(vm.start)
+	return int(vm.input.Offset() - vm.start)
 }
 
 func decodeByte(b []byte) byte {
@@ -173,14 +178,16 @@ func decodeByte(b []byte) byte {
 }
 
 func decodeU32(b []byte) uint32 {
-	return uint32(b[0]) | (uint32(b[1]) << 8) | (uint32(b[2]) << 16) | (uint32(b[3]) << 24)
+	return *(*uint32)(unsafe.Pointer(&b[0]))
+	// return uint32(b[0]) | (uint32(b[1]) << 8) | (uint32(b[2]) << 16) | (uint32(b[3]) << 24)
 }
 
 func decodeSet(b []byte) isa.Charset {
-	first := uint64(decodeU32(b)) | (uint64(decodeU32(b[4:])) << 32)
-	second := uint64(decodeU32(b[8:])) | (uint64(decodeU32(b[12:])) << 32)
-
-	return isa.Charset{
-		Bits: [2]uint64{first, second},
-	}
+	return *(*isa.Charset)(unsafe.Pointer(&b[0]))
+	// first := uint64(decodeU32(b)) | (uint64(decodeU32(b[4:])) << 32)
+	// second := uint64(decodeU32(b[8:])) | (uint64(decodeU32(b[12:])) << 32)
+	//
+	// return isa.Charset{
+	// 	Bits: [2]uint64{first, second},
+	// }
 }

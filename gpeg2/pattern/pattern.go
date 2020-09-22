@@ -57,10 +57,19 @@ func Or(p1, p2 Pattern) Pattern {
 		}
 	}
 
-	code := make(Pattern, 0, len(p1)+len(p2)+4)
+	code := make(Pattern, 0, len(p1)+len(p2)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
-	code = append(code, isa.Choice{Lbl: L1})
+
+	var ch isa.Insn = isa.Choice{Lbl: L1}
+	test, choice, match := optHeadFail(p1, L1)
+	if match {
+		code = append(code, test)
+		ch = choice
+		p1 = p1[1:]
+	}
+
+	code = append(code, ch)
 	code = append(code, p1...)
 	code = append(code, isa.Commit{Lbl: L2})
 	code = append(code, L1)
@@ -112,9 +121,18 @@ func Optional(p Pattern) Pattern {
 // The not predicate succeeds if matching `p` at the current position
 // fails, and does not consume any input.
 func Not(p Pattern) Pattern {
-	code := make(Pattern, 0, len(p)+3)
+	code := make(Pattern, 0, len(p)+4)
 	L1 := isa.NewLabel()
-	code = append(code, isa.Choice{Lbl: L1})
+
+	var ch isa.Insn = isa.Choice{Lbl: L1}
+	test, choice, match := optHeadFail(p, L1)
+	if match {
+		code = append(code, test)
+		ch = choice
+		p = p[1:]
+	}
+
+	code = append(code, ch)
 	code = append(code, p...)
 	code = append(code, isa.FailTwice{})
 	code = append(code, L1)
@@ -126,18 +144,24 @@ func Not(p Pattern) Pattern {
 // succeeds and does not consume any input.
 // This is equivalent to `!!p`.
 func And(p Pattern) Pattern {
-	code := make(Pattern, 0, len(p)+7)
+	code := make(Pattern, 0, len(p)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
-	L3 := isa.NewLabel()
-	code = append(code, isa.Choice{Lbl: L1})
-	code = append(code, isa.Choice{Lbl: L2})
+
+	var ch isa.Insn = isa.Choice{Lbl: L1}
+	test, choice, match := optHeadFail(p, L1)
+	if match {
+		code = append(code, test)
+		ch = choice
+		p = p[1:]
+	}
+
+	code = append(code, ch)
 	code = append(code, p...)
-	code = append(code, L2)
-	code = append(code, isa.Commit{Lbl: L3})
-	code = append(code, L3)
-	code = append(code, isa.Fail{})
+	code = append(code, isa.BackCommit{Lbl: L2})
 	code = append(code, L1)
+	code = append(code, isa.Fail{})
+	code = append(code, L2)
 	return code
 }
 
@@ -260,6 +284,40 @@ func (p Pattern) Copy() Pattern {
 	return code
 }
 
+// Optimize performs some optimization passes on the code in p.
+func (p Pattern) Optimize() {
+	// map from label to index in code
+	labels := make(map[isa.Label]int)
+	for i, insn := range p {
+		switch l := insn.(type) {
+		case isa.Label:
+			labels[l] = i
+		}
+	}
+
+	for i, insn := range p {
+		if j, ok := insn.(isa.Jump); ok {
+			next, ok := nextInsn(p[labels[j.Lbl]:])
+			if ok {
+				switch t := next.(type) {
+				case isa.Call:
+					p[i] = isa.Call{Lbl: t.Lbl}
+				case isa.PartialCommit:
+					p[i] = isa.PartialCommit{Lbl: t.Lbl}
+				case isa.BackCommit:
+					p[i] = isa.BackCommit{Lbl: t.Lbl}
+				case isa.Commit:
+					p[i] = isa.Commit{Lbl: t.Lbl}
+				case isa.Jump:
+					p[i] = isa.Jump{Lbl: t.Lbl}
+				case isa.Return, isa.Fail, isa.FailTwice, isa.End:
+					p[i] = next
+				}
+			}
+		}
+	}
+}
+
 // String returns the string representation of a pattern
 func (p Pattern) String() string {
 	s := ""
@@ -280,4 +338,51 @@ func nextInsn(p Pattern) (isa.Insn, bool) {
 	}
 
 	return isa.Nop{}, false
+}
+
+// Applies head-fail optimizations to patterns. Returns the corresponding
+// TestXXX and Choice2 instructions, and an indicator that the input pattern
+// is amenable to the head-fail optimization. The `chLabel` input should be
+// the label that the TestXXX instruction and subsequent Choice2 instruction
+// should jump to if the test fails.
+func optHeadFail(p Pattern, chLabel isa.Label) (isa.Insn, isa.Insn, bool) {
+	var testi isa.Insn
+	var choicei isa.Insn
+
+	match := false
+	if len(p) >= 1 {
+		match = true
+		switch t := p[0].(type) {
+		case isa.Char:
+			testi = isa.TestChar{
+				Byte: t.Byte,
+				Lbl:  chLabel,
+			}
+			choicei = isa.Choice2{
+				Lbl:  chLabel,
+				Back: 1,
+			}
+		case isa.Set:
+			testi = isa.TestSet{
+				Chars: t.Chars,
+				Lbl:   chLabel,
+			}
+			choicei = isa.Choice2{
+				Lbl:  chLabel,
+				Back: 1,
+			}
+		case isa.Any:
+			testi = isa.TestAny{
+				N:   t.N,
+				Lbl: chLabel,
+			}
+			choicei = isa.Choice2{
+				Lbl:  chLabel,
+				Back: t.N,
+			}
+		default:
+			match = false
+		}
+	}
+	return testi, choicei, match
 }
