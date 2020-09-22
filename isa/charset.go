@@ -32,7 +32,7 @@ func CharsetRange(low, high byte) Charset {
 			bit := uint64(1) << c
 			set.Bits[0] |= bit
 		case c < 128:
-			bit := uint64(c) << (c - 64)
+			bit := uint64(1) << (c - 64)
 			set.Bits[1] |= bit
 		}
 	}
