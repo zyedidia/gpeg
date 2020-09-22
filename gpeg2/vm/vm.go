@@ -158,6 +158,8 @@ loop:
 		case opChoice2:
 			// lbl := decodeU32(code[vm.ip+1:])
 			// back := decodeByte(code[vm.ip+1+4:])
+		case opNop:
+			vm.ip += 1
 		default:
 			log.Fatal("Invalid opcode")
 		}

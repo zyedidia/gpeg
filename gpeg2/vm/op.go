@@ -19,4 +19,5 @@ const (
 	opTestAny
 	opChoice2
 	opEnd
+	opNop
 )

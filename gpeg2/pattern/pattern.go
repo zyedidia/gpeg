@@ -9,75 +9,12 @@ import (
 
 type openCall struct {
 	name string
-	isa.Call
+	isa.Nop
 }
 
 // A Pattern is a set of instructions that can be used to
 // match an input Reader.
 type Pattern []isa.Insn
-
-// String returns the string representation of a pattern
-func (p Pattern) String() string {
-	s := ""
-	for i, insn := range p {
-		s += fmt.Sprintf("%2d: %v\n", i, insn)
-	}
-	return s
-}
-
-// Copy creates a copy of this pattern so it can be used again
-// within itself.
-func (p Pattern) Copy() Pattern {
-	// map from old labels to new labels
-	code := make(Pattern, len(p))
-	copy(code, p)
-	labels := make(map[isa.Label]isa.Label)
-	for i := range code {
-		switch t := code[i].(type) {
-		case isa.Label:
-			l := isa.NewLabel()
-			labels[t] = l
-			code[i] = l
-		}
-	}
-	for i := range code {
-		switch t := code[i].(type) {
-		case isa.Jump:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.Choice:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.Call:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.Commit:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.PartialCommit:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.BackCommit:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.TestChar:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.TestSet:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.TestAny:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.Choice2:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.JumpType:
-			panic("All jump types should be handled")
-		}
-	}
-	return code
-}
 
 // Literal matches a given string literal.
 func Literal(s string) Pattern {
@@ -251,16 +188,11 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 			var replace isa.Insn = isa.Call{Lbl: lbl}
 			// if a call is immediately followed by a return, optimize to
 			// a jump for tail call optimization.
-		loop:
-			for j := i + 1; j < len(code); j++ {
-				switch code[j].(type) {
-				case isa.Label:
-					continue
+			next, ok := nextInsn(code[i+1:])
+			if ok {
+				switch next.(type) {
 				case isa.Return:
 					replace = isa.Jump{Lbl: lbl}
-					break loop
-				default:
-					break loop
 				}
 			}
 
@@ -272,4 +204,80 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 	code = append(code, LEnd)
 
 	return code
+}
+
+// Copy creates a copy of this pattern so it can be used again
+// within itself.
+func (p Pattern) Copy() Pattern {
+	// map from old labels to new labels
+	code := make(Pattern, len(p))
+	copy(code, p)
+	labels := make(map[isa.Label]isa.Label)
+	for i := range code {
+		switch t := code[i].(type) {
+		case isa.Label:
+			l := isa.NewLabel()
+			labels[t] = l
+			code[i] = l
+		}
+	}
+	for i := range code {
+		switch t := code[i].(type) {
+		case isa.Jump:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.Choice:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.Call:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.Commit:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.PartialCommit:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.BackCommit:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.TestChar:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.TestSet:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.TestAny:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.Choice2:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.JumpType:
+			panic("All jump types should be handled")
+		}
+	}
+	return code
+}
+
+// String returns the string representation of a pattern
+func (p Pattern) String() string {
+	s := ""
+	for i, insn := range p {
+		s += fmt.Sprintf("%2d: %v\n", i, insn)
+	}
+	return s
+}
+
+func nextInsn(p Pattern) (isa.Insn, bool) {
+	for i := 0; i < len(p); i++ {
+		switch p[i].(type) {
+		case isa.Label:
+			continue
+		default:
+			return p[i], true
+		}
+	}
+
+	return isa.Nop{}, false
 }

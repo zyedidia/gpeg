@@ -134,6 +134,10 @@ type End struct {
 	basic
 }
 
+type Nop struct {
+	basic
+}
+
 type Choice2 struct {
 	Lbl  Label
 	Back byte
@@ -220,4 +224,8 @@ func (i TestAny) String() string {
 
 func (i End) String() string {
 	return "End"
+}
+
+func (i Nop) String() string {
+	return "Nop"
 }
