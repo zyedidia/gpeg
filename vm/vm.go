@@ -25,25 +25,16 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 	}
 }
 
+func (vm *VM) Reset(start input.Pos) {
+	vm.ip = 0
+	vm.start = start
+	vm.input.SeekTo(vm.start)
+	vm.st = newStack()
+}
+
 func (vm *VM) Exec(code VMCode) int {
 loop:
-	for {
-		if vm.ip == ipFail {
-			ent, ok := vm.st.pop()
-			if !ok {
-				// match failed
-				return -1
-			}
-			if !ent.isRet() {
-				vm.ip = ent.btrack.ip
-				vm.input.SeekTo(ent.btrack.off)
-			}
-			// try again with new ip/stack
-			continue
-		} else if vm.ip >= len(code) {
-			break
-		}
-
+	for vm.ip < len(code) {
 		op := code[vm.ip]
 		switch op {
 		case opChar:
@@ -53,7 +44,7 @@ loop:
 				vm.input.Advance(1)
 				vm.ip += 2
 			} else {
-				vm.ip = ipFail
+				goto fail
 			}
 		case opJump:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -78,7 +69,7 @@ loop:
 				panic("Return failed")
 			}
 		case opFail:
-			vm.ip = ipFail
+			goto fail
 		case opSet:
 			set := decodeSet(code[vm.ip+1:])
 			in, eof := vm.input.Peek()
@@ -86,13 +77,13 @@ loop:
 				vm.input.Advance(1)
 				vm.ip += 17
 			} else {
-				vm.ip = ipFail
+				goto fail
 			}
 		case opAny:
 			n := decodeByte(code[vm.ip+1:])
 			err := vm.input.Advance(int(n))
 			if err != nil {
-				vm.ip = ipFail
+				goto fail
 			} else {
 				vm.ip += 2
 			}
@@ -124,7 +115,7 @@ loop:
 			}
 		case opFailTwice:
 			vm.st.pop()
-			vm.ip = ipFail
+			goto fail
 		case opTestChar:
 			lbl := decodeU32(code[vm.ip+1:])
 			b := decodeByte(code[vm.ip+1+4:])
@@ -167,10 +158,27 @@ loop:
 		default:
 			panic("Invalid opcode")
 		}
+
 	}
 
 	// return vm.input.Offset().Distance(vm.start)
 	return int(vm.input.Offset() - vm.start)
+
+fail:
+	ent, ok := vm.st.pop()
+	if !ok {
+		// match failed
+		return -1
+	}
+	if !ent.isRet() {
+		vm.ip = ent.btrack.ip
+		vm.input.SeekTo(ent.btrack.off)
+	}
+	// try again with new ip/stack
+	if vm.ip == ipFail {
+		goto fail
+	}
+	goto loop
 }
 
 func decodeByte(b []byte) byte {
