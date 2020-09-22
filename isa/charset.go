@@ -56,7 +56,7 @@ func (c Charset) Add(c1 Charset) Charset {
 }
 
 // Has checks if a charset accepts a character.
-func (c Charset) Has(r byte) bool {
+func (c *Charset) Has(r byte) bool {
 	switch {
 	case r < 64:
 		bit := uint64(1) << r

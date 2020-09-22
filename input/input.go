@@ -48,6 +48,11 @@ func (br *BufferedReader) Peek() (byte, error) {
 
 // SeekTo moves the reader to a new position.
 func (br *BufferedReader) SeekTo(pos Pos) error {
+	if pos < br.base+Pos(len(br.chunk)) && pos >= br.base {
+		br.off = int(pos - br.base)
+		return nil
+	}
+
 	var err error
 	br.base = pos
 	br.off = 0
