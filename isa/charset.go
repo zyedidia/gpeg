@@ -55,6 +55,7 @@ func (c Charset) Add(c1 Charset) Charset {
 	}
 }
 
+// String returns the string representation of the charset.
 func (c Charset) String() string {
 	s := ""
 	inRange := false

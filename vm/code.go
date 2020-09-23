@@ -1,15 +1,16 @@
 package vm
 
 import (
-	"log"
 	"unsafe"
 
 	"github.com/zyedidia/gpeg/isa"
 	"github.com/zyedidia/gpeg/pattern"
 )
 
+// VMCode is the representation of VM bytecode. It is simply a list of bytes.
 type VMCode []byte
 
+// Encode transforms a Pattern into VM bytecode.
 func Encode(insns pattern.Pattern) VMCode {
 	insns.Optimize()
 
@@ -103,7 +104,6 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.Nop:
 			continue
 		default:
-			log.Println("Invalid instruction", t)
 			continue
 		}
 		code = append(code, op)

@@ -7,13 +7,15 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
+// openCall is a dummy instruction for resolving recursive function calls in
+// grammars.
 type openCall struct {
 	name string
 	isa.Nop
 }
 
-// A Pattern is a set of instructions that can be used to
-// match an input Reader.
+// A Pattern is a set of instructions that can be used to match an input
+// Reader.
 type Pattern []isa.Insn
 
 // Literal matches a given string literal.
@@ -380,7 +382,7 @@ func (p Pattern) Optimize() {
 	}
 }
 
-// String returns the string representation of a pattern
+// String returns the string representation of the pattern.
 func (p Pattern) String() string {
 	s := ""
 	for _, insn := range p {

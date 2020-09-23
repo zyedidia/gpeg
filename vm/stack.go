@@ -8,7 +8,7 @@ type stack struct {
 
 func newStack() *stack {
 	return &stack{
-		entries: []stackEntry{},
+		entries: make([]stackEntry, 0, 4),
 	}
 }
 

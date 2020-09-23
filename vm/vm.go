@@ -9,6 +9,10 @@ import (
 
 const ipFail = -1
 
+// A VM represents the state for the virtual machine. It stores a reference
+// to the input reader, an instruction pointer, a stack of backtrack entries
+// and return address entries, and the initial subject position (intermediate
+// subject positions are stored on the stack as backtrack entries).
 type VM struct {
 	ip    int
 	st    *stack
@@ -16,6 +20,8 @@ type VM struct {
 	input *input.BufferedReader
 }
 
+// NewVM returns a new virtual machine which will read from the given
+// input.Reader starting at the start position.
 func NewVM(r input.Reader, start input.Pos) *VM {
 	return &VM{
 		ip:    0,
@@ -25,6 +31,8 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 	}
 }
 
+// Reset resets the VM state to initial values and the given start position in
+// the subject.
 func (vm *VM) Reset(start input.Pos) {
 	vm.ip = 0
 	vm.start = start
@@ -32,6 +40,8 @@ func (vm *VM) Reset(start input.Pos) {
 	vm.st = newStack()
 }
 
+// Exec executes the given VM bytecode using the current VM state and returns
+// the number of characters that matched, or -1 if the match failed.
 func (vm *VM) Exec(code VMCode) int {
 loop:
 	for vm.ip < len(code) {

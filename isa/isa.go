@@ -7,6 +7,7 @@ type Insn interface {
 	insn()
 }
 
+// A JumpType instruction is any instruction that refers to a Label.
 type JumpType interface {
 	jumpt()
 }
@@ -28,20 +29,20 @@ func NewLabel() Label {
 	}
 }
 
-// Char consumes the next byte of the subject if it matches `Byte` and
+// Char consumes the next byte of the subject if it matches Byte and
 // fails otherwise.
 type Char struct {
 	Byte byte
 	basic
 }
 
-// Jump jumps to `Lbl`.
+// Jump jumps to Lbl.
 type Jump struct {
 	Lbl Label
 	jump
 }
 
-// Choice pushes `Lbl` to the stack and if there is a failure the label will
+// Choice pushes Lbl to the stack and if there is a failure the label will
 // be popped from the stack and jumped to.
 type Choice struct {
 	Lbl Label
@@ -49,13 +50,13 @@ type Choice struct {
 }
 
 // Call pushes the next instruction to the stack as a return address and jumps
-// to `Lbl`.
+// to Lbl.
 type Call struct {
 	Lbl Label
 	jump
 }
 
-// Commit jumps to `Lbl` and removes the top entry from the stack
+// Commit jumps to Lbl and removes the top entry from the stack
 type Commit struct {
 	Lbl Label
 	jump
@@ -72,72 +73,85 @@ type Fail struct {
 }
 
 // Set consumes the next byte of input if it is in the set of chars defined
-// by `Chars`.
+// by Chars.
 type Set struct {
 	Chars Charset
 	basic
 }
 
-// Any consumes the next `N` UTF-8 codepoints and fails if that is not
-// possible.
+// Any consumes the next N bytes and fails if that is not possible.
 type Any struct {
 	N byte
 	basic
 }
 
+// PartialCommit backtracks to the subject position at the top of the stack
+// without popping the entry off the stack and jumps to Lbl.
 type PartialCommit struct {
 	Lbl Label
 	jump
 }
 
-// Span consumes zero or more bytes in the set `Chars`. This instruction
+// Span consumes zero or more bytes in the set Chars. This instruction
 // never fails.
 type Span struct {
 	Chars Charset
 	basic
 }
 
+// BackCommit pops a backtrack entry off the stack, goes to the subject
+// position in the entry, and jumps to Lbl.
 type BackCommit struct {
 	Lbl Label
 	jump
 }
 
+// FailTwice pops an entry off the stack and sets the instruction pointer to
+// the fail state.
 type FailTwice struct {
 	basic
 }
 
-// TestChar consumes the next byte if it matches `Byte` and jumps to `Lbl`
-// otherwise.
+// TestChar consumes the next byte if it matches Byte and jumps to Lbl
+// otherwise. If the consumption is possible, a backtrack entry referring
+// to Lbl and the subject position from before consumption is pushed to the
+// stack.
 type TestChar struct {
 	Byte byte
 	Lbl  Label
 	jump
 }
 
-// TestSet consumes the next byte if it is in the set `Chars` and jumps to
-// `Lbl` otherwise.
+// TestSet consumes the next byte if it is in the set Chars and jumps to
+// Lbl otherwise. If the consumption is possible, a backtrack entry referring
+// to Lbl and the subject position from before consumption is pushed to the
+// stack.
 type TestSet struct {
 	Chars Charset
 	Lbl   Label
 	jump
 }
 
-// TestAny consumes the next `N` UTF-8 codepoints and jumps to `Lbl` if that
-// is not possible.
+// TestAny consumes the next N bytes and jumps to Lbl if that is not possible.
+// If the consumption is possible, a backtrack entry referring to Lbl and
+// the subject position from before consumption is pushed to the stack.
 type TestAny struct {
 	N   byte
 	Lbl Label
 	jump
 }
 
+// End immediately completes the pattern as a match.
 type End struct {
 	basic
 }
 
+// Nop does nothing.
 type Nop struct {
 	basic
 }
 
+// Choice2 is a deprecated instruction.
 type Choice2 struct {
 	Lbl  Label
 	Back byte
