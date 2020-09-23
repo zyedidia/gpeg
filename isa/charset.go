@@ -55,7 +55,29 @@ func (c Charset) Add(c1 Charset) Charset {
 	}
 }
 
+func (c Charset) String() string {
+	s := ""
+	inRange := false
+	for b := byte(0); b <= 128; b++ {
+		if c.Has(b) && !inRange {
+			inRange = true
+			if c.Has(b + 1) {
+				s += "'" + string(b) + "'.."
+			}
+		} else if !c.Has(b) && inRange {
+			inRange = false
+			s += "'" + string(b-1) + "',"
+		}
+	}
+	if s[len(s)-1] == ',' {
+		s = s[:len(s)-1]
+	}
+	s = "{" + s + "}"
+	return s
+}
+
 // Has checks if a charset accepts a character.
+// Pointer receiver is for performance.
 func (c *Charset) Has(r byte) bool {
 	switch {
 	case r < 64:
