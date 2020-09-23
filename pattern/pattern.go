@@ -7,6 +7,8 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
+const doinline = true
+
 type openCall struct {
 	name string
 	isa.Nop
@@ -194,28 +196,30 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 	inlinable := make(map[string]bool)
 
 	// TODO: more aggressive inlining
-	for k, v := range nonterms {
-		inlinable[k] = true
-		for i, insn := range v {
-			if oc, ok := insn.(openCall); ok {
-				// If we see an openCall this generally means the function is
-				// not inlinable. The only exception is a recursive tail-call.
-				// It's possible that more aggressive inlining than this could
-				// be done.
-				_, ok := nextInsn(v[i+1:])
-				// recursive tail-call is ok to inline
-				inlinable[k] = oc.name == k && !ok
-				if !inlinable[k] {
-					break
+	if doinline {
+		for k, v := range nonterms {
+			inlinable[k] = true
+			for i, insn := range v {
+				if oc, ok := insn.(openCall); ok {
+					// If we see an openCall this generally means the function is
+					// not inlinable. The only exception is a recursive tail-call.
+					// It's possible that more aggressive inlining than this could
+					// be done.
+					_, ok := nextInsn(v[i+1:])
+					// recursive tail-call is ok to inline
+					inlinable[k] = oc.name == k && !ok
+					if !inlinable[k] {
+						break
+					}
 				}
 			}
-		}
 
-		if inlinable[k] {
-			// if this function is inlinable we need to copy it because we
-			// will modify the inline code
-			fn := v.Copy()
-			nonterms[k] = fn
+			if inlinable[k] {
+				// if this function is inlinable we need to copy it because we
+				// will modify the inline code
+				fn := v.Copy()
+				nonterms[k] = fn
+			}
 		}
 	}
 
