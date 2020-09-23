@@ -141,12 +141,12 @@ loop:
 		case opTestAny:
 			lbl := decodeU32(code[vm.ip+1:])
 			n := decodeByte(code[vm.ip+1+4:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
+			ent := vm.st.backtrack(int(lbl), vm.input.Offset())
 			err := vm.input.Advance(int(n))
 			if err != nil {
-				vm.st.pop()
 				vm.ip = int(lbl)
 			} else {
+				vm.st.push(ent)
 				vm.ip += 6
 			}
 		case opEnd:
