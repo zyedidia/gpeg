@@ -117,30 +117,34 @@ loop:
 			vm.st.pop()
 			goto fail
 		case opTestChar:
+			lbl := decodeU32(code[vm.ip+1:])
 			b := decodeByte(code[vm.ip+1+4:])
 			in, eof := vm.input.Peek()
 			if eof == nil && in == b {
+				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
 				vm.input.Advance(1)
 				vm.ip += 6
 			} else {
-				lbl := decodeU32(code[vm.ip+1:])
 				vm.ip = int(lbl)
 			}
 		case opTestSet:
+			lbl := decodeU32(code[vm.ip+1:])
 			set := decodeSet(code[vm.ip+1+4:])
 			in, eof := vm.input.Peek()
 			if eof == nil && set.Has(in) {
+				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
 				vm.input.Advance(1)
 				vm.ip += 21
 			} else {
-				lbl := decodeU32(code[vm.ip+1:])
 				vm.ip = int(lbl)
 			}
 		case opTestAny:
+			lbl := decodeU32(code[vm.ip+1:])
 			n := decodeByte(code[vm.ip+1+4:])
+			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
 			err := vm.input.Advance(int(n))
 			if err != nil {
-				lbl := decodeU32(code[vm.ip+1:])
+				vm.st.pop()
 				vm.ip = int(lbl)
 			} else {
 				vm.ip += 6

@@ -61,15 +61,14 @@ func Or(p1, p2 Pattern) Pattern {
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
 
-	var ch isa.Insn = isa.Choice{Lbl: L1}
-	test, choice, match := optHeadFail(p1, L1)
+	test, _, match := optHeadFail(p1, L1)
 	if match {
 		code = append(code, test)
-		ch = choice
 		p1 = p1[1:]
+	} else {
+		code = append(code, isa.Choice{Lbl: L1})
 	}
 
-	code = append(code, ch)
 	code = append(code, p1...)
 	code = append(code, isa.Commit{Lbl: L2})
 	code = append(code, L1)
@@ -124,15 +123,14 @@ func Not(p Pattern) Pattern {
 	code := make(Pattern, 0, len(p)+4)
 	L1 := isa.NewLabel()
 
-	var ch isa.Insn = isa.Choice{Lbl: L1}
-	test, choice, match := optHeadFail(p, L1)
+	test, _, match := optHeadFail(p, L1)
 	if match {
 		code = append(code, test)
-		ch = choice
 		p = p[1:]
+	} else {
+		code = append(code, isa.Choice{Lbl: L1})
 	}
 
-	code = append(code, ch)
 	code = append(code, p...)
 	code = append(code, isa.FailTwice{})
 	code = append(code, L1)
@@ -148,15 +146,14 @@ func And(p Pattern) Pattern {
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
 
-	var ch isa.Insn = isa.Choice{Lbl: L1}
-	test, choice, match := optHeadFail(p, L1)
+	test, _, match := optHeadFail(p, L1)
 	if match {
 		code = append(code, test)
-		ch = choice
 		p = p[1:]
+	} else {
+		code = append(code, isa.Choice{Lbl: L1})
 	}
 
-	code = append(code, ch)
 	code = append(code, p...)
 	code = append(code, isa.BackCommit{Lbl: L2})
 	code = append(code, L1)
@@ -413,6 +410,7 @@ func nextInsn(p Pattern) (isa.Insn, bool) {
 // the label that the TestXXX instruction and subsequent Choice2 instruction
 // should jump to if the test fails.
 func optHeadFail(p Pattern, chLabel isa.Label) (isa.Insn, isa.Insn, bool) {
+	// TODO: handle case where pattern starts with label
 	var testi isa.Insn
 	var choicei isa.Insn
 
