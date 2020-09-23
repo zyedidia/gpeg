@@ -60,15 +60,7 @@ func Or(p1, p2 Pattern) Pattern {
 	code := make(Pattern, 0, len(p1)+len(p2)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
-
-	test, _, match := optHeadFail(p1, L1)
-	if match {
-		code = append(code, test)
-		p1 = p1[1:]
-	} else {
-		code = append(code, isa.Choice{Lbl: L1})
-	}
-
+	code = append(code, isa.Choice{Lbl: L1})
 	code = append(code, p1...)
 	code = append(code, isa.Commit{Lbl: L2})
 	code = append(code, L1)
@@ -122,15 +114,7 @@ func Optional(p Pattern) Pattern {
 func Not(p Pattern) Pattern {
 	code := make(Pattern, 0, len(p)+4)
 	L1 := isa.NewLabel()
-
-	test, _, match := optHeadFail(p, L1)
-	if match {
-		code = append(code, test)
-		p = p[1:]
-	} else {
-		code = append(code, isa.Choice{Lbl: L1})
-	}
-
+	code = append(code, isa.Choice{Lbl: L1})
 	code = append(code, p...)
 	code = append(code, isa.FailTwice{})
 	code = append(code, L1)
@@ -146,14 +130,7 @@ func And(p Pattern) Pattern {
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
 
-	test, _, match := optHeadFail(p, L1)
-	if match {
-		code = append(code, test)
-		p = p[1:]
-	} else {
-		code = append(code, isa.Choice{Lbl: L1})
-	}
-
+	code = append(code, isa.Choice{Lbl: L1})
 	code = append(code, p...)
 	code = append(code, isa.BackCommit{Lbl: L2})
 	code = append(code, L1)
@@ -360,21 +337,42 @@ func (p Pattern) Optimize() {
 	}
 
 	for i, insn := range p {
+		// head-fail optimization: if we find a choice instruction immediately
+		// followed (no label) by Char/Set/Any, we can replace with the
+		// dedicated instruction TestChar/TestSet/TestAny.
+		if ch, ok := insn.(isa.Choice); ok && i < len(p)-1 {
+			next := p[i+1]
+			switch t := next.(type) {
+			case isa.Char:
+				p[i] = isa.TestChar{
+					Byte: t.Byte,
+					Lbl:  ch.Lbl,
+				}
+				p[i+1] = isa.Nop{}
+			case isa.Set:
+				p[i] = isa.TestSet{
+					Chars: t.Chars,
+					Lbl:   ch.Lbl,
+				}
+				p[i+1] = isa.Nop{}
+			case isa.Any:
+				p[i] = isa.TestAny{
+					N:   t.N,
+					Lbl: ch.Lbl,
+				}
+				p[i+1] = isa.Nop{}
+			}
+		}
+
+		// jump optimization: if we find a jump to another control flow
+		// instruction, we can replace the current jump directly with the
+		// target instruction.
 		if j, ok := insn.(isa.Jump); ok {
 			next, ok := nextInsn(p[labels[j.Lbl]:])
 			if ok {
-				switch t := next.(type) {
-				case isa.Call:
-					p[i] = isa.Call{Lbl: t.Lbl}
-				case isa.PartialCommit:
-					p[i] = isa.PartialCommit{Lbl: t.Lbl}
-				case isa.BackCommit:
-					p[i] = isa.BackCommit{Lbl: t.Lbl}
-				case isa.Commit:
-					p[i] = isa.Commit{Lbl: t.Lbl}
-				case isa.Jump:
-					p[i] = isa.Jump{Lbl: t.Lbl}
-				case isa.Return, isa.Fail, isa.FailTwice, isa.End:
+				switch next.(type) {
+				case isa.Call, isa.PartialCommit, isa.BackCommit, isa.Commit,
+					isa.Jump, isa.Return, isa.Fail, isa.FailTwice, isa.End:
 					p[i] = next
 				}
 			}
@@ -386,7 +384,9 @@ func (p Pattern) Optimize() {
 func (p Pattern) String() string {
 	s := ""
 	for i, insn := range p {
-		s += fmt.Sprintf("%2d: %v\n", i, insn)
+		if _, ok := insn.(isa.Nop); !ok {
+			s += fmt.Sprintf("%2d: %v\n", i, insn)
+		}
 	}
 	return s
 }
@@ -402,52 +402,4 @@ func nextInsn(p Pattern) (isa.Insn, bool) {
 	}
 
 	return isa.Nop{}, false
-}
-
-// Applies head-fail optimizations to patterns. Returns the corresponding
-// TestXXX and Choice2 instructions, and an indicator that the input pattern
-// is amenable to the head-fail optimization. The `chLabel` input should be
-// the label that the TestXXX instruction and subsequent Choice2 instruction
-// should jump to if the test fails.
-func optHeadFail(p Pattern, chLabel isa.Label) (isa.Insn, isa.Insn, bool) {
-	// TODO: handle case where pattern starts with label
-	var testi isa.Insn
-	var choicei isa.Insn
-
-	match := false
-	if len(p) >= 1 {
-		match = true
-		switch t := p[0].(type) {
-		case isa.Char:
-			testi = isa.TestChar{
-				Byte: t.Byte,
-				Lbl:  chLabel,
-			}
-			choicei = isa.Choice2{
-				Lbl:  chLabel,
-				Back: 1,
-			}
-		case isa.Set:
-			testi = isa.TestSet{
-				Chars: t.Chars,
-				Lbl:   chLabel,
-			}
-			choicei = isa.Choice2{
-				Lbl:  chLabel,
-				Back: 1,
-			}
-		case isa.Any:
-			testi = isa.TestAny{
-				N:   t.N,
-				Lbl: chLabel,
-			}
-			choicei = isa.Choice2{
-				Lbl:  chLabel,
-				Back: t.N,
-			}
-		default:
-			match = false
-		}
-	}
-	return testi, choicei, match
 }

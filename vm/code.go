@@ -20,6 +20,8 @@ func Encode(insns pattern.Pattern) VMCode {
 	labels := make(map[int]uint32)
 	for _, insn := range insns {
 		switch t := insn.(type) {
+		case isa.Nop:
+			continue
 		case isa.Label:
 			labels[t.Id] = bcount
 			continue
@@ -98,6 +100,8 @@ func Encode(insns pattern.Pattern) VMCode {
 			args = append(encodeU32(labels[t.Lbl.Id]), t.Back)
 		case isa.End:
 			op = opEnd
+		case isa.Nop:
+			continue
 		default:
 			log.Println("Invalid instruction", t)
 			continue
