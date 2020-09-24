@@ -37,7 +37,7 @@ func (vm *VM) Reset(start input.Pos) {
 	vm.ip = 0
 	vm.start = start
 	vm.input.SeekTo(vm.start)
-	vm.st = newStack()
+	vm.st.reset()
 }
 
 // Exec executes the given VM bytecode using the current VM state and returns

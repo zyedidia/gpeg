@@ -239,7 +239,8 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 	}
 
 	// resolve calls to openCall and do tail call optimization
-	for i, insn := range code {
+	for i := 0; i < len(code); i++ {
+		insn := code[i]
 		if oc, ok := insn.(openCall); ok {
 			if inlinable[oc.name] {
 				code = append(code[:i], append(nonterms[oc.name].Copy(), code[i+1:]...)...)

@@ -85,8 +85,8 @@ type Any struct {
 	basic
 }
 
-// PartialCommit backtracks to the subject position at the top of the stack
-// without popping the entry off the stack and jumps to Lbl.
+// PartialCommit modifies the backtrack entry on the top of the stack to
+// point to the current subject offset, and jumps to Lbl.
 type PartialCommit struct {
 	Lbl Label
 	jump

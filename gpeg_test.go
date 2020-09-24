@@ -1,6 +1,9 @@
 package gpeg
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/zyedidia/gpeg/input"
@@ -201,4 +204,125 @@ func TestArithmeticGrammar(t *testing.T) {
 		{"10*(43", 2},
 	}
 	check(p, tests, t)
+}
+
+// **************
+// * Benchmarks *
+// **************
+
+var match int
+var bible input.ByteReader
+var machine *vm.VM
+
+func searchFirst(patt Pattern) Pattern {
+	return Grammar("S", map[string]Pattern{
+		"S": Or(patt, Concat(Any(1), NonTerm("S"))),
+	})
+}
+
+func searchFirstOpt(patt Pattern, c byte) Pattern {
+	return Grammar("S", map[string]Pattern{
+		"S": Or(patt, Concat(Any(1), Concat(Star(Set(isa.NewCharset([]byte{c}).Complement())), NonTerm("S")))),
+	})
+}
+
+func searchLast(patt Pattern) Pattern {
+	p := Grammar("S", map[string]Pattern{
+		"S": Or(patt, Concat(Any(1), NonTerm("S"))),
+	})
+	return Star(p)
+}
+
+func TestMain(m *testing.M) {
+	var err error
+	bible, err = ioutil.ReadFile("testdata/bible.txt")
+	if err != nil {
+		fmt.Println("Warning:", err)
+	}
+	machine = vm.NewVM(bible, 0)
+	os.Exit(m.Run())
+}
+
+func BenchmarkBibleSearchFirstEartt(b *testing.B) {
+	code := vm.Encode(searchFirst(Literal("eartt")))
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleSearchFirstOptEartt(b *testing.B) {
+	code := vm.Encode(searchFirstOpt(Literal("eartt"), 'e'))
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleSearchFirstAbram(b *testing.B) {
+	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
+	code := vm.Encode(searchFirst(abram))
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleSearchLastAbram(b *testing.B) {
+	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
+	code := vm.Encode(searchLast(abram))
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
+	code := vm.Encode(searchLast(Literal("Tubalcain")))
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleOmegaPattern(b *testing.B) {
+	omega := Concat(Star(Concat(Not(Literal("Omega")), Any(1))), Literal("Omega"))
+	code := vm.Encode(omega)
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
+}
+
+func BenchmarkBibleOmegaGrammar(b *testing.B) {
+	omega := Grammar("S", map[string]Pattern{
+		"S": Concat(Star(Concat(Not(NonTerm("P")), Any(1))), NonTerm("P")),
+		"P": Literal("Omega"),
+	})
+	code := vm.Encode(omega)
+	machine.Reset(0)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match = machine.Exec(code)
+		machine.Reset(0)
+	}
 }

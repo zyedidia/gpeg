@@ -12,6 +12,10 @@ func newStack() *stack {
 	}
 }
 
+func (s *stack) reset() {
+	s.entries = s.entries[:1]
+}
+
 func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
