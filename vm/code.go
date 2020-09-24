@@ -109,6 +109,7 @@ func Encode(insns pattern.Pattern) VMCode {
 		code = append(code, op)
 		code = append(code, args...)
 	}
+	code = append(code, opEnd)
 
 	return code
 }

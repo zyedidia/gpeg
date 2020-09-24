@@ -1,4 +1,5 @@
-coverage.out
+*.out
+*.test
 main/
 todo.txt
 testdata/bible.txt

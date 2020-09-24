@@ -15,6 +15,9 @@ bench: testdata/bible.txt
 bench-pretty: testdata/bible.txt
 	go test -run=none -bench=. | prettybench
 
+bench-profile:
+	go test -run=none -bench=. -cpuprofile=profile.out
+
 coverage.out: $(SRC)
 	go test -coverpkg=./... -coverprofile=coverage.out .
 

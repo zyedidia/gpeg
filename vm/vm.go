@@ -44,7 +44,7 @@ func (vm *VM) Reset(start input.Pos) {
 // the number of characters that matched, or -1 if the match failed.
 func (vm *VM) Exec(code VMCode) int {
 loop:
-	for vm.ip < len(code) {
+	for {
 		op := code[vm.ip]
 		switch op {
 		case opChar:
