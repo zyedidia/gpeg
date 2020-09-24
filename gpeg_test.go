@@ -185,6 +185,25 @@ func TestUnionSet(t *testing.T) {
 	check(p, tests, t)
 }
 
+func TestSearch(t *testing.T) {
+	p := Search(Literal("ana"))
+	tests := []PatternTest{
+		{"hello ana hello", 9},
+		{"hello", -1},
+		{"hello ana ana ana", 9},
+	}
+	check(p, tests, t)
+
+	// search for last occurrence
+	p = Plus(Search(Literal("ana")))
+	tests = []PatternTest{
+		{"hello ana hello", 9},
+		{"hello", -1},
+		{"hello ana ana ana hello", 17},
+	}
+	check(p, tests, t)
+}
+
 func TestArithmeticGrammar(t *testing.T) {
 	// grammar:
 	// Expr   <- <Factor> ([+-] <Factor>)*
@@ -214,25 +233,6 @@ var match int
 var bible input.ByteReader
 var machine *vm.VM
 
-func searchFirst(patt Pattern) Pattern {
-	return Grammar("S", map[string]Pattern{
-		"S": Or(patt, Concat(Any(1), NonTerm("S"))),
-	})
-}
-
-func searchFirstOpt(patt Pattern, c byte) Pattern {
-	return Grammar("S", map[string]Pattern{
-		"S": Or(patt, Concat(Any(1), Concat(Star(Set(isa.NewCharset([]byte{c}).Complement())), NonTerm("S")))),
-	})
-}
-
-func searchLast(patt Pattern) Pattern {
-	p := Grammar("S", map[string]Pattern{
-		"S": Or(patt, Concat(Any(1), NonTerm("S"))),
-	})
-	return Star(p)
-}
-
 func TestMain(m *testing.M) {
 	var err error
 	bible, err = ioutil.ReadFile("testdata/bible.txt")
@@ -244,18 +244,7 @@ func TestMain(m *testing.M) {
 }
 
 func BenchmarkBibleSearchFirstEartt(b *testing.B) {
-	code := vm.Encode(searchFirst(Literal("eartt")))
-	machine.Reset(0)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
-		machine.Reset(0)
-	}
-}
-
-func BenchmarkBibleSearchFirstOptEartt(b *testing.B) {
-	code := vm.Encode(searchFirstOpt(Literal("eartt"), 'e'))
+	code := vm.Encode(Search(Literal("eartt")))
 	machine.Reset(0)
 
 	b.ResetTimer()
@@ -267,7 +256,7 @@ func BenchmarkBibleSearchFirstOptEartt(b *testing.B) {
 
 func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
-	code := vm.Encode(searchFirst(abram))
+	code := vm.Encode(Search(abram))
 	machine.Reset(0)
 
 	b.ResetTimer()
@@ -279,7 +268,7 @@ func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 
 func BenchmarkBibleSearchLastAbram(b *testing.B) {
 	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
-	code := vm.Encode(searchLast(abram))
+	code := vm.Encode(Star(Search(abram)))
 	machine.Reset(0)
 
 	b.ResetTimer()
@@ -290,7 +279,7 @@ func BenchmarkBibleSearchLastAbram(b *testing.B) {
 }
 
 func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
-	code := vm.Encode(searchLast(Literal("Tubalcain")))
+	code := vm.Encode(Star(Search(Literal("Tubalcain"))))
 	machine.Reset(0)
 
 	b.ResetTimer()

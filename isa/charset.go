@@ -1,5 +1,7 @@
 package isa
 
+import "math/bits"
+
 type Charset struct {
 	Bits [2]uint64
 }
@@ -75,6 +77,11 @@ func (c Charset) String() string {
 	}
 	s = "{" + s + "}"
 	return s
+}
+
+// Size returns the number of chars matched by this Charset.
+func (c Charset) Size() int {
+	return bits.OnesCount64(c.Bits[0]) + bits.OnesCount64(c.Bits[1])
 }
 
 // Has checks if a charset accepts a character.

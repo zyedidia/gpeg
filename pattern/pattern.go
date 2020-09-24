@@ -141,6 +141,43 @@ func And(p Pattern) Pattern {
 	return code
 }
 
+// Search is a dedicated operator for creating searches. It will match
+// the first occurrence of the given pattern. Use Star(Search(p)) to match
+// the last occurrence.
+func Search(p Pattern) Pattern {
+	var rsearch Pattern
+	var set isa.Charset
+	opt := false
+
+	next, ok := nextInsn(p)
+	if ok {
+		switch t := next.(type) {
+		case isa.Char:
+			set = isa.NewCharset([]byte{t.Byte}).Complement()
+			opt = true
+		case isa.Set:
+			// Heuristic: if the set is smaller than 10 chars, it
+			// is unlikely enough to match that we should consume all
+			// chars from the complement before continuing the search.
+			// The number 10 was arbitrarily chosen.
+			if t.Chars.Size() < 10 {
+				set = t.Chars.Complement()
+				opt = true
+			}
+		}
+	}
+
+	if opt {
+		rsearch = Concat(Star(Set(set)), NonTerm("S"))
+	} else {
+		rsearch = NonTerm("S")
+	}
+
+	return Grammar("S", map[string]Pattern{
+		"S": Or(p, Concat(Any(1), rsearch)),
+	})
+}
+
 // NonTerm builds an unresolved non-terminal with a given name.
 // NonTerms should be used together with `Grammar` to build a recursive
 // grammar.
