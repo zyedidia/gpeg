@@ -10,6 +10,10 @@ type Reader interface {
 	// in memory, and as a result the slice that is returned does not cause
 	// any allocation apart from the fat pointer for the slice itself.
 	ReadAtPos(p Pos) (b []byte, err error)
+
+	// Slice returns the bytes in the data [low:high). This is used for
+	// resolving capture data.
+	Slice(low, high Pos) (b []byte)
 }
 
 // A BufferedReader is an efficient wrapper of a Reader which provides
@@ -73,6 +77,12 @@ func (br *BufferedReader) Advance(n int) bool {
 		return br.SeekTo(br.base + Pos(br.off))
 	}
 	return true
+}
+
+// Slice returns the bytes in the data [low:high). This is used for
+// resolving capture data.
+func (br *BufferedReader) Slice(low, high Pos) []byte {
+	return br.r.Slice(low, high)
 }
 
 // Offset returns the current position of the reader.

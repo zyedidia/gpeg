@@ -23,9 +23,9 @@ func check(p Pattern, tests []PatternTest, t *testing.T) {
 		t.Run(tt.in, func(t *testing.T) {
 			var bytes input.ByteReader = []byte(tt.in)
 			machine := vm.NewVM(bytes, 0)
-			nchars := machine.Exec(code)
-			if tt.match != nchars {
-				t.Errorf("%v returned %v", string(bytes), nchars)
+			match, off, _ := machine.Exec(code)
+			if tt.match == -1 && match || tt.match != -1 && tt.match != int(off) {
+				t.Errorf("%v returned %v, %v", string(bytes), match, off)
 			}
 		})
 	}
@@ -234,7 +234,7 @@ func TestArithmeticGrammar(t *testing.T) {
 // * Benchmarks *
 // **************
 
-var match int
+var match bool
 var bible input.ByteReader
 var machine *vm.VM
 
@@ -254,7 +254,7 @@ func BenchmarkBibleSearchFirstEartt(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }
@@ -266,7 +266,7 @@ func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }
@@ -278,7 +278,7 @@ func BenchmarkBibleSearchLastAbram(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }
@@ -289,7 +289,7 @@ func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }
@@ -301,7 +301,7 @@ func BenchmarkBibleOmegaPattern(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }
@@ -316,7 +316,7 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match = machine.Exec(code)
+		match, _, _ = machine.Exec(code)
 		machine.Reset(0)
 	}
 }

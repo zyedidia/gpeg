@@ -43,8 +43,9 @@ func (vm *VM) Reset(start input.Pos) {
 }
 
 // Exec executes the given VM bytecode using the current VM state and returns
-// the number of characters that matched, or -1 if the match failed.
-func (vm *VM) Exec(code VMCode) int {
+// whether the match was successful, the offset when matching stopped, and a
+// capture object.
+func (vm *VM) Exec(code VMCode) (bool, input.Pos, []capt) {
 loop:
 	for {
 		op := code[vm.ip]
@@ -185,14 +186,13 @@ loop:
 		}
 	}
 
-	// return vm.input.Offset().Distance(vm.start)
-	return int(vm.input.Offset() - vm.start)
+	return true, vm.input.Offset(), vm.capt
 
 fail:
 	ent, ok := vm.st.pop()
 	if !ok {
 		// match failed
-		return -1
+		return false, vm.input.Offset(), vm.capt
 	}
 	if !ent.isRet() {
 		vm.ip = ent.btrack.ip
