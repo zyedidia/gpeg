@@ -214,6 +214,6 @@ func decodeU32(b []byte) uint32 {
 	return *(*uint32)(unsafe.Pointer(&b[0]))
 }
 
-func decodeSet(b []byte) isa.Charset {
-	return *(*isa.Charset)(unsafe.Pointer(&b[0]))
+func decodeSet(b []byte) *isa.Charset {
+	return (*isa.Charset)(unsafe.Pointer(&b[0]))
 }
