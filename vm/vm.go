@@ -51,8 +51,8 @@ loop:
 		switch op {
 		case opChar:
 			b := decodeByte(code[vm.ip+1:])
-			in, eof := vm.input.Peek()
-			if eof == nil && b == in {
+			in, ok := vm.input.Peek()
+			if ok && b == in {
 				vm.input.Advance(1)
 				vm.ip += 2
 			} else {
@@ -84,8 +84,8 @@ loop:
 			goto fail
 		case opSet:
 			set := decodeSet(code[vm.ip+1:])
-			in, eof := vm.input.Peek()
-			if eof == nil && set.Has(in) {
+			in, ok := vm.input.Peek()
+			if ok && set.Has(in) {
 				vm.input.Advance(1)
 				vm.ip += 17
 			} else {
@@ -93,11 +93,11 @@ loop:
 			}
 		case opAny:
 			n := decodeByte(code[vm.ip+1:])
-			err := vm.input.Advance(int(n))
-			if err != nil {
-				goto fail
-			} else {
+			ok := vm.input.Advance(int(n))
+			if ok {
 				vm.ip += 2
+			} else {
+				goto fail
 			}
 		case opPartialCommit:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -111,10 +111,10 @@ loop:
 			}
 		case opSpan:
 			set := decodeSet(code[vm.ip+1:])
-			in, eof := vm.input.Peek()
-			for eof == nil && set.Has(in) {
+			in, ok := vm.input.Peek()
+			for ok && set.Has(in) {
 				vm.input.Advance(1)
-				in, eof = vm.input.Peek()
+				in, ok = vm.input.Peek()
 			}
 			vm.ip += 17
 		case opBackCommit:
@@ -133,8 +133,8 @@ loop:
 		case opTestChar:
 			lbl := decodeU32(code[vm.ip+1:])
 			b := decodeByte(code[vm.ip+1+4:])
-			in, eof := vm.input.Peek()
-			if eof == nil && in == b {
+			in, ok := vm.input.Peek()
+			if ok && in == b {
 				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
 				vm.input.Advance(1)
 				vm.ip += 6
@@ -144,8 +144,8 @@ loop:
 		case opTestSet:
 			lbl := decodeU32(code[vm.ip+1:])
 			set := decodeSet(code[vm.ip+1+4:])
-			in, eof := vm.input.Peek()
-			if eof == nil && set.Has(in) {
+			in, ok := vm.input.Peek()
+			if ok && set.Has(in) {
 				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
 				vm.input.Advance(1)
 				vm.ip += 21
@@ -156,12 +156,12 @@ loop:
 			lbl := decodeU32(code[vm.ip+1:])
 			n := decodeByte(code[vm.ip+1+4:])
 			ent := vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt)
-			err := vm.input.Advance(int(n))
-			if err != nil {
-				vm.ip = int(lbl)
-			} else {
+			ok := vm.input.Advance(int(n))
+			if ok {
 				vm.st.push(ent)
 				vm.ip += 6
+			} else {
+				vm.ip = int(lbl)
 			}
 		case opCapture:
 			c := capt{

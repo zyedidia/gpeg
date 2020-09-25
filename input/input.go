@@ -1,9 +1,5 @@
 package input
 
-import (
-	"io"
-)
-
 type Pos int
 
 // A Reader is an interface for reading bytes in chunks from a document
@@ -24,7 +20,10 @@ type BufferedReader struct {
 	base  Pos
 	off   int
 	chunk []byte
+	end   bool
 }
+
+var dummy = []byte{0}
 
 // NewBufferedReader returns a new buffered reader from a general reader
 // at the given starting position.
@@ -34,40 +33,46 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 		base: start,
 		off:  0,
 	}
-	br.chunk, _ = r.ReadAtPos(start)
+	br.readAtBase()
 	return &br
 }
 
-// Peek returns the next byte but does not consume it.
-func (br *BufferedReader) Peek() (byte, error) {
-	if br.off >= len(br.chunk) {
-		return 0, io.EOF
+func (br *BufferedReader) readAtBase() {
+	var err error
+	br.chunk, err = br.r.ReadAtPos(br.base)
+	br.end = len(br.chunk) == 0 || err != nil
+	if br.end {
+		br.off = 0
+		br.chunk = dummy
 	}
-	return br.chunk[br.off], nil
+}
+
+// Peek returns the next byte but does not consume it.
+func (br *BufferedReader) Peek() (byte, bool) {
+	return br.chunk[br.off], !br.end
 }
 
 // SeekTo moves the reader to a new position.
-func (br *BufferedReader) SeekTo(pos Pos) error {
+func (br *BufferedReader) SeekTo(pos Pos) bool {
 	if pos < br.base+Pos(len(br.chunk)) && pos >= br.base {
 		br.off = int(pos - br.base)
-		return nil
+		return true
 	}
 
-	var err error
 	br.base = pos
 	br.off = 0
-	br.chunk, err = br.r.ReadAtPos(br.base)
-	return err
+	br.readAtBase()
+	return !br.end
 }
 
 // Advance moves the reader forward from its current position by n bytes.
-func (br *BufferedReader) Advance(n int) error {
+func (br *BufferedReader) Advance(n int) bool {
 	br.off += n
 
 	if br.off >= len(br.chunk) {
 		return br.SeekTo(br.base + Pos(br.off))
 	}
-	return nil
+	return true
 }
 
 // Offset returns the current position of the reader.

@@ -87,13 +87,13 @@ func (c Charset) Size() int {
 // Has checks if a charset accepts a character.
 // Pointer receiver is for performance.
 func (c *Charset) Has(r byte) bool {
-	switch {
-	case r < 64:
-		bit := uint64(1) << r
-		return c.Bits[0]&bit != 0
-	case r < 128:
+	switch int8(r-64) >= 0 {
+	case true:
 		bit := uint64(1) << (r - 64)
 		return c.Bits[1]&bit != 0
+	case false:
+		bit := uint64(1) << r
+		return c.Bits[0]&bit != 0
 	}
 	return false
 }
