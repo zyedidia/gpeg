@@ -2,6 +2,9 @@ package isa
 
 import "math/bits"
 
+const log2WordSize = 6
+const wordSize = 64
+
 type Charset struct {
 	Bits [2]uint64
 }
@@ -87,13 +90,5 @@ func (c Charset) Size() int {
 // Has checks if a charset accepts a character.
 // Pointer receiver is for performance.
 func (c *Charset) Has(r byte) bool {
-	switch int8(r-64) >= 0 {
-	case true:
-		bit := uint64(1) << (r - 64)
-		return c.Bits[1]&bit != 0
-	case false:
-		bit := uint64(1) << r
-		return c.Bits[0]&bit != 0
-	}
-	return false
+	return r < 128 && c.Bits[r>>log2WordSize]&(uint64(1)<<(r&(wordSize-1))) != 0
 }
