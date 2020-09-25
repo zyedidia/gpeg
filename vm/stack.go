@@ -20,14 +20,14 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *stack) pop() (stackEntry, bool) {
+func (s *stack) pop() (*stackEntry, bool) {
 	if len(s.entries) == 0 {
-		return stackEntry{}, false
+		return nil, false
 	}
 
 	ret := s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
-	return ret, true
+	return &ret, true
 }
 
 func (s *stack) peek() *stackEntry {
@@ -37,12 +37,13 @@ func (s *stack) peek() *stackEntry {
 	return &s.entries[len(s.entries)-1]
 }
 
-func (s *stack) backtrack(ip int, off input.Pos) stackEntry {
+func (s *stack) backtrack(ip int, off input.Pos, c []capt) stackEntry {
 	return stackEntry{
 		retaddr: -1,
 		btrack: backtrack{
-			ip:  ip,
-			off: off,
+			ip:   ip,
+			off:  off,
+			capt: c,
 		},
 	}
 }
@@ -59,11 +60,12 @@ type stackEntry struct {
 	btrack  backtrack
 }
 
-func (se stackEntry) isRet() bool {
+func (se *stackEntry) isRet() bool {
 	return se.retaddr != -1
 }
 
 type backtrack struct {
-	ip  int
-	off input.Pos
+	ip   int
+	off  input.Pos
+	capt []capt
 }

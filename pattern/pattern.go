@@ -18,6 +18,14 @@ type openCall struct {
 // Reader.
 type Pattern []isa.Insn
 
+func Cap(p Pattern) Pattern {
+	code := make(Pattern, 0, len(p)+2)
+	code = append(code, isa.Capture{Attr: isa.CaptureBegin})
+	code = append(code, p...)
+	code = append(code, isa.Capture{Attr: isa.CaptureEnd})
+	return code
+}
+
 // Literal matches a given string literal.
 func Literal(s string) Pattern {
 	code := make(Pattern, len(s))

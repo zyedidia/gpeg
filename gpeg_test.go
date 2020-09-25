@@ -204,6 +204,11 @@ func TestSearch(t *testing.T) {
 	check(p, tests, t)
 }
 
+// func TestCapture(t *testing.T) {
+// 	wordChar := isa.CharsetRange('A', 'Z').Add(isa.CharsetRange('a', 'z'))
+// 	p := Star(Concat(Star(Set(wordChar.Complement())), Cap(Plus(Set(wordChar)))))
+// }
+
 func TestArithmeticGrammar(t *testing.T) {
 	// grammar:
 	// Expr   <- <Factor> ([+-] <Factor>)*

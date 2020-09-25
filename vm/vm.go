@@ -16,6 +16,7 @@ const ipFail = -1
 type VM struct {
 	ip    int
 	st    *stack
+	capt  []capt
 	start input.Pos
 	input *input.BufferedReader
 }
@@ -28,6 +29,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 		st:    newStack(),
 		start: start,
 		input: input.NewBufferedReader(r, start),
+		capt:  []capt{},
 	}
 }
 
@@ -61,7 +63,7 @@ loop:
 			vm.ip = int(lbl)
 		case opChoice:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
+			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
 			vm.ip += 5
 		case opCall:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -102,6 +104,7 @@ loop:
 			ent := vm.st.peek()
 			if ent != nil && !ent.isRet() {
 				ent.btrack.off = vm.input.Offset()
+				ent.btrack.capt = vm.capt
 				vm.ip = int(lbl)
 			} else {
 				panic("PartialCommit failed")
@@ -119,6 +122,7 @@ loop:
 			ent, ok := vm.st.pop()
 			if ok && !ent.isRet() {
 				vm.input.SeekTo(ent.btrack.off)
+				vm.capt = ent.btrack.capt
 				vm.ip = int(lbl)
 			} else {
 				panic("BackCommit failed")
@@ -131,7 +135,7 @@ loop:
 			b := decodeByte(code[vm.ip+1+4:])
 			in, eof := vm.input.Peek()
 			if eof == nil && in == b {
-				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
+				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
 				vm.input.Advance(1)
 				vm.ip += 6
 			} else {
@@ -142,7 +146,7 @@ loop:
 			set := decodeSet(code[vm.ip+1+4:])
 			in, eof := vm.input.Peek()
 			if eof == nil && set.Has(in) {
-				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()))
+				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
 				vm.input.Advance(1)
 				vm.ip += 21
 			} else {
@@ -151,7 +155,7 @@ loop:
 		case opTestAny:
 			lbl := decodeU32(code[vm.ip+1:])
 			n := decodeByte(code[vm.ip+1+4:])
-			ent := vm.st.backtrack(int(lbl), vm.input.Offset())
+			ent := vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt)
 			err := vm.input.Advance(int(n))
 			if err != nil {
 				vm.ip = int(lbl)
@@ -159,20 +163,26 @@ loop:
 				vm.st.push(ent)
 				vm.ip += 6
 			}
+		case opCapture:
+			c := capt{
+				ip:  vm.ip,
+				off: vm.input.Offset(),
+			}
+			vm.capt = append(vm.capt, c)
+			vm.ip += 3
 		case opEnd:
 			// ends the machine with a success
 			break loop
 		case opChoice2:
 			lbl := decodeU32(code[vm.ip+1:])
 			back := decodeByte(code[vm.ip+1+4:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()-input.Pos(back)))
+			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()-input.Pos(back), vm.capt))
 			vm.ip += 6
 		case opNop:
 			vm.ip += 1
 		default:
 			panic("Invalid opcode")
 		}
-
 	}
 
 	// return vm.input.Offset().Distance(vm.start)
@@ -187,6 +197,7 @@ fail:
 	if !ent.isRet() {
 		vm.ip = ent.btrack.ip
 		vm.input.SeekTo(ent.btrack.off)
+		vm.capt = ent.btrack.capt
 	}
 	// try again with new ip/stack
 	if vm.ip == ipFail {

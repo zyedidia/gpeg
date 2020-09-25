@@ -151,6 +151,18 @@ type Nop struct {
 	basic
 }
 
+const (
+	CaptureBegin byte = iota
+	CaptureEnd
+	CaptureFull
+)
+
+type Capture struct {
+	Attr  byte
+	Extra byte
+	basic
+}
+
 // Choice2 is a deprecated instruction.
 type Choice2 struct {
 	Lbl  Label
@@ -246,4 +258,16 @@ func (i End) String() string {
 
 func (i Nop) String() string {
 	return "Nop"
+}
+
+func (i Capture) String() string {
+	switch i.Attr {
+	case CaptureBegin:
+		return fmt.Sprintf("Capture begin %v", i.Extra)
+	case CaptureEnd:
+		return fmt.Sprintf("Capture end")
+	case CaptureFull:
+		return fmt.Sprintf("Capture full %v", i.Extra)
+	}
+	return "Capture unknown"
 }

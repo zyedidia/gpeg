@@ -39,6 +39,8 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.Char, isa.Any, isa.TestChar, isa.TestAny, isa.Choice2:
 			// arg is 1 byte
 			bcount += 1
+		case isa.Capture:
+			bcount += 2
 		case isa.Set, isa.Span, isa.TestSet:
 			// arg is 16 bytes
 			bcount += 16
@@ -99,6 +101,9 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.Choice2:
 			op = opChoice2
 			args = append(encodeU32(labels[t.Lbl.Id]), t.Back)
+		case isa.Capture:
+			op = opCapture
+			args = []byte{t.Attr, t.Extra}
 		case isa.End:
 			op = opEnd
 		case isa.Nop:

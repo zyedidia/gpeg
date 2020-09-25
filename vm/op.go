@@ -20,4 +20,5 @@ const (
 	opChoice2
 	opEnd
 	opNop
+	opCapture
 )
