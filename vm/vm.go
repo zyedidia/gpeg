@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"unsafe"
+	"fmt"
 
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
@@ -14,9 +14,11 @@ const ipFail = -1
 // and return address entries, and the initial subject position (intermediate
 // subject positions are stored on the stack as backtrack entries).
 type VM struct {
-	ip    int
-	st    *stack
-	capt  []capt
+	ip   int
+	st   *stack
+	capt []capt
+	memo memoTable
+
 	start input.Pos
 	input *input.BufferedReader
 }
@@ -30,6 +32,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 		start: start,
 		input: input.NewBufferedReader(r, start),
 		capt:  []capt{},
+		memo:  make(memoTable),
 	}
 }
 
@@ -38,6 +41,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 func (vm *VM) Reset(start input.Pos) {
 	vm.ip = 0
 	vm.start = start
+	vm.memo = make(memoTable)
 	vm.input.SeekTo(vm.start)
 	vm.st.reset()
 }
@@ -64,20 +68,20 @@ loop:
 			vm.ip = int(lbl)
 		case opChoice:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
+			vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 			vm.ip += 5
 		case opCall:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(vm.st.retaddr(vm.ip + 5))
+			vm.st.push(stackRet(vm.ip + 5))
 			vm.ip = int(lbl)
 		case opCommit:
 			lbl := decodeU32(code[vm.ip+1:])
 			vm.st.pop()
 			vm.ip = int(lbl)
 		case opReturn:
-			ent, ok := vm.st.pop()
-			if ok && ent.isRet() {
-				vm.ip = ent.retaddr
+			ent := vm.st.pop()
+			if addr, isret := ent.(stackRet); isret {
+				vm.ip = int(addr)
 			} else {
 				panic("Return failed")
 			}
@@ -103,9 +107,11 @@ loop:
 		case opPartialCommit:
 			lbl := decodeU32(code[vm.ip+1:])
 			ent := vm.st.peek()
-			if ent != nil && !ent.isRet() {
-				ent.btrack.off = vm.input.Offset()
-				ent.btrack.capt = vm.capt
+			// TODO: does this work?
+			if btrack, ok := (*ent).(stackBacktrack); ok {
+				btrack.off = vm.input.Offset()
+				btrack.capt = vm.capt
+				*ent = btrack
 				vm.ip = int(lbl)
 			} else {
 				panic("PartialCommit failed")
@@ -120,10 +126,10 @@ loop:
 			vm.ip += 17
 		case opBackCommit:
 			lbl := decodeU32(code[vm.ip+1:])
-			ent, ok := vm.st.pop()
-			if ok && !ent.isRet() {
-				vm.input.SeekTo(ent.btrack.off)
-				vm.capt = ent.btrack.capt
+			ent := vm.st.pop()
+			if btrack, ok := ent.(stackBacktrack); ok {
+				vm.input.SeekTo(btrack.off)
+				vm.capt = btrack.capt
 				vm.ip = int(lbl)
 			} else {
 				panic("BackCommit failed")
@@ -136,7 +142,7 @@ loop:
 			b := decodeByte(code[vm.ip+1+4:])
 			in, ok := vm.input.Peek()
 			if ok && in == b {
-				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
+				vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 				vm.input.Advance(1)
 				vm.ip += 6
 			} else {
@@ -147,7 +153,7 @@ loop:
 			set := decodeSet(code[vm.ip+1+4:])
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
-				vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt))
+				vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 				vm.input.Advance(1)
 				vm.ip += 21
 			} else {
@@ -156,7 +162,7 @@ loop:
 		case opTestAny:
 			lbl := decodeU32(code[vm.ip+1:])
 			n := decodeByte(code[vm.ip+1+4:])
-			ent := vm.st.backtrack(int(lbl), vm.input.Offset(), vm.capt)
+			ent := stackBacktrack{int(lbl), vm.input.Offset(), vm.capt}
 			ok := vm.input.Advance(int(n))
 			if ok {
 				vm.st.push(ent)
@@ -177,8 +183,32 @@ loop:
 		case opChoice2:
 			lbl := decodeU32(code[vm.ip+1:])
 			back := decodeByte(code[vm.ip+1+4:])
-			vm.st.push(vm.st.backtrack(int(lbl), vm.input.Offset()-input.Pos(back), vm.capt))
+			vm.st.push(stackBacktrack{int(lbl), vm.input.Offset() - input.Pos(back), vm.capt})
 			vm.ip += 6
+		case opMemoOpen:
+			lbl := decodeU32(code[vm.ip+1:])
+			id := decodeU16(code[vm.ip+1+4:])
+			vm.st.push(stackMemo{
+				start: vm.ip,
+				end:   int(lbl),
+				id:    id,
+				pos:   vm.input.Offset(),
+			})
+			vm.ip += 7
+		case opMemoClose:
+			ent := vm.st.pop()
+			if ment, ok := ent.(stackMemo); ok {
+				vm.memo[memoKey{
+					id:  ment.id,
+					pos: ment.pos,
+				}] = memoEntry{
+					matchLength: int(vm.input.Offset()) - int(ment.pos),
+					maxExamined: 0,
+				}
+				vm.ip += 1
+			} else {
+				panic("MemoClose found no partial memo entry!")
+			}
 		case opNop:
 			vm.ip += 1
 		default:
@@ -186,19 +216,22 @@ loop:
 		}
 	}
 
+	fmt.Println(vm.memo)
+
 	return true, vm.input.Offset(), vm.capt
 
 fail:
-	ent, ok := vm.st.pop()
-	if !ok {
+	ent := vm.st.pop()
+	if ent == nil {
 		// match failed
 		return false, vm.input.Offset(), vm.capt
 	}
-	if !ent.isRet() {
-		vm.ip = ent.btrack.ip
-		vm.input.SeekTo(ent.btrack.off)
-		vm.capt = ent.btrack.capt
+	if btrack, ok := ent.(stackBacktrack); ok {
+		vm.ip = btrack.ip
+		vm.input.SeekTo(btrack.off)
+		vm.capt = btrack.capt
 	}
+
 	// try again with new ip/stack
 	if vm.ip == ipFail {
 		goto fail
@@ -211,9 +244,18 @@ func decodeByte(b []byte) byte {
 }
 
 func decodeU32(b []byte) uint32 {
-	return *(*uint32)(unsafe.Pointer(&b[0]))
+	return uint32(b[0]) | (uint32(b[1]) << 8) | (uint32(b[2]) << 16) | (uint32(b[3]) << 24)
 }
 
-func decodeSet(b []byte) *isa.Charset {
-	return (*isa.Charset)(unsafe.Pointer(&b[0]))
+func decodeU16(b []byte) uint16 {
+	return uint16(b[0]) | (uint16(b[1]) << 8)
+}
+
+func decodeSet(b []byte) isa.Charset {
+	first := uint64(decodeU32(b)) | (uint64(decodeU32(b[4:])) << 32)
+	second := uint64(decodeU32(b[8:])) | (uint64(decodeU32(b[12:])) << 32)
+
+	return isa.Charset{
+		Bits: [2]uint64{first, second},
+	}
 }

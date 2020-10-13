@@ -6,6 +6,31 @@ type stack struct {
 	entries []stackEntry
 }
 
+type stackEntry interface {
+	isStackEntry()
+}
+
+type stackRet int
+
+func (s stackRet) isStackEntry() {}
+
+type stackBacktrack struct {
+	ip   int
+	off  input.Pos
+	capt []capt
+}
+
+func (s stackBacktrack) isStackEntry() {}
+
+type stackMemo struct {
+	start int
+	end   int
+	id    uint16
+	pos   input.Pos
+}
+
+func (s stackMemo) isStackEntry() {}
+
 func newStack() *stack {
 	return &stack{
 		entries: make([]stackEntry, 0, 4),
@@ -20,14 +45,14 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *stack) pop() (*stackEntry, bool) {
+func (s *stack) pop() stackEntry {
 	if len(s.entries) == 0 {
-		return nil, false
+		return nil
 	}
 
 	ret := s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
-	return &ret, true
+	return ret
 }
 
 func (s *stack) peek() *stackEntry {
@@ -35,37 +60,4 @@ func (s *stack) peek() *stackEntry {
 		return nil
 	}
 	return &s.entries[len(s.entries)-1]
-}
-
-func (s *stack) backtrack(ip int, off input.Pos, c []capt) stackEntry {
-	return stackEntry{
-		retaddr: -1,
-		btrack: backtrack{
-			ip:   ip,
-			off:  off,
-			capt: c,
-		},
-	}
-}
-
-func (s *stack) retaddr(addr int) stackEntry {
-	return stackEntry{
-		retaddr: addr,
-	}
-}
-
-type stackEntry struct {
-	// if retaddr is -1 use btrack instead
-	retaddr int
-	btrack  backtrack
-}
-
-func (se *stackEntry) isRet() bool {
-	return se.retaddr != -1
-}
-
-type backtrack struct {
-	ip   int
-	off  input.Pos
-	capt []capt
 }

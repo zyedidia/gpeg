@@ -21,4 +21,6 @@ const (
 	opEnd
 	opNop
 	opCapture
+	opMemoOpen
+	opMemoClose
 )

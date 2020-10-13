@@ -151,6 +151,16 @@ type Nop struct {
 	basic
 }
 
+type MemoOpen struct {
+	Lbl Label
+	Id  uint16
+	jump
+}
+
+type MemoClose struct {
+	basic
+}
+
 const (
 	CaptureBegin byte = iota
 	CaptureEnd
@@ -258,6 +268,14 @@ func (i End) String() string {
 
 func (i Nop) String() string {
 	return "Nop"
+}
+
+func (i MemoOpen) String() string {
+	return fmt.Sprintf("MemoOpen %v %v", i.Lbl, i.Id)
+}
+
+func (i MemoClose) String() string {
+	return "MemoClose"
 }
 
 func (i Capture) String() string {

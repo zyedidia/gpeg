@@ -26,6 +26,19 @@ func Cap(p Pattern) Pattern {
 	return code
 }
 
+var memoId uint16 = 0
+
+func Memo(p Pattern) Pattern {
+	memoId++
+	L1 := isa.NewLabel()
+	code := make(Pattern, 0, len(p)+3)
+	code = append(code, isa.MemoOpen{Lbl: L1, Id: memoId})
+	code = append(code, p...)
+	code = append(code, L1)
+	code = append(code, isa.MemoClose{})
+	return code
+}
+
 // Literal matches a given string literal.
 func Literal(s string) Pattern {
 	code := make(Pattern, len(s))
@@ -364,6 +377,9 @@ func (p Pattern) Copy() Pattern {
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.Choice2:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.MemoOpen:
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.JumpType:

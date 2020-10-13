@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"unsafe"
-
 	"github.com/zyedidia/gpeg/isa"
 	"github.com/zyedidia/gpeg/pattern"
 )
@@ -39,7 +37,7 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.Char, isa.Any, isa.TestChar, isa.TestAny, isa.Choice2:
 			// arg is 1 byte
 			bcount += 1
-		case isa.Capture:
+		case isa.Capture, isa.MemoOpen:
 			bcount += 2
 		case isa.Set, isa.Span, isa.TestSet:
 			// arg is 16 bytes
@@ -104,6 +102,11 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.Capture:
 			op = opCapture
 			args = []byte{t.Attr, t.Extra}
+		case isa.MemoOpen:
+			op = opMemoOpen
+			args = append(encodeU32(labels[t.Lbl.Id]), encodeU16(t.Id)...)
+		case isa.MemoClose:
+			op = opMemoClose
 		case isa.End:
 			op = opEnd
 		case isa.Nop:
@@ -120,11 +123,24 @@ func Encode(insns pattern.Pattern) VMCode {
 }
 
 func encodeSet(set isa.Charset) []byte {
-	bytes := *(*[16]byte)(unsafe.Pointer(&set.Bits[0]))
-	return bytes[:]
+	var b []byte
+	b = append(b, encodeU32(uint32(set.Bits[0]&0xffffffff))...)
+	b = append(b, encodeU32(uint32((set.Bits[0]>>32)&0xffffffff))...)
+	b = append(b, encodeU32(uint32(set.Bits[1]&0xffffffff))...)
+	b = append(b, encodeU32(uint32((set.Bits[1]>>32)&0xffffffff))...)
+	return b
 }
 
 func encodeU32(l uint32) []byte {
-	bytes := *(*[4]byte)(unsafe.Pointer(&l))
-	return bytes[:]
+	b1 := byte(l & 0xff)
+	b2 := byte((l >> 8) & 0xff)
+	b3 := byte((l >> 16) & 0xff)
+	b4 := byte((l >> 24) & 0xff)
+	return []byte{b1, b2, b3, b4}
+}
+
+func encodeU16(l uint16) []byte {
+	b1 := byte(l & 0xff)
+	b2 := byte((l >> 8) & 0xff)
+	return []byte{b1, b2}
 }
