@@ -226,16 +226,19 @@ fail:
 		// match failed
 		return false, vm.input.Offset(), vm.capt
 	}
-	if btrack, ok := ent.(stackBacktrack); ok {
-		vm.ip = btrack.ip
-		vm.input.SeekTo(btrack.off)
-		vm.capt = btrack.capt
-	}
 
-	// try again with new ip/stack
-	if vm.ip == ipFail {
+	switch t := ent.(type) {
+	case stackBacktrack:
+		vm.ip = t.ip
+		vm.input.SeekTo(t.off)
+		vm.capt = t.capt
+	case stackMemo:
+		// TODO: Mark this position in the memoTable as a failed match
+		goto fail
+	case stackRet:
 		goto fail
 	}
+
 	goto loop
 }
 
