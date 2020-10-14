@@ -23,10 +23,8 @@ type stackBacktrack struct {
 func (s stackBacktrack) isStackEntry() {}
 
 type stackMemo struct {
-	start int
-	end   int
-	id    uint16
-	pos   input.Pos
+	id  uint16
+	pos input.Pos
 }
 
 func (s stackMemo) isStackEntry() {}

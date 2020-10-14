@@ -188,13 +188,25 @@ loop:
 		case opMemoOpen:
 			lbl := decodeU32(code[vm.ip+1:])
 			id := decodeU16(code[vm.ip+1+4:])
-			vm.st.push(stackMemo{
-				start: vm.ip,
-				end:   int(lbl),
-				id:    id,
-				pos:   vm.input.Offset(),
-			})
-			vm.ip += 7
+
+			ment, ok := vm.memo[memoKey{
+				id:  id,
+				pos: vm.input.Offset(),
+			}]
+			if ok {
+				fmt.Println("HI")
+				if ment.matchLength == -1 {
+					goto fail
+				}
+				vm.input.Advance(ment.matchLength)
+				vm.ip = int(lbl)
+			} else {
+				vm.st.push(stackMemo{
+					id:  id,
+					pos: vm.input.Offset(),
+				})
+				vm.ip += 7
+			}
 		case opMemoClose:
 			ent := vm.st.pop()
 			if ment, ok := ent.(stackMemo); ok {
@@ -233,7 +245,14 @@ fail:
 		vm.input.SeekTo(t.off)
 		vm.capt = t.capt
 	case stackMemo:
-		// TODO: Mark this position in the memoTable as a failed match
+		// Mark this position in the memoTable as a failed match
+		vm.memo[memoKey{
+			id:  t.id,
+			pos: t.pos,
+		}] = memoEntry{
+			matchLength: -1,
+			maxExamined: -1,
+		}
 		goto fail
 	case stackRet:
 		goto fail

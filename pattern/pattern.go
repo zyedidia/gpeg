@@ -34,8 +34,8 @@ func Memo(p Pattern) Pattern {
 	code := make(Pattern, 0, len(p)+3)
 	code = append(code, isa.MemoOpen{Lbl: L1, Id: memoId})
 	code = append(code, p...)
-	code = append(code, L1)
 	code = append(code, isa.MemoClose{})
+	code = append(code, L1)
 	return code
 }
 
