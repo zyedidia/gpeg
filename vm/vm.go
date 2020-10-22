@@ -106,7 +106,6 @@ loop:
 		case opPartialCommit:
 			lbl := decodeU32(code[vm.ip+1:])
 			ent := vm.st.peek()
-			// TODO: does this work?
 			if ent.stype == stBtrack {
 				ent.btrack.off = vm.input.Offset()
 				ent.btrack.capt = vm.capt
