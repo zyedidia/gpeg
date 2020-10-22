@@ -10,6 +10,19 @@ type stackEntry interface {
 	isStackEntry()
 }
 
+// const (
+// 	stRet = iota
+// 	stBtrack
+// 	stMemo
+// )
+//
+// type stackEntry struct {
+// 	stype  byte
+// 	ret    stackRet
+// 	btrack stackBacktrack
+// 	memo   stackMemo
+// }
+
 type stackRet int
 
 func (s stackRet) isStackEntry() {}

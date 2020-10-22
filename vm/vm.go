@@ -5,9 +5,10 @@ import (
 
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
+	"github.com/zyedidia/gpeg/memo"
 )
 
-const ipFail = -1
+const memoSize = 100
 
 // A VM represents the state for the virtual machine. It stores a reference
 // to the input reader, an instruction pointer, a stack of backtrack entries
@@ -17,7 +18,7 @@ type VM struct {
 	ip   int
 	st   *stack
 	capt []capt
-	memo memoTable
+	memo *memo.Table
 
 	start input.Pos
 	input *input.BufferedReader
@@ -32,7 +33,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 		start: start,
 		input: input.NewBufferedReader(r, start),
 		capt:  []capt{},
-		memo:  make(memoTable),
+		memo:  memo.NewTable(memoSize),
 	}
 }
 
@@ -41,7 +42,7 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 func (vm *VM) Reset(start input.Pos) {
 	vm.ip = 0
 	vm.start = start
-	vm.memo = make(memoTable)
+	vm.memo = memo.NewTable(memoSize)
 	vm.input.SeekTo(vm.start)
 	vm.st.reset()
 }
@@ -189,16 +190,15 @@ loop:
 			lbl := decodeU32(code[vm.ip+1:])
 			id := decodeU16(code[vm.ip+1+4:])
 
-			ment, ok := vm.memo[memoKey{
-				id:  id,
-				pos: vm.input.Offset(),
-			}]
+			ment, ok := vm.memo.Get(memo.Key{
+				Id:  id,
+				Pos: vm.input.Offset(),
+			})
 			if ok {
-				fmt.Println("HI")
-				if ment.matchLength == -1 {
+				if ment.MatchLength() == -1 {
 					goto fail
 				}
-				vm.input.Advance(ment.matchLength)
+				vm.input.Advance(ment.MatchLength())
 				vm.ip = int(lbl)
 			} else {
 				vm.st.push(stackMemo{
@@ -210,13 +210,10 @@ loop:
 		case opMemoClose:
 			ent := vm.st.pop()
 			if ment, ok := ent.(stackMemo); ok {
-				vm.memo[memoKey{
-					id:  ment.id,
-					pos: ment.pos,
-				}] = memoEntry{
-					matchLength: int(vm.input.Offset()) - int(ment.pos),
-					maxExamined: 0,
-				}
+				vm.memo.Put(memo.Key{
+					Id:  ment.id,
+					Pos: ment.pos,
+				}, memo.NewEntry(int(vm.input.Offset())-int(ment.pos), 0))
 				vm.ip += 1
 			} else {
 				panic("MemoClose found no partial memo entry!")
@@ -246,13 +243,10 @@ fail:
 		vm.capt = t.capt
 	case stackMemo:
 		// Mark this position in the memoTable as a failed match
-		vm.memo[memoKey{
-			id:  t.id,
-			pos: t.pos,
-		}] = memoEntry{
-			matchLength: -1,
-			maxExamined: -1,
-		}
+		vm.memo.Put(memo.Key{
+			Id:  t.id,
+			Pos: t.pos,
+		}, memo.NewEntry(-1, -1))
 		goto fail
 	case stackRet:
 		goto fail
