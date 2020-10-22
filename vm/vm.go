@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"fmt"
-
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/isa"
 	"github.com/zyedidia/gpeg/memo"
@@ -69,20 +67,20 @@ loop:
 			vm.ip = int(lbl)
 		case opChoice:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
+			vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 			vm.ip += 5
 		case opCall:
 			lbl := decodeU32(code[vm.ip+1:])
-			vm.st.push(stackRet(vm.ip + 5))
+			vm.st.pushRet(stackRet(vm.ip + 5))
 			vm.ip = int(lbl)
 		case opCommit:
 			lbl := decodeU32(code[vm.ip+1:])
 			vm.st.pop()
 			vm.ip = int(lbl)
 		case opReturn:
-			ent := vm.st.pop()
-			if addr, isret := ent.(stackRet); isret {
-				vm.ip = int(addr)
+			ent, ok := vm.st.pop()
+			if ok && ent.stype == stRet {
+				vm.ip = int(ent.ret)
 			} else {
 				panic("Return failed")
 			}
@@ -109,10 +107,9 @@ loop:
 			lbl := decodeU32(code[vm.ip+1:])
 			ent := vm.st.peek()
 			// TODO: does this work?
-			if btrack, ok := (*ent).(stackBacktrack); ok {
-				btrack.off = vm.input.Offset()
-				btrack.capt = vm.capt
-				*ent = btrack
+			if ent.stype == stBtrack {
+				ent.btrack.off = vm.input.Offset()
+				ent.btrack.capt = vm.capt
 				vm.ip = int(lbl)
 			} else {
 				panic("PartialCommit failed")
@@ -127,10 +124,10 @@ loop:
 			vm.ip += 17
 		case opBackCommit:
 			lbl := decodeU32(code[vm.ip+1:])
-			ent := vm.st.pop()
-			if btrack, ok := ent.(stackBacktrack); ok {
-				vm.input.SeekTo(btrack.off)
-				vm.capt = btrack.capt
+			ent, ok := vm.st.pop()
+			if ok && ent.stype == stBtrack {
+				vm.input.SeekTo(ent.btrack.off)
+				vm.capt = ent.btrack.capt
 				vm.ip = int(lbl)
 			} else {
 				panic("BackCommit failed")
@@ -143,7 +140,7 @@ loop:
 			b := decodeByte(code[vm.ip+1+4:])
 			in, ok := vm.input.Peek()
 			if ok && in == b {
-				vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
+				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 				vm.input.Advance(1)
 				vm.ip += 6
 			} else {
@@ -154,7 +151,7 @@ loop:
 			set := decodeSet(code[vm.ip+1+4:])
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
-				vm.st.push(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
+				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset(), vm.capt})
 				vm.input.Advance(1)
 				vm.ip += 21
 			} else {
@@ -166,7 +163,7 @@ loop:
 			ent := stackBacktrack{int(lbl), vm.input.Offset(), vm.capt}
 			ok := vm.input.Advance(int(n))
 			if ok {
-				vm.st.push(ent)
+				vm.st.pushBacktrack(ent)
 				vm.ip += 6
 			} else {
 				vm.ip = int(lbl)
@@ -184,7 +181,7 @@ loop:
 		case opChoice2:
 			lbl := decodeU32(code[vm.ip+1:])
 			back := decodeByte(code[vm.ip+1+4:])
-			vm.st.push(stackBacktrack{int(lbl), vm.input.Offset() - input.Pos(back), vm.capt})
+			vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset() - input.Pos(back), vm.capt})
 			vm.ip += 6
 		case opMemoOpen:
 			lbl := decodeU32(code[vm.ip+1:])
@@ -201,19 +198,19 @@ loop:
 				vm.input.Advance(ment.MatchLength())
 				vm.ip = int(lbl)
 			} else {
-				vm.st.push(stackMemo{
+				vm.st.pushMemo(stackMemo{
 					id:  id,
 					pos: vm.input.Offset(),
 				})
 				vm.ip += 7
 			}
 		case opMemoClose:
-			ent := vm.st.pop()
-			if ment, ok := ent.(stackMemo); ok {
+			ent, ok := vm.st.pop()
+			if ok && ent.stype == stMemo {
 				vm.memo.Put(memo.Key{
-					Id:  ment.id,
-					Pos: ment.pos,
-				}, memo.NewEntry(int(vm.input.Offset())-int(ment.pos), 0))
+					Id:  ent.memo.id,
+					Pos: ent.memo.pos,
+				}, memo.NewEntry(int(vm.input.Offset())-int(ent.memo.pos), 0))
 				vm.ip += 1
 			} else {
 				panic("MemoClose found no partial memo entry!")
@@ -225,30 +222,28 @@ loop:
 		}
 	}
 
-	fmt.Println(vm.memo)
-
 	return true, vm.input.Offset(), vm.capt
 
 fail:
-	ent := vm.st.pop()
-	if ent == nil {
+	ent, ok := vm.st.pop()
+	if !ok {
 		// match failed
 		return false, vm.input.Offset(), vm.capt
 	}
 
-	switch t := ent.(type) {
-	case stackBacktrack:
-		vm.ip = t.ip
-		vm.input.SeekTo(t.off)
-		vm.capt = t.capt
-	case stackMemo:
+	switch ent.stype {
+	case stBtrack:
+		vm.ip = ent.btrack.ip
+		vm.input.SeekTo(ent.btrack.off)
+		vm.capt = ent.btrack.capt
+	case stMemo:
 		// Mark this position in the memoTable as a failed match
 		vm.memo.Put(memo.Key{
-			Id:  t.id,
-			Pos: t.pos,
+			Id:  ent.memo.id,
+			Pos: ent.memo.pos,
 		}, memo.NewEntry(-1, -1))
 		goto fail
-	case stackRet:
+	case stRet:
 		goto fail
 	}
 

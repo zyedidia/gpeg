@@ -6,22 +6,22 @@ type stack struct {
 	entries []stackEntry
 }
 
-type stackEntry interface {
-	isStackEntry()
-}
-
-// const (
-// 	stRet = iota
-// 	stBtrack
-// 	stMemo
-// )
-//
-// type stackEntry struct {
-// 	stype  byte
-// 	ret    stackRet
-// 	btrack stackBacktrack
-// 	memo   stackMemo
+// type stackEntry interface {
+// 	isStackEntry()
 // }
+
+const (
+	stRet = iota
+	stBtrack
+	stMemo
+)
+
+type stackEntry struct {
+	stype  byte
+	ret    stackRet
+	btrack stackBacktrack
+	memo   stackMemo
+}
 
 type stackRet int
 
@@ -56,14 +56,14 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *stack) pop() stackEntry {
+func (s *stack) pop() (stackEntry, bool) {
 	if len(s.entries) == 0 {
-		return nil
+		return stackEntry{}, false
 	}
 
 	ret := s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
-	return ret
+	return ret, true
 }
 
 func (s *stack) peek() *stackEntry {
@@ -71,4 +71,25 @@ func (s *stack) peek() *stackEntry {
 		return nil
 	}
 	return &s.entries[len(s.entries)-1]
+}
+
+func (s *stack) pushRet(r stackRet) {
+	s.push(stackEntry{
+		stype: stRet,
+		ret:   r,
+	})
+}
+
+func (s *stack) pushBacktrack(b stackBacktrack) {
+	s.push(stackEntry{
+		stype:  stBtrack,
+		btrack: b,
+	})
+}
+
+func (s *stack) pushMemo(m stackMemo) {
+	s.push(stackEntry{
+		stype: stMemo,
+		memo:  m,
+	})
 }
