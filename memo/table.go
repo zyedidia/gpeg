@@ -1,6 +1,8 @@
 package memo
 
-import "github.com/zyedidia/gpeg/input"
+import (
+	"github.com/zyedidia/gpeg/input"
+)
 
 // A Table is an LRU cache for memo.Key and memo.Entry values. Each entry is
 // put into the table with an associated key used for looking up the entry.
@@ -80,6 +82,7 @@ func (t *Table) ApplyEdit(e Edit) {
 	n := t.lru.head
 	size := e.Len - int(e.End-e.Start)
 	for n != nil {
+		// fmt.Println(n.key.Id, n.key.Pos, n.ent.MatchLength(), n.ent.Examined())
 		// invalidate entries that overlap with the edited interval
 		x1, x2 := int(n.key.Pos), int(n.key.Pos)+n.ent.examined
 		y1, y2 := int(e.Start), int(e.End)

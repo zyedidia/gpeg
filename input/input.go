@@ -23,6 +23,7 @@ type BufferedReader struct {
 	r     Reader
 	base  Pos
 	off   int
+	max   Pos
 	chunk []byte
 	end   bool
 }
@@ -41,6 +42,15 @@ func NewBufferedReader(r Reader, start Pos) *BufferedReader {
 	return &br
 }
 
+func (br *BufferedReader) Reset(r Reader, start Pos) {
+	br.max = 0
+	br.r = r
+	br.base = start
+	br.off = 0
+	br.end = false
+	br.readAtBase()
+}
+
 func (br *BufferedReader) readAtBase() {
 	var err error
 	br.chunk, err = br.r.ReadAtPos(br.base)
@@ -51,8 +61,19 @@ func (br *BufferedReader) readAtBase() {
 	}
 }
 
+func (br *BufferedReader) MaxExaminedPos() Pos {
+	return br.max
+}
+
+func (br *BufferedReader) ResetMaxExamined() {
+	br.max = 0
+}
+
 // Peek returns the next byte but does not consume it.
 func (br *BufferedReader) Peek() (byte, bool) {
+	if br.base+Pos(br.off) > br.max {
+		br.max = br.base + Pos(br.off)
+	}
 	return br.chunk[br.off], !br.end
 }
 

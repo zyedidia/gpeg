@@ -6,7 +6,7 @@ import (
 	"github.com/zyedidia/gpeg/memo"
 )
 
-const memoSize = 100
+const memoSize = 100000
 
 // A VM represents the state for the virtual machine. It stores a reference
 // to the input reader, an instruction pointer, a stack of backtrack entries
@@ -40,9 +40,17 @@ func NewVM(r input.Reader, start input.Pos) *VM {
 func (vm *VM) Reset(start input.Pos) {
 	vm.ip = 0
 	vm.start = start
-	vm.memo = memo.NewTable(memoSize)
 	vm.input.SeekTo(vm.start)
+	vm.input.ResetMaxExamined()
 	vm.st.reset()
+}
+
+func (vm *VM) SetReader(r input.Reader) {
+	vm.input.Reset(r, 0)
+}
+
+func (vm *VM) ApplyEdit(e memo.Edit) {
+	vm.memo.ApplyEdit(e)
 }
 
 // Exec executes the given VM bytecode using the current VM state and returns
@@ -206,10 +214,13 @@ loop:
 		case opMemoClose:
 			ent, ok := vm.st.pop()
 			if ok && ent.stype == stMemo {
-				vm.memo.Put(memo.Key{
-					Id:  ent.memo.id,
-					Pos: ent.memo.pos,
-				}, memo.NewEntry(int(vm.input.Offset())-int(ent.memo.pos), 0))
+				mlen := int(vm.input.Offset()) - int(ent.memo.pos)
+				if mlen >= 8 {
+					vm.memo.Put(memo.Key{
+						Id:  ent.memo.id,
+						Pos: ent.memo.pos,
+					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.memo.pos)+1)) // TODO: +1?
+				}
 				vm.ip += 1
 			} else {
 				panic("MemoClose found no partial memo entry!")
