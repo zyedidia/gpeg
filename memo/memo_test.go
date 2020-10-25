@@ -3,7 +3,6 @@ package memo
 import "testing"
 
 func TestEntry(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		match, exam int
@@ -26,17 +25,17 @@ func TestEntry(t *testing.T) {
 	}
 }
 
-func TestTable(t *testing.T) {
+func TestLRUTable(t *testing.T) {
 
-	table := NewTable(2)
+	table := NewLRUTable(2)
 	k1 := Key{1, 0}
 	k2 := Key{2, 10}
 	k3 := Key{8, 17}
 
-	e1 := Entry{1}
-	e2 := Entry{2}
-	e3 := Entry{3}
-	e4 := Entry{4}
+	e1 := NewEntry(1, 1)
+	e2 := NewEntry(2, 2)
+	e3 := NewEntry(3, 3)
+	e4 := NewEntry(4, 4)
 
 	var ret Entry
 	var ok bool

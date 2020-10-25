@@ -1,18 +1,20 @@
-package isa
+package charset
 
-import "math/bits"
+import (
+	"math/bits"
+)
 
 const log2WordSize = 6
 const wordSize = 64
 
-type Charset struct {
+type Set struct {
 	Bits [2]uint64
 }
 
-// NewCharset returns a charset which accepts all chars in `chars`. Note
+// New returns a charset which accepts all chars in `chars`. Note
 // that all chars must be valid ASCII characters (<128).
-func NewCharset(chars []byte) Charset {
-	var set Charset
+func New(chars []byte) Set {
+	var set Set
 	for _, r := range chars {
 		switch {
 		case r < 64:
@@ -29,8 +31,8 @@ func NewCharset(chars []byte) Charset {
 
 // CharsetRange returns a charset matching all characters between `low` and
 // `high` inclusive.
-func CharsetRange(low, high byte) Charset {
-	var set Charset
+func Range(low, high byte) Set {
+	var set Set
 	for c := low; c <= high; c++ {
 		switch {
 		case c < 64:
@@ -47,21 +49,38 @@ func CharsetRange(low, high byte) Charset {
 
 // Complement returns a charset that matches all characters except for those
 // matched by `c`.
-func (c Charset) Complement() Charset {
-	return Charset{
+func (c Set) Complement() Set {
+	return Set{
 		Bits: [2]uint64{^c.Bits[0], ^c.Bits[1]},
 	}
 }
 
 // Add combines the characters two charsets match together.
-func (c Charset) Add(c1 Charset) Charset {
-	return Charset{
+func (c Set) Add(c1 Set) Set {
+	return Set{
 		Bits: [2]uint64{c1.Bits[0] | c.Bits[0], c1.Bits[1] | c.Bits[1]},
 	}
 }
 
+func (c Set) Sub(c1 Set) Set {
+	return Set{
+		Bits: [2]uint64{^c1.Bits[0] & c.Bits[0], ^c1.Bits[1] & c.Bits[1]},
+	}
+}
+
+// Size returns the number of chars matched by this Set.
+func (c Set) Size() int {
+	return bits.OnesCount64(c.Bits[0]) + bits.OnesCount64(c.Bits[1])
+}
+
+// Has checks if a charset accepts a character.
+// Pointer receiver is for performance.
+func (c *Set) Has(r byte) bool {
+	return r < 128 && c.Bits[r>>log2WordSize]&(uint64(1)<<(r&(wordSize-1))) != 0
+}
+
 // String returns the string representation of the charset.
-func (c Charset) String() string {
+func (c Set) String() string {
 	s := ""
 	inRange := false
 	for b := byte(0); b <= 128; b++ {
@@ -80,15 +99,4 @@ func (c Charset) String() string {
 	}
 	s = "{" + s + "}"
 	return s
-}
-
-// Size returns the number of chars matched by this Charset.
-func (c Charset) Size() int {
-	return bits.OnesCount64(c.Bits[0]) + bits.OnesCount64(c.Bits[1])
-}
-
-// Has checks if a charset accepts a character.
-// Pointer receiver is for performance.
-func (c *Charset) Has(r byte) bool {
-	return r < 128 && c.Bits[r>>log2WordSize]&(uint64(1)<<(r&(wordSize-1))) != 0
 }

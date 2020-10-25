@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
-	"github.com/zyedidia/gpeg/isa"
+	"github.com/zyedidia/gpeg/memo"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
 )
@@ -22,8 +23,8 @@ func check(p Pattern, tests []PatternTest, t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
 			var bytes input.ByteReader = []byte(tt.in)
-			machine := vm.NewVM(bytes, 0)
-			match, off, _ := machine.Exec(code)
+			machine := vm.NewVM(bytes, code)
+			match, off, _ := machine.Exec(memo.NoneTable{})
 			if tt.match == -1 && match || tt.match != -1 && tt.match != int(off) {
 				t.Errorf("%v returned %v, %v", string(bytes), match, off)
 			}
@@ -79,7 +80,7 @@ func TestRepeat(t *testing.T) {
 	}
 	check(p, tests, t)
 
-	p = Concat(Plus(Set(isa.NewCharset([]byte{'0', '1'}))), Star(Set(isa.NewCharset([]byte{'a', 'b', 'c'}))))
+	p = Concat(Plus(Set(charset.New([]byte{'0', '1'}))), Star(Set(charset.New([]byte{'a', 'b', 'c'}))))
 	tests = []PatternTest{
 		{"01", 2},
 		{"01abaabbc", 9},
@@ -132,7 +133,7 @@ func TestOptional(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	p := Plus(Set(isa.CharsetRange('0', '9')))
+	p := Plus(Set(charset.Range('0', '9')))
 	tests := []PatternTest{
 		{"hi", -1},
 		{"1002", 4},
@@ -146,7 +147,7 @@ func TestGrammar(t *testing.T) {
 	// grammar:
 	// S <- <B> / (![()] .)*
 	// B <- '(' <S> ')'
-	S := Or(NonTerm("B"), Plus(Concat(Not(Set(isa.NewCharset([]byte{'(', ')'}))), Any(1))))
+	S := Or(NonTerm("B"), Plus(Concat(Not(Set(charset.New([]byte{'(', ')'}))), Any(1))))
 	B := Concat(Concat(Literal("("), NonTerm("S")), Literal(")"))
 
 	p := Grammar("S", map[string]Pattern{
@@ -176,7 +177,7 @@ func TestTailCall(t *testing.T) {
 }
 
 func TestUnionSet(t *testing.T) {
-	p := Plus(Or(Set(isa.CharsetRange('a', 'z')), Set(isa.CharsetRange('A', 'Z'))))
+	p := Plus(Or(Set(charset.Range('a', 'z')), Set(charset.Range('A', 'Z'))))
 	tests := []PatternTest{
 		{"Hello", 5},
 		{"123", -1},
@@ -205,7 +206,7 @@ func TestSearch(t *testing.T) {
 }
 
 // func TestCapture(t *testing.T) {
-// 	wordChar := isa.CharsetRange('A', 'Z').Add(isa.CharsetRange('a', 'z'))
+// 	wordChar := charset.Range('A', 'Z').Add(charset.Range('a', 'z'))
 // 	p := Star(Concat(Star(Set(wordChar.Complement())), Cap(Plus(Set(wordChar)))))
 // }
 
@@ -216,10 +217,10 @@ func TestArithmeticGrammar(t *testing.T) {
 	// Term   <- <Number> / '(' <Expr> ')'
 	// Number <- [0-9]+
 	p := Grammar("Expr", map[string]Pattern{
-		"Expr":   Concat(NonTerm("Factor"), Star(Concat(Set(isa.NewCharset([]byte{'+', '-'})), NonTerm("Factor")))),
-		"Factor": Concat(NonTerm("Term"), Star(Concat(Set(isa.NewCharset([]byte{'*', '/'})), NonTerm("Term")))),
+		"Expr":   Concat(NonTerm("Factor"), Star(Concat(Set(charset.New([]byte{'+', '-'})), NonTerm("Factor")))),
+		"Factor": Concat(NonTerm("Term"), Star(Concat(Set(charset.New([]byte{'*', '/'})), NonTerm("Term")))),
 		"Term":   Or(NonTerm("Number"), Concat(Concat(Literal("("), NonTerm("Expr")), Literal(")"))),
-		"Number": Plus(Set(isa.CharsetRange('0', '9'))),
+		"Number": Plus(Set(charset.Range('0', '9'))),
 	})
 	tests := []PatternTest{
 		{"13+(22-15)", 10},
@@ -244,65 +245,74 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		fmt.Println("Warning:", err)
 	}
-	machine = vm.NewVM(bible, 0)
 	os.Exit(m.Run())
 }
 
 func BenchmarkBibleSearchFirstEartt(b *testing.B) {
 	code := vm.Encode(Search(Literal("eartt")))
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }
 
 func BenchmarkBibleSearchFirstAbram(b *testing.B) {
-	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
+	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
 	code := vm.Encode(Search(abram))
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }
 
 func BenchmarkBibleSearchLastAbram(b *testing.B) {
-	abram := Concat(Plus(Set(isa.CharsetRange('a', 'z').Add(isa.CharsetRange('A', 'Z')))), Literal(" Abram"))
+	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
 	code := vm.Encode(Star(Search(abram)))
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }
 
 func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
 	code := vm.Encode(Star(Search(Literal("Tubalcain"))))
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }
 
 func BenchmarkBibleOmegaPattern(b *testing.B) {
 	omega := Concat(Star(Concat(Not(Literal("Omega")), Any(1))), Literal("Omega"))
 	code := vm.Encode(omega)
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }
 
@@ -312,11 +322,13 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 		"P": Literal("Omega"),
 	})
 	code := vm.Encode(omega)
-	machine.Reset(0)
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(code)
-		machine.Reset(0)
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
 	}
 }

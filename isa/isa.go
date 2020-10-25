@@ -1,6 +1,10 @@
 package isa
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/zyedidia/gpeg/charset"
+)
 
 // Insn represents the interface for an instruction in the ISA
 type Insn interface {
@@ -75,7 +79,7 @@ type Fail struct {
 // Set consumes the next byte of input if it is in the set of chars defined
 // by Chars.
 type Set struct {
-	Chars Charset
+	Chars charset.Set
 	basic
 }
 
@@ -95,7 +99,7 @@ type PartialCommit struct {
 // Span consumes zero or more bytes in the set Chars. This instruction
 // never fails.
 type Span struct {
-	Chars Charset
+	Chars charset.Set
 	basic
 }
 
@@ -127,7 +131,7 @@ type TestChar struct {
 // to Lbl and the subject position from before consumption is pushed to the
 // stack.
 type TestSet struct {
-	Chars Charset
+	Chars charset.Set
 	Lbl   Label
 	jump
 }
@@ -151,33 +155,37 @@ type Nop struct {
 	basic
 }
 
+// MemoOpen begins a memo entry at this position. It marks the pattern that is
+// being memoized with a unique ID for that pattern, and stores a label to
+// jump to if the pattern is found in the memoization table.
 type MemoOpen struct {
 	Lbl Label
-	Id  uint16
+	Id  int
 	jump
 }
 
+// MemoClose completes a memoization entry and adds the entry into the memo
+// table if it meets certain conditions (size, or other heuristics).
 type MemoClose struct {
 	basic
 }
 
-const (
-	CaptureBegin byte = iota
-	CaptureEnd
-	CaptureFull
-)
-
-type Capture struct {
-	Attr  byte
-	Extra byte
+type CaptureBegin struct {
 	basic
 }
 
-// Choice2 is a deprecated instruction.
-type Choice2 struct {
-	Lbl  Label
-	Back byte
-	jump
+type CaptureLate struct {
+	N byte
+	basic
+}
+
+type CaptureEnd struct {
+	basic
+}
+
+type CaptureFull struct {
+	N byte
+	basic
 }
 
 type basic struct{}
@@ -258,10 +266,6 @@ func (i TestAny) String() string {
 	return fmt.Sprintf("TestAny %v %v", i.N, i.Lbl)
 }
 
-func (i Choice2) String() string {
-	return fmt.Sprintf("Choice2 %v %v", i.Back, i.Lbl)
-}
-
 func (i End) String() string {
 	return "End"
 }
@@ -278,14 +282,18 @@ func (i MemoClose) String() string {
 	return "MemoClose"
 }
 
-func (i Capture) String() string {
-	switch i.Attr {
-	case CaptureBegin:
-		return fmt.Sprintf("Capture begin %v", i.Extra)
-	case CaptureEnd:
-		return fmt.Sprintf("Capture end")
-	case CaptureFull:
-		return fmt.Sprintf("Capture full %v", i.Extra)
-	}
-	return "Capture unknown"
+func (i CaptureBegin) String() string {
+	return fmt.Sprintf("Capture begin")
+}
+
+func (i CaptureLate) String() string {
+	return fmt.Sprintf("Capture late %v", i.N)
+}
+
+func (i CaptureEnd) String() string {
+	return fmt.Sprintf("Capture end")
+}
+
+func (i CaptureFull) String() string {
+	return fmt.Sprintf("Capture full %v", i.N)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
 )
 
@@ -18,16 +19,18 @@ type openCall struct {
 // Reader.
 type Pattern []isa.Insn
 
+// Cap marks a pattern to be captured.
 func Cap(p Pattern) Pattern {
 	code := make(Pattern, 0, len(p)+2)
-	code = append(code, isa.Capture{Attr: isa.CaptureBegin})
+	code = append(code, isa.CaptureBegin{})
 	code = append(code, p...)
-	code = append(code, isa.Capture{Attr: isa.CaptureEnd})
+	code = append(code, isa.CaptureEnd{})
 	return code
 }
 
-var memoId uint16 = 0
+var memoId = 0
 
+// Memo marks a pattern as memoizable.
 func Memo(p Pattern) Pattern {
 	memoId++
 	L1 := isa.NewLabel()
@@ -49,7 +52,7 @@ func Literal(s string) Pattern {
 }
 
 // Set matches any character in the given set.
-func Set(chars isa.Charset) Pattern {
+func Set(chars charset.Set) Pattern {
 	return Pattern{isa.Set{Chars: chars}}
 }
 
@@ -59,16 +62,57 @@ func Any(n uint8) Pattern {
 	return Pattern{isa.Any{N: n}}
 }
 
-// Concat concatenates two patterns: `p1 p2`.
-func Concat(p1, p2 Pattern) Pattern {
+// Repeat matches p exactly n times
+func Repeat(p Pattern, n int) Pattern {
+	if n <= 0 {
+		return Pattern{}
+	}
+
+	acc := p
+	for i := 1; i < n; i++ {
+		acc = concat(acc, p)
+	}
+	return acc
+}
+
+// Concat concatenates n patterns: `p1 p2 p3...`.
+func Concat(patts ...Pattern) Pattern {
+	if len(patts) <= 0 {
+		return Pattern{}
+	}
+
+	// TODO: copy new memory?
+	acc := patts[0]
+	for _, p := range patts[1:] {
+		acc = concat(acc, p)
+	}
+
+	return acc
+}
+
+func concat(p1, p2 Pattern) Pattern {
 	code := make(Pattern, 0, len(p1)+len(p2))
 	code = append(code, p1...)
 	code = append(code, p2...)
 	return code
 }
 
-// Or returns the ordered choice between two patterns: `p1 / p2`.
-func Or(p1, p2 Pattern) Pattern {
+// Or returns the ordered choice between n patterns: `p1 / p2 / p3...`.
+func Or(patts ...Pattern) Pattern {
+	if len(patts) <= 0 {
+		return Pattern{}
+	}
+
+	// optimization: make or right associative
+	acc := patts[len(patts)-1]
+	for i := len(patts) - 2; i >= 0; i-- {
+		acc = or(patts[i], acc)
+	}
+
+	return acc
+}
+
+func or(p1, p2 Pattern) Pattern {
 	// optimization: if p1 and p2 are charsets, return the union
 	if len(p1) == 1 && len(p2) == 1 {
 		s1, ok1 := p1[0].(isa.Set)
@@ -164,17 +208,17 @@ func And(p Pattern) Pattern {
 
 // Search is a dedicated operator for creating searches. It will match
 // the first occurrence of the given pattern. Use Star(Search(p)) to match
-// the last occurrence.
+// the last occurrence (for a non-overlapping pattern).
 func Search(p Pattern) Pattern {
 	var rsearch Pattern
-	var set isa.Charset
+	var set charset.Set
 	opt := false
 
 	next, ok := nextInsn(p)
 	if ok {
 		switch t := next.(type) {
 		case isa.Char:
-			set = isa.NewCharset([]byte{t.Byte}).Complement()
+			set = charset.New([]byte{t.Byte}).Complement()
 			opt = true
 		case isa.Set:
 			// Heuristic: if the set is smaller than 10 chars, it
@@ -374,9 +418,6 @@ func (p Pattern) Copy() Pattern {
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.TestAny:
-			t.Lbl = labels[t.Lbl]
-			code[i] = t
-		case isa.Choice2:
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.MemoOpen:

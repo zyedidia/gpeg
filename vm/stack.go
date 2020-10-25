@@ -56,14 +56,14 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *stack) pop() (stackEntry, bool) {
+func (s *stack) pop() *stackEntry {
 	if len(s.entries) == 0 {
-		return stackEntry{}, false
+		return nil
 	}
 
 	ret := s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
-	return ret, true
+	return &ret
 }
 
 func (s *stack) peek() *stackEntry {
