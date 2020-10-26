@@ -77,7 +77,7 @@ loop:
 		case opReturn:
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stRet {
-				vm.ip = int(ent.ret)
+				vm.ip = int(ent.u.ret())
 			} else {
 				panic("Return failed")
 			}
@@ -104,8 +104,9 @@ loop:
 			lbl := decodeU16(idata[vm.ip+2:])
 			ent := vm.st.peek()
 			if ent.stype == stBtrack {
-				ent.btrack.off = vm.input.Offset()
-				ent.btrack.capt = vm.capt
+				b := ent.u.btrackPtr()
+				b.off = vm.input.Offset()
+				b.capt = vm.capt
 				vm.ip += int(lbl)
 			} else {
 				panic("PartialCommit failed")
@@ -122,8 +123,8 @@ loop:
 			lbl := decodeU16(idata[vm.ip+2:])
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stBtrack {
-				vm.input.SeekTo(ent.btrack.off)
-				vm.capt = ent.btrack.capt
+				vm.input.SeekTo(ent.u.btrack().off)
+				vm.capt = ent.u.btrack().capt
 				vm.ip += int(lbl)
 			} else {
 				panic("BackCommit failed")
@@ -198,12 +199,12 @@ loop:
 		case opMemoClose:
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stMemo {
-				mlen := int(vm.input.Offset()) - int(ent.memo.pos)
+				mlen := int(vm.input.Offset()) - int(ent.u.memo().pos)
 				if mlen >= memoCutoff {
 					memtbl.Put(memo.Key{
-						Id:  ent.memo.id,
-						Pos: ent.memo.pos,
-					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.memo.pos)+1)) // TODO: +1?
+						Id:  ent.u.memo().id,
+						Pos: ent.u.memo().pos,
+					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.u.memo().pos)+1)) // TODO: +1?
 				}
 				vm.ip += 2
 			} else {
@@ -227,16 +228,16 @@ fail:
 
 	switch ent.stype {
 	case stBtrack:
-		vm.ip = ent.btrack.ip
-		vm.input.SeekTo(ent.btrack.off)
-		vm.capt = ent.btrack.capt
+		vm.ip = ent.u.btrack().ip
+		vm.input.SeekTo(ent.u.btrack().off)
+		vm.capt = ent.u.btrack().capt
 	case stMemo:
 		// Mark this position in the memoTable as a failed match
-		mlen := int(vm.input.Offset()) - int(ent.memo.pos)
+		mlen := int(vm.input.Offset()) - int(ent.u.memo().pos)
 		if mlen >= memoCutoff {
 			memtbl.Put(memo.Key{
-				Id:  ent.memo.id,
-				Pos: ent.memo.pos,
+				Id:  ent.u.memo().id,
+				Pos: ent.u.memo().pos,
 			}, memo.NewEntry(-1, -1))
 		}
 		goto fail

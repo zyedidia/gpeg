@@ -16,11 +16,15 @@ const (
 	stMemo
 )
 
-type stackEntry struct {
-	stype  byte
+type entry struct {
 	ret    stackRet
 	btrack stackBacktrack
 	memo   stackMemo
+}
+
+type stackEntry struct {
+	stype byte
+	u     entryUnion
 }
 
 type stackRet int
@@ -74,22 +78,28 @@ func (s *stack) peek() *stackEntry {
 }
 
 func (s *stack) pushRet(r stackRet) {
+	var u entryUnion
+	u.retPut(r)
 	s.push(stackEntry{
 		stype: stRet,
-		ret:   r,
+		u:     u,
 	})
 }
 
 func (s *stack) pushBacktrack(b stackBacktrack) {
+	var u entryUnion
+	u.btrackPut(b)
 	s.push(stackEntry{
-		stype:  stBtrack,
-		btrack: b,
+		stype: stBtrack,
+		u:     u,
 	})
 }
 
 func (s *stack) pushMemo(m stackMemo) {
+	var u entryUnion
+	u.memoPut(m)
 	s.push(stackEntry{
 		stype: stMemo,
-		memo:  m,
+		u:     u,
 	})
 }
