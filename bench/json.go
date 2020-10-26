@@ -24,7 +24,7 @@ func json() {
 		"jnull":         Literal("null"),
 		"unicodeEscape": Concat(Literal("u"), Repeat(NonTerm("Xdigit"), 4)),
 		"escape":        Concat(Literal("\\"), Or(Set(charset.New([]byte{'{', '"', '|', '\\', 'b', 'f', 'n', 'r', 't'})), NonTerm("unicodeEscape"))),
-		"stringBody":    Concat(Optional(NonTerm("escape")), Star(Concat(Plus(Set(charset.Range('\x20', 127).Sub(charset.New([]byte{'"', '\\'})))), Star(NonTerm("escape"))))),
+		"stringBody":    Concat(Optional(NonTerm("escape")), Star(Concat(Plus(Set(charset.Range('\x20', '\xff').Sub(charset.New([]byte{'"', '\\'})))), Star(NonTerm("escape"))))),
 		"jstring":       Concat(Optional(NonTerm("S")), Literal("\""), NonTerm("stringBody"), Literal("\""), Optional(NonTerm("S"))),
 		"minus":         Literal("-"),
 		"intPart":       Or(Literal("0"), Concat(Concat(Not(Literal("0")), NonTerm("Digit")), Star(NonTerm("Digit")))),
@@ -51,6 +51,8 @@ func json() {
 	// in := input.ByteReader(json)
 	machine := vm.NewVM(in, code)
 	tbl := memo.NewMapTable()
+
+	PrintMemUsage()
 
 	start := time.Now()
 	fmt.Println(machine.Exec(tbl))

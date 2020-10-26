@@ -44,3 +44,12 @@ func TestComplement(t *testing.T) {
 
 	inSet(set, notin, in, t)
 }
+
+func TestBigSet(t *testing.T) {
+	in := []byte{200, 201, 203}
+	notin := []byte{0, 1, 2}
+
+	set := Range(128, '\xff')
+
+	inSet(set, in, notin, t)
+}

@@ -488,15 +488,21 @@ func (p Pattern) Optimize() {
 // String returns the string representation of the pattern.
 func (p Pattern) String() string {
 	s := ""
+	var last isa.Insn
 	for _, insn := range p {
 		switch insn.(type) {
 		case isa.Nop:
 			continue
 		case isa.Label:
-			s += fmt.Sprintf("%v:", insn)
+			if _, ok := last.(isa.Label); ok {
+				s += "\rL...:"
+			} else {
+				s += fmt.Sprintf("%v:", insn)
+			}
 		default:
 			s += fmt.Sprintf("\t%v\n", insn)
 		}
+		last = insn
 	}
 	s += "\n"
 	return s
