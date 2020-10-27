@@ -29,6 +29,7 @@ const (
 	opMemoClose
 )
 
+// returns the size in bytes of the encoded version of this instruction
 func size(insn isa.Insn) int {
 	var sz int
 	switch insn.(type) {
