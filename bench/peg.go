@@ -59,8 +59,9 @@ func peg() {
 
 	code := vm.Encode(p)
 	fmt.Println(code)
+	fmt.Println("Code size", code.Size())
 
-	data, err := ioutil.ReadFile("../testdata/peg.peg")
+	data, err := ioutil.ReadFile("../testdata/bigpeg.peg")
 	if err != nil {
 		log.Fatal(err)
 	}

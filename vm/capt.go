@@ -31,7 +31,7 @@ func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
 	stack := newCapStack()
 	caps := make([][2]input.Pos, 0, len(capt))
 	for _, c := range capt {
-		op := code.insns[c.ip]
+		op := code.data.Insns[c.ip]
 
 		switch op {
 		case opCaptureBegin, opCaptureLate:
@@ -43,7 +43,7 @@ func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
 			}
 			caps = append(caps, [2]input.Pos{ent.off, c.off})
 		case opCaptureFull:
-			back := decodeByte(code.insns[c.ip+1:])
+			back := decodeByte(code.data.Insns[c.ip+1:])
 			caps = append(caps, [2]input.Pos{c.off, c.off + input.Pos(back)})
 		}
 	}

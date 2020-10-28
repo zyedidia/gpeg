@@ -1,6 +1,9 @@
 package vm
 
 import (
+	"bytes"
+	"encoding/gob"
+	"log"
 	"unsafe"
 
 	"github.com/zyedidia/gpeg/charset"
@@ -10,11 +13,41 @@ import (
 
 // VMCode is the representation of VM bytecode.
 type VMCode struct {
+	data code
+}
+
+type code struct {
 	// list of charsets
-	sets []charset.Set
+	Sets []charset.Set
 
 	// the encoded instructions
-	insns []byte
+	Insns []byte
+}
+
+func (c *VMCode) Size() int {
+	return int(unsafe.Sizeof(charset.Set{}))*len(c.data.Sets) + len(c.data.Insns)
+}
+
+func (c *VMCode) Bytes() []byte {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(c.data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func LoadCode(b []byte) VMCode {
+	var c code
+	dec := gob.NewDecoder(bytes.NewBuffer(b))
+	err := dec.Decode(&c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return VMCode{
+		data: c,
+	}
 }
 
 // Encode transforms a Pattern into VM bytecode.
@@ -22,8 +55,10 @@ func Encode(insns pattern.Pattern) VMCode {
 	insns.Optimize()
 
 	code := VMCode{
-		sets:  make([]charset.Set, 0),
-		insns: make([]byte, 0),
+		data: code{
+			Sets:  make([]charset.Set, 0),
+			Insns: make([]byte, 0),
+		},
 	}
 
 	var bcount int
@@ -115,16 +150,16 @@ func Encode(insns pattern.Pattern) VMCode {
 		}
 
 		sz += size(insn)
-		code.insns = append(code.insns, op)
+		code.data.Insns = append(code.data.Insns, op)
 
 		// need padding to align the args if they are divisible by 16 bits
 		if len(args)%2 == 0 {
-			code.insns = append(code.insns, 0)
+			code.data.Insns = append(code.data.Insns, 0)
 		}
 
-		code.insns = append(code.insns, args...)
+		code.data.Insns = append(code.data.Insns, args...)
 	}
-	code.insns = append(code.insns, opEnd, 0)
+	code.data.Insns = append(code.data.Insns, opEnd, 0)
 
 	return code
 }
@@ -142,12 +177,12 @@ func encodeLabel(x int, cur int) []byte {
 // added at. If there are duplicate charsets, this may not actually insert
 // the new charset.
 func addSet(code *VMCode, set charset.Set) int {
-	for i, s := range code.sets {
+	for i, s := range code.data.Sets {
 		if set == s {
 			return i
 		}
 	}
 
-	code.sets = append(code.sets, set)
-	return len(code.sets) - 1
+	code.data.Sets = append(code.data.Sets, set)
+	return len(code.data.Sets) - 1
 }

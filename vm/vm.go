@@ -44,7 +44,7 @@ func (vm *VM) SetReader(r input.Reader) {
 }
 
 func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []capt) {
-	idata := vm.code.insns
+	idata := vm.code.data.Insns
 
 loop:
 	for {
@@ -84,7 +84,7 @@ loop:
 		case opFail:
 			goto fail
 		case opSet:
-			set := decodeSet(idata[vm.ip+2:], vm.code.sets)
+			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
 				vm.input.Advance(1)
@@ -111,7 +111,7 @@ loop:
 				panic("PartialCommit failed")
 			}
 		case opSpan:
-			set := decodeSet(idata[vm.ip+2:], vm.code.sets)
+			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			for ok && set.Has(in) {
 				vm.input.Advance(1)
@@ -144,7 +144,7 @@ loop:
 			}
 		case opTestSet:
 			lbl := decodeU16(idata[vm.ip+2:])
-			set := decodeSet(idata[vm.ip+2+2:], vm.code.sets)
+			set := decodeSet(idata[vm.ip+2+2:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
 				vm.st.pushBacktrack(stackBacktrack{vm.ip + int(lbl), vm.input.Offset(), vm.capt})

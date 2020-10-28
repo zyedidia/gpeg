@@ -42,6 +42,7 @@ func json() {
 
 	code := vm.Encode(p)
 	fmt.Println(code)
+	fmt.Println("Code size", code.Size())
 
 	data, err := ioutil.ReadFile("../testdata/test.json")
 	if err != nil {

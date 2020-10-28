@@ -12,6 +12,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var bench = flag.String("b", "", "benchmark to run")
 
 func PrintMemUsage() {
@@ -56,5 +57,17 @@ func main() {
 	default:
 		fmt.Println("Unknown benchmark", *bench)
 		os.Exit(1)
+	}
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC()    // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
 	}
 }
