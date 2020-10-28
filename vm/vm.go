@@ -164,13 +164,21 @@ loop:
 			} else {
 				vm.ip += int(lbl)
 			}
-		// case opCapture:
-		// 	c := capt{
-		// 		ip:  vm.ip,
-		// 		off: vm.input.Offset(),
-		// 	}
-		// 	vm.capt = append(vm.capt, c)
-		// 	vm.ip += 3
+		case opCaptureBegin, opCaptureEnd:
+			c := capt{
+				ip:  vm.ip,
+				off: vm.input.Offset(),
+			}
+			vm.capt = append(vm.capt, c)
+			vm.ip += 2
+		case opCaptureLate, opCaptureFull:
+			back := decodeByte(idata[vm.ip+1:])
+			c := capt{
+				ip:  vm.ip,
+				off: vm.input.Offset() - input.Pos(back),
+			}
+			vm.capt = append(vm.capt, c)
+			vm.ip += 4
 		case opEnd:
 			// ends the machine with a success
 			break loop

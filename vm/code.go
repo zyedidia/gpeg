@@ -96,12 +96,12 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.CaptureBegin:
 			op = opCaptureBegin
 		case isa.CaptureEnd:
-			op = opCaptureBegin
+			op = opCaptureEnd
 		case isa.CaptureLate:
-			op = opCaptureBegin
+			op = opCaptureLate
 			args = []byte{t.N}
 		case isa.CaptureFull:
-			op = opCaptureBegin
+			op = opCaptureFull
 			args = []byte{t.N}
 		case isa.MemoOpen:
 			op = opMemoOpen
