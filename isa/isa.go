@@ -176,7 +176,7 @@ type CaptureBegin struct {
 }
 
 type CaptureLate struct {
-	N byte
+	Back byte
 	basic
 }
 
@@ -185,7 +185,7 @@ type CaptureEnd struct {
 }
 
 type CaptureFull struct {
-	N byte
+	Back byte
 	basic
 }
 
@@ -288,7 +288,7 @@ func (i CaptureBegin) String() string {
 }
 
 func (i CaptureLate) String() string {
-	return fmt.Sprintf("Capture late %v", i.N)
+	return fmt.Sprintf("Capture late %v", i.Back)
 }
 
 func (i CaptureEnd) String() string {
@@ -296,5 +296,5 @@ func (i CaptureEnd) String() string {
 }
 
 func (i CaptureFull) String() string {
-	return fmt.Sprintf("Capture full %v", i.N)
+	return fmt.Sprintf("Capture full %v", i.Back)
 }

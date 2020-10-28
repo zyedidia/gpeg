@@ -43,8 +43,8 @@ func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
 			}
 			caps = append(caps, [2]input.Pos{ent.off, c.off})
 		case opCaptureFull:
-			back := decodeByte(code.data.Insns[c.ip+1:])
-			caps = append(caps, [2]input.Pos{c.off, c.off + input.Pos(back)})
+			back := decodeU8(code.data.Insns[c.ip+1:])
+			caps = append(caps, [2]input.Pos{c.off, c.off - input.Pos(back)})
 		}
 	}
 	return caps

@@ -363,6 +363,11 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 				switch next.(type) {
 				case isa.Return:
 					replace = isa.Jump{Lbl: lbl}
+					// remove the return instruction if there is no label referring to it
+					retidx, hadlbl := nextInsnLabel(code[i+1:])
+					if !hadlbl {
+						code[i+1+retidx] = isa.Nop{}
+					}
 				}
 			}
 
@@ -519,4 +524,20 @@ func nextInsn(p Pattern) (isa.Insn, bool) {
 	}
 
 	return isa.Nop{}, false
+}
+
+func nextInsnLabel(p Pattern) (int, bool) {
+	hadLabel := false
+	for i := 0; i < len(p); i++ {
+		switch p[i].(type) {
+		case isa.Nop:
+			continue
+		case isa.Label:
+			hadLabel = true
+		default:
+			return i, hadLabel
+		}
+	}
+
+	return -1, hadLabel
 }

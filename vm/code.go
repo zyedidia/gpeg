@@ -104,7 +104,7 @@ func Encode(insns pattern.Pattern) VMCode {
 			op = opFail
 		case isa.Set:
 			op = opSet
-			args = encodeU16(addSet(&code, t.Chars))
+			args = encodeU8(addSet(&code, t.Chars))
 		case isa.Any:
 			op = opAny
 			args = []byte{t.N}
@@ -113,7 +113,7 @@ func Encode(insns pattern.Pattern) VMCode {
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Span:
 			op = opSpan
-			args = encodeU16(addSet(&code, t.Chars))
+			args = encodeU8(addSet(&code, t.Chars))
 		case isa.BackCommit:
 			op = opBackCommit
 			args = encodeLabel(labels[t.Lbl], sz)
@@ -124,7 +124,7 @@ func Encode(insns pattern.Pattern) VMCode {
 			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestSet:
 			op = opTestSet
-			args = append(encodeLabel(labels[t.Lbl], sz), encodeU16(addSet(&code, t.Chars))...)
+			args = append(encodeU8(addSet(&code, t.Chars)), encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestAny:
 			op = opTestAny
 			args = append([]byte{t.N}, encodeLabel(labels[t.Lbl], sz)...)
@@ -134,13 +134,13 @@ func Encode(insns pattern.Pattern) VMCode {
 			op = opCaptureEnd
 		case isa.CaptureLate:
 			op = opCaptureLate
-			args = []byte{t.N}
+			args = []byte{t.Back}
 		case isa.CaptureFull:
 			op = opCaptureFull
-			args = []byte{t.N}
+			args = []byte{t.Back}
 		case isa.MemoOpen:
 			op = opMemoOpen
-			args = append(encodeLabel(labels[t.Lbl], sz), encodeU16(t.Id)...)
+			args = append(encodeLabel(labels[t.Lbl], sz), encodeI16(t.Id)...)
 		case isa.MemoClose:
 			op = opMemoClose
 		case isa.End:
@@ -164,25 +164,34 @@ func Encode(insns pattern.Pattern) VMCode {
 	return code
 }
 
-func encodeU16(x int) []byte {
+func encodeU8(x uint) []byte {
+	return []byte{uint8(x)}
+}
+
+func encodeI8(x int) []byte {
+	bytes := *(*[1]byte)(unsafe.Pointer(&x))
+	return bytes[:]
+}
+
+func encodeI16(x int) []byte {
 	bytes := *(*[2]byte)(unsafe.Pointer(&x))
 	return bytes[:]
 }
 
 func encodeLabel(x int, cur int) []byte {
-	return encodeU16(x - cur)
+	return encodeI16(x - cur)
 }
 
 // Adds the set to the code's list of charsets, and returns the index it was
 // added at. If there are duplicate charsets, this may not actually insert
 // the new charset.
-func addSet(code *VMCode, set charset.Set) int {
+func addSet(code *VMCode, set charset.Set) uint {
 	for i, s := range code.data.Sets {
 		if set == s {
-			return i
+			return uint(i)
 		}
 	}
 
 	code.data.Sets = append(code.data.Sets, set)
-	return len(code.data.Sets) - 1
+	return uint(len(code.data.Sets) - 1)
 }

@@ -1,6 +1,8 @@
 package vm
 
-import "github.com/zyedidia/gpeg/isa"
+import (
+	"github.com/zyedidia/gpeg/isa"
+)
 
 const (
 	opChar byte = iota
@@ -43,7 +45,7 @@ func size(insn isa.Insn) int {
 
 	// handle instructions with extra args
 	switch insn.(type) {
-	case isa.Set, isa.TestSet, isa.Span, isa.MemoOpen:
+	case isa.MemoOpen:
 		sz += 2
 	}
 
@@ -59,14 +61,14 @@ var sizes = map[byte]int{
 	opCommit:        4,
 	opReturn:        2,
 	opFail:          2,
-	opSet:           4,
+	opSet:           2,
 	opAny:           2,
 	opPartialCommit: 4,
-	opSpan:          4,
+	opSpan:          2,
 	opBackCommit:    4,
 	opFailTwice:     2,
 	opTestChar:      4,
-	opTestSet:       6,
+	opTestSet:       4,
 	opTestAny:       4,
 	opEnd:           2,
 	opNop:           0,

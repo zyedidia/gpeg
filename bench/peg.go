@@ -9,6 +9,7 @@ import (
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
+	"github.com/zyedidia/gpeg/pattern"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
 )
@@ -56,6 +57,7 @@ func peg() {
 
 	p.Optimize()
 	fmt.Println(p)
+	fmt.Println(pattern.Histogram(p))
 
 	code := vm.Encode(p)
 	fmt.Println(code)

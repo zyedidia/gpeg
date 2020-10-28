@@ -51,7 +51,7 @@ loop:
 		op := idata[vm.ip]
 		switch op {
 		case opChar:
-			b := decodeByte(idata[vm.ip+1:])
+			b := decodeU8(idata[vm.ip+1:])
 			in, ok := vm.input.Peek()
 			if ok && b == in {
 				vm.input.Advance(1)
@@ -60,18 +60,18 @@ loop:
 				goto fail
 			}
 		case opJump:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			vm.ip += int(lbl)
 		case opChoice:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			vm.st.pushBacktrack(stackBacktrack{vm.ip + int(lbl), vm.input.Offset(), vm.capt})
 			vm.ip += 4
 		case opCall:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			vm.st.pushRet(stackRet(vm.ip + 4))
 			vm.ip += int(lbl)
 		case opCommit:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			vm.st.pop()
 			vm.ip += int(lbl)
 		case opReturn:
@@ -84,16 +84,16 @@ loop:
 		case opFail:
 			goto fail
 		case opSet:
-			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
+			set := decodeSet(idata[vm.ip+1:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
 				vm.input.Advance(1)
-				vm.ip += 4
+				vm.ip += 2
 			} else {
 				goto fail
 			}
 		case opAny:
-			n := decodeByte(idata[vm.ip+1:])
+			n := decodeU8(idata[vm.ip+1:])
 			ok := vm.input.Advance(int(n))
 			if ok {
 				vm.ip += 2
@@ -101,7 +101,7 @@ loop:
 				goto fail
 			}
 		case opPartialCommit:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			ent := vm.st.peek()
 			if ent.stype == stBtrack {
 				ent.btrack.off = vm.input.Offset()
@@ -111,15 +111,15 @@ loop:
 				panic("PartialCommit failed")
 			}
 		case opSpan:
-			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
+			set := decodeSet(idata[vm.ip+1:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			for ok && set.Has(in) {
 				vm.input.Advance(1)
 				in, ok = vm.input.Peek()
 			}
-			vm.ip += 4
+			vm.ip += 2
 		case opBackCommit:
-			lbl := decodeU16(idata[vm.ip+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stBtrack {
 				vm.input.SeekTo(ent.btrack.off)
@@ -132,8 +132,8 @@ loop:
 			vm.st.pop()
 			goto fail
 		case opTestChar:
-			b := decodeByte(idata[vm.ip+1:])
-			lbl := decodeU16(idata[vm.ip+2:])
+			b := decodeU8(idata[vm.ip+1:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			in, ok := vm.input.Peek()
 			if ok && in == b {
 				vm.st.pushBacktrack(stackBacktrack{vm.ip + int(lbl), vm.input.Offset(), vm.capt})
@@ -143,19 +143,19 @@ loop:
 				vm.ip += int(lbl)
 			}
 		case opTestSet:
-			lbl := decodeU16(idata[vm.ip+2:])
-			set := decodeSet(idata[vm.ip+2+2:], vm.code.data.Sets)
+			lbl := decodeI16(idata[vm.ip+2:])
+			set := decodeSet(idata[vm.ip+1:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
 				vm.st.pushBacktrack(stackBacktrack{vm.ip + int(lbl), vm.input.Offset(), vm.capt})
 				vm.input.Advance(1)
-				vm.ip += 6
+				vm.ip += 4
 			} else {
 				vm.ip += int(lbl)
 			}
 		case opTestAny:
-			n := decodeByte(idata[vm.ip+1:])
-			lbl := decodeU16(idata[vm.ip+2:])
+			n := decodeU8(idata[vm.ip+1:])
+			lbl := decodeI16(idata[vm.ip+2:])
 			ent := stackBacktrack{vm.ip + int(lbl), vm.input.Offset(), vm.capt}
 			ok := vm.input.Advance(int(n))
 			if ok {
@@ -172,7 +172,7 @@ loop:
 			vm.capt = append(vm.capt, c)
 			vm.ip += 2
 		case opCaptureLate, opCaptureFull:
-			back := decodeByte(idata[vm.ip+1:])
+			back := decodeU8(idata[vm.ip+1:])
 			c := capt{
 				ip:  vm.ip,
 				off: vm.input.Offset() - input.Pos(back),
@@ -183,8 +183,8 @@ loop:
 			// ends the machine with a success
 			break loop
 		case opMemoOpen:
-			lbl := decodeU16(idata[vm.ip+2:])
-			id := decodeU16(idata[vm.ip+2+2:])
+			lbl := decodeI16(idata[vm.ip+2:])
+			id := decodeI16(idata[vm.ip+2+2:])
 
 			ment, ok := memtbl.Get(memo.Key{
 				Id:  uint16(id),
@@ -255,15 +255,19 @@ fail:
 	goto loop
 }
 
-func decodeByte(b []byte) byte {
+func decodeU8(b []byte) byte {
 	return b[0]
 }
 
-func decodeU16(b []byte) int16 {
+func decodeI8(b []byte) int8 {
+	return *(*int8)(unsafe.Pointer(&b[0]))
+}
+
+func decodeI16(b []byte) int16 {
 	return *(*int16)(unsafe.Pointer(&b[0]))
 }
 
 func decodeSet(b []byte, sets []charset.Set) charset.Set {
-	i := decodeU16(b)
+	i := decodeU8(b)
 	return sets[i]
 }
