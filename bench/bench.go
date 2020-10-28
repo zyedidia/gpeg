@@ -51,6 +51,8 @@ func main() {
 		bible()
 	case "json":
 		json()
+	case "peg":
+		peg()
 	default:
 		fmt.Println("Unknown benchmark", *bench)
 		os.Exit(1)

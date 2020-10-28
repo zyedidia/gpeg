@@ -2,6 +2,7 @@ package isa
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/zyedidia/gpeg/charset"
 )
@@ -203,7 +204,7 @@ func (i Label) String() string {
 }
 
 func (i Char) String() string {
-	return fmt.Sprintf("Char %v", string(i.Byte))
+	return fmt.Sprintf("Char %v", strconv.QuoteRune(rune(i.Byte)))
 }
 
 func (i Jump) String() string {
@@ -255,7 +256,7 @@ func (i FailTwice) String() string {
 }
 
 func (i TestChar) String() string {
-	return fmt.Sprintf("TestChar %v %v", string(i.Byte), i.Lbl)
+	return fmt.Sprintf("TestChar %v %v", strconv.QuoteRune(rune(i.Byte)), i.Lbl)
 }
 
 func (i TestSet) String() string {

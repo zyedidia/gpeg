@@ -476,7 +476,7 @@ func (p Pattern) Optimize() {
 			next, ok := nextInsn(p[labels[j.Lbl]:])
 			if ok {
 				switch next.(type) {
-				case isa.Call, isa.PartialCommit, isa.BackCommit, isa.Commit,
+				case isa.PartialCommit, isa.BackCommit, isa.Commit,
 					isa.Jump, isa.Return, isa.Fail, isa.FailTwice, isa.End:
 					p[i] = next
 				}
@@ -511,7 +511,7 @@ func (p Pattern) String() string {
 func nextInsn(p Pattern) (isa.Insn, bool) {
 	for i := 0; i < len(p); i++ {
 		switch p[i].(type) {
-		case isa.Label:
+		case isa.Label, isa.Nop:
 			continue
 		default:
 			return p[i], true
