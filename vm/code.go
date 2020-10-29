@@ -122,6 +122,9 @@ func Encode(insns pattern.Pattern) VMCode {
 		case isa.TestChar:
 			op = opTestChar
 			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl], sz)...)
+		case isa.TestCharNoChoice:
+			op = opTestCharNoChoice
+			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestSet:
 			op = opTestSet
 			args = append(encodeU8(addSet(&code, t.Chars)), encodeLabel(labels[t.Lbl], sz)...)

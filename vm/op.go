@@ -19,6 +19,7 @@ const (
 	opBackCommit
 	opFailTwice
 	opTestChar
+	opTestCharNoChoice
 	opTestSet
 	opTestAny
 	opEnd
@@ -54,28 +55,29 @@ func size(insn isa.Insn) int {
 
 // size in bytes of each instruction's encoding (unused)
 var sizes = map[byte]int{
-	opChar:          2,
-	opJump:          4,
-	opChoice:        4,
-	opCall:          4,
-	opCommit:        4,
-	opReturn:        2,
-	opFail:          2,
-	opSet:           2,
-	opAny:           2,
-	opPartialCommit: 4,
-	opSpan:          2,
-	opBackCommit:    4,
-	opFailTwice:     2,
-	opTestChar:      4,
-	opTestSet:       4,
-	opTestAny:       4,
-	opEnd:           2,
-	opNop:           0,
-	opCaptureBegin:  2,
-	opCaptureLate:   2,
-	opCaptureEnd:    2,
-	opCaptureFull:   2,
-	opMemoOpen:      6,
-	opMemoClose:     2,
+	opChar:             2,
+	opJump:             4,
+	opChoice:           4,
+	opCall:             4,
+	opCommit:           4,
+	opReturn:           2,
+	opFail:             2,
+	opSet:              2,
+	opAny:              2,
+	opPartialCommit:    4,
+	opSpan:             2,
+	opBackCommit:       4,
+	opFailTwice:        2,
+	opTestChar:         4,
+	opTestCharNoChoice: 4,
+	opTestSet:          4,
+	opTestAny:          4,
+	opEnd:              2,
+	opNop:              0,
+	opCaptureBegin:     2,
+	opCaptureLate:      2,
+	opCaptureEnd:       2,
+	opCaptureFull:      2,
+	opMemoOpen:         6,
+	opMemoClose:        2,
 }

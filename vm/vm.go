@@ -142,6 +142,16 @@ loop:
 			} else {
 				vm.ip += int(lbl)
 			}
+		case opTestCharNoChoice:
+			b := decodeU8(idata[vm.ip+1:])
+			in, ok := vm.input.Peek()
+			if ok && in == b {
+				vm.input.Advance(1)
+				vm.ip += 4
+			} else {
+				lbl := decodeI16(idata[vm.ip+2:])
+				vm.ip += int(lbl)
+			}
 		case opTestSet:
 			lbl := decodeI16(idata[vm.ip+2:])
 			set := decodeSet(idata[vm.ip+1:], vm.code.data.Sets)

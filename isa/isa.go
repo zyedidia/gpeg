@@ -127,6 +127,14 @@ type TestChar struct {
 	jump
 }
 
+// TestCharNoChoice consumes the next byte if it matches Byte and jumps to Lbl
+// otherwise. No backtrack entry is pushed to the stack.
+type TestCharNoChoice struct {
+	Byte byte
+	Lbl  Label
+	jump
+}
+
 // TestSet consumes the next byte if it is in the set Chars and jumps to
 // Lbl otherwise. If the consumption is possible, a backtrack entry referring
 // to Lbl and the subject position from before consumption is pushed to the
@@ -257,6 +265,10 @@ func (i FailTwice) String() string {
 
 func (i TestChar) String() string {
 	return fmt.Sprintf("TestChar %v %v", strconv.QuoteRune(rune(i.Byte)), i.Lbl)
+}
+
+func (i TestCharNoChoice) String() string {
+	return fmt.Sprintf("TestCharNoChoice %v %v", strconv.QuoteRune(rune(i.Byte)), i.Lbl)
 }
 
 func (i TestSet) String() string {

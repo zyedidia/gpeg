@@ -124,6 +124,35 @@ func or(p1, p2 Pattern) Pattern {
 		}
 	}
 
+	var testbyte byte
+	var disjoint bool
+	next1, _ := nextInsn(p1)
+	next2, _ := nextInsn(p2)
+	switch t1 := next1.(type) {
+	case isa.Char:
+		switch t2 := next2.(type) {
+		case isa.Char:
+			disjoint = t1.Byte != t2.Byte
+			testbyte = t1.Byte
+		case isa.Set:
+			disjoint = !t2.Chars.Has(t1.Byte)
+			testbyte = t1.Byte
+		}
+	}
+
+	if disjoint {
+		code := make(Pattern, 0, len(p1)+len(p2)+3)
+		L1 := isa.NewLabel()
+		L2 := isa.NewLabel()
+		code = append(code, isa.TestCharNoChoice{Byte: testbyte, Lbl: L1})
+		code = append(code, p1[1:]...)
+		code = append(code, isa.Jump{Lbl: L2})
+		code = append(code, L1)
+		code = append(code, p2...)
+		code = append(code, L2)
+		return code
+	}
+
 	code := make(Pattern, 0, len(p1)+len(p2)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
@@ -417,6 +446,9 @@ func (p Pattern) Copy() Pattern {
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.TestChar:
+			t.Lbl = labels[t.Lbl]
+			code[i] = t
+		case isa.TestCharNoChoice:
 			t.Lbl = labels[t.Lbl]
 			code[i] = t
 		case isa.TestSet:
