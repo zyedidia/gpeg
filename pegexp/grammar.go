@@ -3,6 +3,7 @@ package pegexp
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/zyedidia/gpeg/ast"
@@ -75,7 +76,7 @@ var grammar = map[string]Pattern{
 		Concat(Literal("\""), Star(Concat(Not(Literal("\"")), NonTerm("Char"))), Literal("\""), NonTerm("Spacing"))),
 	"Class": Concat(Literal("["), Star(Concat(Not(Literal("]")), NonTerm("Range"))), Literal("]"), NonTerm("Spacing")),
 	"Range": Or(Concat(NonTerm("Char"), Literal("-"), NonTerm("Char")), NonTerm("Char")),
-	"Char": Or(Concat(Literal("\\"), Set(charset.New([]byte{'n', 'r', 't', '[', ']', '\\'}))),
+	"Char": Or(Concat(Literal("\\"), Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\'}))),
 		Concat(Literal("\\"), Set(charset.Range('0', '2')), Set(charset.Range('0', '7')), Set(charset.Range('0', '7'))),
 		Concat(Literal("\\"), Set(charset.Range('0', '7')), Optional(Set(charset.Range('0', '7')))),
 		Concat(Not(Literal("\\")), Any(1))),
@@ -271,10 +272,10 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
-	match, _, caps := machine.Exec(memo.NoneTable{})
+	match, length, caps := machine.Exec(memo.NoneTable{})
 
 	if !match {
-		return nil, errors.New("Not a valid PEG expression")
+		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
 
 	root := machine.CaptureAST(caps, pegCode)
