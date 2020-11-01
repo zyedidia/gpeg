@@ -3,7 +3,6 @@ package pegexp
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/zyedidia/gpeg/ast"
@@ -106,7 +105,6 @@ var pegCode vm.VMCode
 func init() {
 	ids = make(map[string]int16)
 	p := pattern.CapGrammar("Grammar", grammar, ids)
-	fmt.Println(p)
 	pegCode = vm.Encode(p)
 }
 
@@ -188,7 +186,6 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 			if first == "" {
 				first = k
 			}
-			fmt.Println(k)
 			nonterms[k] = v
 		}
 		p = pattern.Grammar(first, nonterms)
@@ -275,7 +272,6 @@ func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
 	match, _, caps := machine.Exec(memo.NoneTable{})
-	fmt.Println(machine.CapturesString(caps, pegCode))
 
 	if !match {
 		return nil, errors.New("Not a valid PEG expression")
