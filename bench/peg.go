@@ -15,7 +15,8 @@ import (
 )
 
 func peg() {
-	p := Grammar("Grammar", map[string]Pattern{
+	ids := make(map[string]int16)
+	p := CapGrammar("Grammar", map[string]Pattern{
 		"Grammar":    Concat(NonTerm("Spacing"), Plus(NonTerm("Definition")), NonTerm("EndOfFile")),
 		"Definition": Concat(NonTerm("Identifier"), NonTerm("LEFTARROW"), NonTerm("Expression")),
 		"Expression": Concat(NonTerm("Sequence"), Star(Concat(NonTerm("SLASH"), NonTerm("Sequence")))),
@@ -53,7 +54,7 @@ func peg() {
 		"Space":     Or(Literal(" "), Literal("\t"), NonTerm("EndOfLine")),
 		"EndOfLine": Or(Literal("\r\n"), Literal("\n"), Literal("\r")),
 		"EndOfFile": Not(Any(1)),
-	})
+	}, ids)
 
 	p.Optimize()
 	fmt.Println(p)
@@ -63,7 +64,7 @@ func peg() {
 	fmt.Println(code)
 	fmt.Println("Code size", code.Size())
 
-	data, err := ioutil.ReadFile("../testdata/bigpeg.peg")
+	data, err := ioutil.ReadFile("../testdata/peg.peg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,8 +76,12 @@ func peg() {
 	fmt.Printf("Input is %d bytes\n", len(data))
 
 	start := time.Now()
-	fmt.Println(machine.Exec(tbl))
+	match, length, caps := machine.Exec(tbl)
+	fmt.Println(match, length)
 	elapsed := time.Since(start)
 	elapsed = time.Since(start)
 	fmt.Println("Parse completed in", elapsed)
+
+	root := machine.CaptureAST(caps, code)
+	fmt.Println(len(root[0].Children))
 }

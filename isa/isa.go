@@ -180,20 +180,24 @@ type MemoClose struct {
 }
 
 type CaptureBegin struct {
+	Id int16
 	basic
 }
 
 type CaptureLate struct {
 	Back byte
+	Id   int16
 	basic
 }
 
 type CaptureEnd struct {
+	Id int16
 	basic
 }
 
 type CaptureFull struct {
 	Back byte
+	Id   int16
 	basic
 }
 
@@ -296,11 +300,11 @@ func (i MemoClose) String() string {
 }
 
 func (i CaptureBegin) String() string {
-	return fmt.Sprintf("Capture begin")
+	return fmt.Sprintf("Capture begin %v", i.Id)
 }
 
 func (i CaptureLate) String() string {
-	return fmt.Sprintf("Capture late %v", i.Back)
+	return fmt.Sprintf("Capture late %v %v", i.Back, i.Id)
 }
 
 func (i CaptureEnd) String() string {
@@ -308,5 +312,5 @@ func (i CaptureEnd) String() string {
 }
 
 func (i CaptureFull) String() string {
-	return fmt.Sprintf("Capture full %v", i.Back)
+	return fmt.Sprintf("Capture full %v %v", i.Back, i.Id)
 }

@@ -109,7 +109,7 @@ func (c Set) String() string {
 			s += strconv.QuoteRune(rune(b-1)) + ","
 		}
 	}
-	if s[len(s)-1] == ',' {
+	if s != "" && s[len(s)-1] == ',' {
 		s = s[:len(s)-1]
 	}
 	s = "{" + s + "}"

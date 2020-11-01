@@ -46,7 +46,7 @@ func size(insn isa.Insn) int {
 
 	// handle instructions with extra args
 	switch insn.(type) {
-	case isa.MemoOpen:
+	case isa.MemoOpen, isa.CaptureBegin, isa.CaptureLate, isa.CaptureFull:
 		sz += 2
 	}
 
@@ -74,10 +74,10 @@ var sizes = map[byte]int{
 	opTestAny:          4,
 	opEnd:              2,
 	opNop:              0,
-	opCaptureBegin:     2,
-	opCaptureLate:      2,
+	opCaptureBegin:     4,
+	opCaptureLate:      4,
 	opCaptureEnd:       2,
-	opCaptureFull:      2,
+	opCaptureFull:      4,
 	opMemoOpen:         6,
 	opMemoClose:        2,
 }

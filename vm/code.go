@@ -133,14 +133,15 @@ func Encode(insns pattern.Pattern) VMCode {
 			args = append([]byte{t.N}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.CaptureBegin:
 			op = opCaptureBegin
+			args = encodeI16(int(t.Id))
 		case isa.CaptureEnd:
 			op = opCaptureEnd
 		case isa.CaptureLate:
 			op = opCaptureLate
-			args = []byte{t.Back}
+			args = append([]byte{t.Back}, encodeI16(int(t.Id))...)
 		case isa.CaptureFull:
 			op = opCaptureFull
-			args = []byte{t.Back}
+			args = append([]byte{t.Back}, encodeI16(int(t.Id))...)
 		case isa.MemoOpen:
 			op = opMemoOpen
 			args = append(encodeLabel(labels[t.Lbl], sz), encodeI16(t.Id)...)

@@ -145,7 +145,7 @@ func TestSet(t *testing.T) {
 
 func TestGrammar(t *testing.T) {
 	// grammar:
-	// S <- <B> / (![()] .)*
+	// S <- <B> / (![()] .)+
 	// B <- '(' <S> ')'
 	S := Or(NonTerm("B"), Plus(Concat(Not(Set(charset.New([]byte{'(', ')'}))), Any(1))))
 	B := Concat(Concat(Literal("("), NonTerm("S")), Literal(")"))

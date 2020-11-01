@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"github.com/zyedidia/gpeg/ast"
+
 	"github.com/zyedidia/gpeg/input"
 )
 
@@ -35,7 +37,11 @@ func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
 
 		switch op {
 		case opCaptureBegin, opCaptureLate:
-			stack.push(c)
+			stack.push(astCapt{
+				off:  c.off,
+				ip:   c.ip,
+				node: nil,
+			})
 		case opCaptureEnd:
 			ent, ok := stack.pop()
 			if !ok {
@@ -50,13 +56,58 @@ func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
 	return caps
 }
 
+func (vm *VM) CaptureAST(capt []capt, code VMCode) []*ast.Node {
+	stack := newCapStack()
+	nodes := make([]*ast.Node, 0)
+	for _, c := range capt {
+		op := code.data.Insns[c.ip]
+
+		switch op {
+		case opCaptureBegin, opCaptureLate:
+			id := decodeI16(code.data.Insns[c.ip+2:])
+			stack.push(astCapt{
+				off: c.off,
+				ip:  c.ip,
+				node: &ast.Node{
+					Id:       id,
+					Start:    c.off,
+					End:      0,
+					Children: make([]*ast.Node, 0),
+				},
+			})
+		case opCaptureEnd:
+			ent, ok := stack.pop()
+			if !ok {
+				panic("Error: capture closed but not opened")
+			}
+			ent.node.End = c.off
+			prev := stack.peek()
+			if prev == nil {
+				nodes = append(nodes, ent.node)
+			} else {
+				prev.node.Children = append(prev.node.Children, ent.node)
+			}
+			// case opCaptureFull:
+			// 	back := decodeU8(code.data.Insns[c.ip+1:])
+			// 	caps = append(caps, [2]input.Pos{c.off, c.off - input.Pos(back)})
+		}
+	}
+	return nodes
+}
+
+type astCapt struct {
+	off  input.Pos
+	ip   int
+	node *ast.Node
+}
+
 type capstack struct {
-	entries []capt
+	entries []astCapt
 }
 
 func newCapStack() *capstack {
 	return &capstack{
-		entries: make([]capt, 0, 4),
+		entries: make([]astCapt, 0, 4),
 	}
 }
 
@@ -64,11 +115,11 @@ func (s *capstack) reset() {
 	s.entries = s.entries[:1]
 }
 
-func (s *capstack) push(ent capt) {
+func (s *capstack) push(ent astCapt) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *capstack) pop() (*capt, bool) {
+func (s *capstack) pop() (*astCapt, bool) {
 	if len(s.entries) == 0 {
 		return nil, false
 	}
@@ -78,7 +129,7 @@ func (s *capstack) pop() (*capt, bool) {
 	return &ret, true
 }
 
-func (s *capstack) peek() *capt {
+func (s *capstack) peek() *astCapt {
 	if len(s.entries) == 0 {
 		return nil
 	}

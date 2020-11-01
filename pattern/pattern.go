@@ -15,6 +15,10 @@ type openCall struct {
 	isa.Nop
 }
 
+func (o openCall) String() string {
+	return fmt.Sprintf("OpenCall %v", o.name)
+}
+
 // A Pattern is a set of instructions that can be used to match an input
 // Reader.
 type Pattern []isa.Insn
@@ -23,6 +27,15 @@ type Pattern []isa.Insn
 func Cap(p Pattern) Pattern {
 	code := make(Pattern, 0, len(p)+2)
 	code = append(code, isa.CaptureBegin{})
+	code = append(code, p...)
+	code = append(code, isa.CaptureEnd{})
+	return code
+}
+
+// CapId marks a pattern with an ID to be captured.
+func CapId(p Pattern, id int16) Pattern {
+	code := make(Pattern, 0, len(p)+2)
+	code = append(code, isa.CaptureBegin{Id: id})
 	code = append(code, p...)
 	code = append(code, isa.CaptureEnd{})
 	return code
@@ -279,6 +292,16 @@ func NonTerm(name string) Pattern {
 	return Pattern{
 		openCall{name: name},
 	}
+}
+
+func CapGrammar(start string, nonterms map[string]Pattern, nontermIds map[string]int16) Pattern {
+	var id int16
+	for k, v := range nonterms {
+		nonterms[k] = CapId(v, id)
+		nontermIds[k] = id
+		id++
+	}
+	return Grammar(start, nonterms)
 }
 
 // Grammar builds a grammar from a map of non-terminal patterns.

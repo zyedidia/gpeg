@@ -31,10 +31,10 @@ The encoding of each instruction is given below:
 * `Nop`: can be removed and not encoded at all.
 * `MemoOpen Lbl Id`: `| 8-bit opcode | 8-bit Padding | 16-bit Lbl | 16-bit Id |`
 * `MemoClose`: `| 8-bit opcode | 8-bit padding |`
-* `CaptureBegin`: `| 8-bit opcode | 8-bit padding |`
+* `CaptureBegin`: `| 8-bit opcode | 8-bit padding | 16-bit capture Id |`
 * `CaptureLate`: `| 8-bit opcode | 8-bit N |`
-* `CaptureEnd`: `| 8-bit opcode | 8-bit padding |`
-* `CaptureFull`: `| 8-bit opcode | 8-bit N |`
+* `CaptureEnd`: `| 8-bit opcode | 8-bit padding | 16-bit capture Id |`
+* `CaptureFull`: `| 8-bit opcode | 8-bit N | 16-bit capture Id |`
 
 Note that the machine stores a separate table of character sets which are
 looked up whenever there is an instruction involving a character set (`Set`,

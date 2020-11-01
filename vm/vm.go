@@ -103,7 +103,7 @@ loop:
 		case opPartialCommit:
 			lbl := decodeI16(idata[vm.ip+2:])
 			ent := vm.st.peek()
-			if ent.stype == stBtrack {
+			if ent != nil && ent.stype == stBtrack {
 				ent.btrack.off = vm.input.Offset()
 				ent.btrack.capt = vm.capt
 				vm.ip += int(lbl)
@@ -180,7 +180,11 @@ loop:
 				off: vm.input.Offset(),
 			}
 			vm.capt = append(vm.capt, c)
-			vm.ip += 2
+			if op == opCaptureBegin {
+				vm.ip += 4
+			} else {
+				vm.ip += 2
+			}
 		case opCaptureLate, opCaptureFull:
 			back := decodeU8(idata[vm.ip+1:])
 			c := capt{
