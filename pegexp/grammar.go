@@ -37,7 +37,7 @@ import (
 //             / ["] (!["] Char)* ["] Spacing
 // Class      <- '[' (!']' Range)* ']' Spacing
 // Range      <- Char '-' Char / Char
-// Char       <- '\\' [nrt'"\[\]\\]
+// Char       <- '\\' [\-nrt'"\[\]\\]
 //             / '\\' [0-2][0-7][0-7]
 //             / '\\' [0-7][0-7]?
 //             / !'\\' .
@@ -76,7 +76,7 @@ var grammar = map[string]Pattern{
 		Concat(Literal("\""), Star(Concat(Not(Literal("\"")), NonTerm("Char"))), Literal("\""), NonTerm("Spacing"))),
 	"Class": Concat(Literal("["), Star(Concat(Not(Literal("]")), NonTerm("Range"))), Literal("]"), NonTerm("Spacing")),
 	"Range": Or(Concat(NonTerm("Char"), Literal("-"), NonTerm("Char")), NonTerm("Char")),
-	"Char": Or(Concat(Literal("\\"), Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\'}))),
+	"Char": Or(Concat(Literal("\\"), Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\', '-'}))),
 		Concat(Literal("\\"), Set(charset.Range('0', '2')), Set(charset.Range('0', '7')), Set(charset.Range('0', '7'))),
 		Concat(Literal("\\"), Set(charset.Range('0', '7')), Optional(Set(charset.Range('0', '7')))),
 		Concat(Not(Literal("\\")), Any(1))),
@@ -118,6 +118,7 @@ var special = map[byte]byte{
 	'[':  '[',
 	']':  ']',
 	'\\': '\\',
+	'-':  '-',
 }
 
 func parseChar(char []byte) byte {
