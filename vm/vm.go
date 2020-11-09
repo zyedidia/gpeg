@@ -225,7 +225,7 @@ loop:
 					memtbl.Put(memo.Key{
 						Id:  ent.memo.id,
 						Pos: ent.memo.pos,
-					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.memo.pos)+1)) // TODO: +1?
+					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.memo.pos)+1, nil)) // TODO: +1?
 				}
 				vm.ip += 2
 			} else {
@@ -259,7 +259,7 @@ fail:
 			memtbl.Put(memo.Key{
 				Id:  ent.memo.id,
 				Pos: ent.memo.pos,
-			}, memo.NewEntry(-1, -1))
+			}, memo.NewEntry(-1, -1, nil))
 		}
 		goto fail
 	case stRet:

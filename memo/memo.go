@@ -20,13 +20,15 @@ type Key struct {
 type Entry struct {
 	examined int
 	length   int
+	val      interface{}
 }
 
 // NewEntry returns a new entry with the given information.
-func NewEntry(matchlen, examlen int) Entry {
+func NewEntry(matchlen, examlen int, val interface{}) Entry {
 	return Entry{
 		examined: examlen,
 		length:   matchlen,
+		val:      val,
 	}
 }
 
@@ -39,4 +41,8 @@ func (e *Entry) MatchLength() int {
 // this entry's pattern.
 func (e *Entry) Examined() int {
 	return e.examined
+}
+
+func (e *Entry) Value() interface{} {
+	return e.val
 }
