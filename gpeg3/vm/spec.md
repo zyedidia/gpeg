@@ -18,14 +18,14 @@ The encoding of each instruction is given below:
 * `Commit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
 * `Return`: `| 8-bit opcode | 8-bit padding |`
 * `Fail`: `| 8-bit opcode | 8-bit padding |`
-* `Set Chars`: `| 8-bit opcode | 8-bit padding | 16-bit index of Chars |`
+* `Set Chars`: `| 8-bit opcode | 8-bit index of Chars |`
 * `Any Byte`: `| 8-bit opcode | 8-bit Byte |`
 * `PartialCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Span Chars`: `| 8-bit opcode | 8-bit padding | 16-bit index of Chars |`
+* `Span Chars`: `| 8-bit opcode | 8-bit index of Chars |`
 * `BackCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
 * `FailTwice`: `| 8-bit opcode | 8-bit padding |`
 * `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit Byte | 16-bit Lbl |`
-* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit Padding | 16-bit Lbl | 16-bit index of Chars |`
+* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit index of Chars | 16-bit Lbl |`
 * `TestAny N Lbl`: `| 8-bit opcode | 8-bit N | 16-bit Lbl |`
 * `End`: `| 8-bit opcode | 8-bit padding |`
 * `Nop`: can be removed and not encoded at all.

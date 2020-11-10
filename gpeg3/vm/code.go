@@ -84,16 +84,16 @@ func Encode(insns isa.Program) VMCode {
 			op = opChar
 			args = []byte{t.Byte}
 		case isa.Jump:
-			op = opJump
+			op = opBigJump
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Choice:
-			op = opChoice
+			op = opBigChoice
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Call:
-			op = opCall
+			op = opBigCall
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Commit:
-			op = opCommit
+			op = opBigCommit
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Return:
 			op = opReturn
@@ -106,27 +106,27 @@ func Encode(insns isa.Program) VMCode {
 			op = opAny
 			args = []byte{t.N}
 		case isa.PartialCommit:
-			op = opPartialCommit
+			op = opBigPartialCommit
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.Span:
 			op = opSpan
 			args = encodeU8(addSet(&code, t.Chars))
 		case isa.BackCommit:
-			op = opBackCommit
+			op = opBigBackCommit
 			args = encodeLabel(labels[t.Lbl], sz)
 		case isa.FailTwice:
 			op = opFailTwice
 		case isa.TestChar:
-			op = opTestChar
+			op = opBigTestChar
 			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestCharNoChoice:
-			op = opTestCharNoChoice
+			op = opBigTestCharNoChoice
 			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestSet:
-			op = opTestSet
+			op = opBigTestSet
 			args = append(encodeU8(addSet(&code, t.Chars)), encodeLabel(labels[t.Lbl], sz)...)
 		case isa.TestAny:
-			op = opTestAny
+			op = opBigTestAny
 			args = append([]byte{t.N}, encodeLabel(labels[t.Lbl], sz)...)
 		case isa.CaptureBegin:
 			op = opCaptureBegin
@@ -140,8 +140,8 @@ func Encode(insns isa.Program) VMCode {
 			op = opCaptureFull
 			args = append([]byte{t.Back}, encodeI16(int(t.Id))...)
 		case isa.MemoOpen:
-			op = opMemoOpen
-			args = append(encodeLabel(labels[t.Lbl], sz), encodeI16(int(t.Id))...)
+			op = opBigMemoOpen
+			args = append(encodeI16(int(t.Id)), encodeLabel(labels[t.Lbl], sz)...)
 		case isa.MemoClose:
 			op = opMemoClose
 		case isa.End:
@@ -185,8 +185,22 @@ func encodeI16(x int) []byte {
 	return bytes[:]
 }
 
+func encodeI32(x int) []byte {
+	i1 := x >> 16
+	i2 := int16(x)
+
+	bytes1 := *(*[2]byte)(unsafe.Pointer(&i1))
+	bytes2 := *(*[2]byte)(unsafe.Pointer(&i2))
+	bytes := append(bytes1[:], bytes2[:]...)
+	return bytes
+}
+
+// func encodeLabel(x int, cur int) []byte {
+// 	return encodeI16(x - cur)
+// }
+
 func encodeLabel(x int, cur int) []byte {
-	return encodeI16(x - cur)
+	return encodeI32(x - cur)
 }
 
 // Adds the set to the code's list of charsets, and returns the index it was

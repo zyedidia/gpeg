@@ -62,7 +62,7 @@ func size(insn isa.Insn) int {
 	case isa.Label, isa.Nop:
 		return 0
 	case isa.JumpType:
-		sz += 4
+		sz += 6
 	default:
 		sz += 2
 	}
@@ -76,31 +76,55 @@ func size(insn isa.Insn) int {
 	return sz
 }
 
-// size in bytes of each instruction's encoding (unused)
-var sizes = map[byte]int{
-	opChar:             2,
-	opJump:             4,
-	opChoice:           4,
-	opCall:             4,
-	opCommit:           4,
-	opReturn:           2,
-	opFail:             2,
-	opSet:              2,
-	opAny:              2,
-	opPartialCommit:    4,
-	opSpan:             2,
-	opBackCommit:       4,
-	opFailTwice:        2,
-	opTestChar:         4,
-	opTestCharNoChoice: 4,
-	opTestSet:          4,
-	opTestAny:          4,
-	opEnd:              2,
-	opNop:              0,
-	opCaptureBegin:     4,
-	opCaptureLate:      4,
-	opCaptureEnd:       2,
-	opCaptureFull:      4,
-	opMemoOpen:         6,
-	opMemoClose:        2,
-}
+// instruction sizes
+const (
+	// base instruction set
+	szChar         = 2
+	szReturn       = 2
+	szFail         = 2
+	szSet          = 2
+	szAny          = 2
+	szSpan         = 2
+	szFailTwice    = 2
+	szEnd          = 2
+	szNop          = 0
+	szCaptureBegin = 4
+	szCaptureLate  = 4
+	szCaptureEnd   = 2
+	szCaptureFull  = 4
+	szMemoClose    = 2
+
+	// normal jumps
+	szJump             = 4
+	szChoice           = 4
+	szCall             = 4
+	szCommit           = 4
+	szPartialCommit    = 4
+	szBackCommit       = 4
+	szTestChar         = 4
+	szTestCharNoChoice = 4
+	szTestSet          = 4
+	szTestAny          = 4
+	szMemoOpen         = 6
+
+	// big jump variants
+	szBigJump             = 6
+	szBigChoice           = 6
+	szBigCall             = 6
+	szBigCommit           = 6
+	szBigPartialCommit    = 6
+	szBigBackCommit       = 6
+	szBigTestChar         = 6
+	szBigTestCharNoChoice = 6
+	szBigTestSet          = 6
+	szBigTestAny          = 6
+	szBigMemoOpen         = 8
+
+	// small jump variants
+	szSmallJump          = 2
+	szSmallChoice        = 2
+	szSmallCall          = 2
+	szSmallCommit        = 2
+	szSmallPartialCommit = 2
+	szSmallBackCommit    = 2
+)
