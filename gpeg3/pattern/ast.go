@@ -1,9 +1,12 @@
 package pattern
 
-import "github.com/zyedidia/gpeg/charset"
+import (
+	"github.com/zyedidia/gpeg/charset"
+	"github.com/zyedidia/gpeg/isa"
+)
 
 type Pattern interface {
-	Compile() Compiled
+	Compile() isa.Program
 }
 
 type AltNode struct {

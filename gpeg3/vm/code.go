@@ -8,7 +8,6 @@ import (
 
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
-	"github.com/zyedidia/gpeg/pattern"
 )
 
 // VMCode is the representation of VM bytecode.
@@ -51,9 +50,7 @@ func LoadCode(b []byte) VMCode {
 }
 
 // Encode transforms a Pattern into VM bytecode.
-func Encode(insns pattern.Compiled) VMCode {
-	insns.Optimize()
-
+func Encode(insns isa.Program) VMCode {
 	code := VMCode{
 		data: code{
 			Sets:  make([]charset.Set, 0),

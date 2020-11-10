@@ -38,7 +38,7 @@ func (p *GrammarNode) inline() bool {
 	return didInline
 }
 
-func nextInsn(p Compiled) (isa.Insn, bool) {
+func nextInsn(p isa.Program) (isa.Insn, bool) {
 	for i := 0; i < len(p); i++ {
 		switch p[i].(type) {
 		case isa.Label, isa.Nop:
@@ -51,7 +51,7 @@ func nextInsn(p Compiled) (isa.Insn, bool) {
 	return isa.Nop{}, false
 }
 
-func nextInsnLabel(p Compiled) (int, bool) {
+func nextInsnLabel(p isa.Program) (int, bool) {
 	hadLabel := false
 	for i := 0; i < len(p); i++ {
 		switch p[i].(type) {
@@ -68,7 +68,7 @@ func nextInsnLabel(p Compiled) (int, bool) {
 }
 
 // Optimize performs some optimization passes on the code in p.
-func (p Compiled) Optimize() {
+func Optimize(p isa.Program) {
 	// map from label to index in code
 	labels := make(map[isa.Label]int)
 	for i, insn := range p {

@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	// base instruction set
 	opChar byte = iota
 	opJump
 	opChoice
@@ -30,6 +31,28 @@ const (
 	opCaptureFull
 	opMemoOpen
 	opMemoClose
+
+	// big jump variants
+	opBigJump
+	opBigChoice
+	opBigCall
+	opBigCommit
+	opBigPartialCommit
+	opBigBackCommit
+	opBigTestChar
+	opBigTestCharNoChoice
+	opBigTestSet
+	opBigTestAny
+	opBigMemoOpen
+
+	// small jump variants
+	opSmallJump
+	opSmallChoice
+	opSmallCall
+	opSmallCommit
+	opSmallPartialCommit
+	opSmallBackCommit
+	opSmallTestSet
 )
 
 // returns the size in bytes of the encoded version of this instruction

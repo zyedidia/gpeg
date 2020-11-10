@@ -12,6 +12,9 @@ type Insn interface {
 	insn()
 }
 
+// A Program is a sequence of instructions
+type Program []Insn
+
 // A JumpType instruction is any instruction that refers to a Label.
 type JumpType interface {
 	jumpt()
@@ -313,4 +316,27 @@ func (i CaptureEnd) String() string {
 
 func (i CaptureFull) String() string {
 	return fmt.Sprintf("Capture full %v %v", i.Back, i.Id)
+}
+
+// String returns the string representation of the pattern.
+func (p Program) String() string {
+	s := ""
+	var last Insn
+	for _, insn := range p {
+		switch insn.(type) {
+		case Nop:
+			continue
+		case Label:
+			if _, ok := last.(Label); ok {
+				s += "\rL...:"
+			} else {
+				s += fmt.Sprintf("%v:", insn)
+			}
+		default:
+			s += fmt.Sprintf("\t%v\n", insn)
+		}
+		last = insn
+	}
+	s += "\n"
+	return s
 }
