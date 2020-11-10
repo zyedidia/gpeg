@@ -6,7 +6,7 @@ import (
 )
 
 type Pattern interface {
-	Compile() isa.Program
+	Compile() (isa.Program, error)
 }
 
 type AltNode struct {

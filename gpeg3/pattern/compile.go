@@ -2,14 +2,31 @@ package pattern
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/zyedidia/gpeg/isa"
 )
 
-func Compile(p Pattern) isa.Program {
-	c := p.Compile()
+type NotFoundError struct {
+	Name string
+}
+
+func (e *NotFoundError) Error() string { return "non-terminal " + e.Name + ": not found" }
+
+func Compile(p Pattern) (isa.Program, error) {
+	c, err := p.Compile()
+	if err != nil {
+		return nil, err
+	}
+
 	Optimize(c)
+	return c, nil
+}
+
+func MustCompile(p Pattern) isa.Program {
+	c, err := Compile(p)
+	if err != nil {
+		panic(err)
+	}
 	return c
 }
 
@@ -24,17 +41,25 @@ func (i openCall) String() string {
 	return fmt.Sprintf("OpenCall %v", i.name)
 }
 
-func (p *AltNode) Compile() isa.Program {
+func (p *AltNode) Compile() (isa.Program, error) {
 	// optimization: if p1 and p2 are charsets, return the union
 	cl, okl := p.Left.(*ClassNode)
 	cr, okr := p.Right.(*ClassNode)
 	if okl && okr {
 		return isa.Program{
 			isa.Set{Chars: cl.Chars.Add(cr.Chars)},
-		}
+		}, nil
 	}
 
-	l, r := p.Left.Compile(), p.Right.Compile()
+	l, err1 := p.Left.Compile()
+	r, err2 := p.Right.Compile()
+	if err1 != nil {
+		return nil, err1
+	}
+	if err2 != nil {
+		return nil, err2
+	}
+
 	code := make(isa.Program, 0, len(l)+len(r)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
@@ -44,24 +69,32 @@ func (p *AltNode) Compile() isa.Program {
 	code = append(code, L1)
 	code = append(code, r...)
 	code = append(code, L2)
-	return code
+	return code, nil
 }
 
-func (p *SeqNode) Compile() isa.Program {
-	l, r := p.Left.Compile(), p.Right.Compile()
-	return append(l, r...)
+func (p *SeqNode) Compile() (isa.Program, error) {
+	l, err1 := p.Left.Compile()
+	r, err2 := p.Right.Compile()
+	if err1 != nil {
+		return nil, err1
+	}
+	if err2 != nil {
+		return nil, err2
+	}
+
+	return append(l, r...), nil
 }
 
-func (p *StarNode) Compile() isa.Program {
+func (p *StarNode) Compile() (isa.Program, error) {
 	// optimization: repeating a charset uses the dedicated instruction 'span'
 	switch t := p.Patt.(type) {
 	case *ClassNode:
 		return isa.Program{
 			isa.Span{Chars: t.Chars},
-		}
+		}, nil
 	}
 
-	sub := p.Patt.Compile()
+	sub, err := p.Patt.Compile()
 	code := make(isa.Program, 0, len(sub)+4)
 
 	L1 := isa.NewLabel()
@@ -71,22 +104,29 @@ func (p *StarNode) Compile() isa.Program {
 	code = append(code, sub...)
 	code = append(code, isa.PartialCommit{Lbl: L1})
 	code = append(code, L2)
-	return code
+	return code, err
 }
 
-func (p *PlusNode) Compile() isa.Program {
+func (p *PlusNode) Compile() (isa.Program, error) {
 	starp := StarNode{
 		Patt: p.Patt,
 	}
-	star := starp.Compile()
-	sub := p.Patt.Compile()
+	star, err1 := starp.Compile()
+	sub, err2 := p.Patt.Compile()
+	if err1 != nil {
+		return nil, err1
+	}
+	if err2 != nil {
+		return nil, err2
+	}
+
 	code := make(isa.Program, 0, len(sub)+len(star))
 	code = append(code, sub...)
 	code = append(code, star...)
-	return code
+	return code, nil
 }
 
-func (p *OptionalNode) Compile() isa.Program {
+func (p *OptionalNode) Compile() (isa.Program, error) {
 	a := AltNode{
 		Left:  p.Patt,
 		Right: &EmptyNode{},
@@ -94,19 +134,19 @@ func (p *OptionalNode) Compile() isa.Program {
 	return a.Compile()
 }
 
-func (p *NotNode) Compile() isa.Program {
-	sub := p.Patt.Compile()
+func (p *NotNode) Compile() (isa.Program, error) {
+	sub, err := p.Patt.Compile()
 	L1 := isa.NewLabel()
 	code := make(isa.Program, 0, len(sub)+3)
 	code = append(code, isa.Choice{Lbl: L1})
 	code = append(code, sub...)
 	code = append(code, isa.FailTwice{})
 	code = append(code, L1)
-	return code
+	return code, err
 }
 
-func (p *AndNode) Compile() isa.Program {
-	sub := p.Patt.Compile()
+func (p *AndNode) Compile() (isa.Program, error) {
+	sub, err := p.Patt.Compile()
 	code := make(isa.Program, 0, len(sub)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
@@ -117,32 +157,31 @@ func (p *AndNode) Compile() isa.Program {
 	code = append(code, L1)
 	code = append(code, isa.Fail{})
 	code = append(code, L2)
-	return code
+	return code, err
 }
 
-func (p *CapNode) Compile() isa.Program {
-	sub := p.Patt.Compile()
+func (p *CapNode) Compile() (isa.Program, error) {
+	sub, err := p.Patt.Compile()
 	code := make(isa.Program, 0, len(sub)+2)
 	code = append(code, isa.CaptureBegin{Id: p.Id})
 	code = append(code, sub...)
 	code = append(code, isa.CaptureEnd{})
-	return code
+	return code, err
 }
 
-func (p *MemoNode) Compile() isa.Program {
+func (p *MemoNode) Compile() (isa.Program, error) {
 	L1 := isa.NewLabel()
-	sub := p.Patt.Compile()
+	sub, err := p.Patt.Compile()
 	code := make(isa.Program, 0, len(sub)+3)
 	code = append(code, isa.MemoOpen{Lbl: L1, Id: p.Id})
 	code = append(code, sub...)
 	code = append(code, isa.MemoClose{})
 	code = append(code, L1)
-	return code
+	return code, err
 }
 
-func (p *GrammarNode) Compile() isa.Program {
-	for p.inline() {
-	}
+func (p *GrammarNode) Compile() (isa.Program, error) {
+	p.Inline()
 
 	used := make(map[string]bool)
 	for _, v := range p.Defs {
@@ -171,8 +210,12 @@ func (p *GrammarNode) Compile() isa.Program {
 		}
 		label := isa.NewLabel()
 		labels[k] = label
+		fn, err := v.Compile()
+		if err != nil {
+			return nil, err
+		}
 		code = append(code, label)
-		code = append(code, v.Compile()...)
+		code = append(code, fn...)
 		code = append(code, isa.Return{})
 	}
 
@@ -182,7 +225,9 @@ func (p *GrammarNode) Compile() isa.Program {
 		if oc, ok := insn.(openCall); ok {
 			lbl, ok := labels[oc.name]
 			if !ok {
-				log.Fatal("Undefined non-terminal in grammar:", oc.name)
+				return nil, &NotFoundError{
+					Name: oc.name,
+				}
 			}
 
 			// replace this placeholder instruction with a normal call
@@ -209,39 +254,39 @@ func (p *GrammarNode) Compile() isa.Program {
 
 	code = append(code, LEnd)
 
-	return code
+	return code, nil
 }
 
-func (p *ClassNode) Compile() isa.Program {
+func (p *ClassNode) Compile() (isa.Program, error) {
 	return isa.Program{
 		isa.Set{Chars: p.Chars},
-	}
+	}, nil
 }
 
-func (p *LiteralNode) Compile() isa.Program {
+func (p *LiteralNode) Compile() (isa.Program, error) {
 	code := make(isa.Program, len(p.Str))
 	for i := 0; i < len(p.Str); i++ {
 		code[i] = isa.Char{Byte: p.Str[i]}
 	}
-	return code
+	return code, nil
 }
 
-func (p *NonTermNode) Compile() isa.Program {
+func (p *NonTermNode) Compile() (isa.Program, error) {
 	if p.inlined != nil {
 		return p.inlined.Compile()
 	}
 	return isa.Program{
 		openCall{name: p.Name},
-	}
+	}, nil
 }
 
-func (p *DotNode) Compile() isa.Program {
+func (p *DotNode) Compile() (isa.Program, error) {
 	return isa.Program{
 		isa.Any{N: 1},
-	}
+	}, nil
 }
 
-func (p *EmptyNode) Compile() isa.Program {
+func (p *EmptyNode) Compile() (isa.Program, error) {
 	code := make(isa.Program, 0)
-	return code
+	return code, nil
 }

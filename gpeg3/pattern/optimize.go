@@ -4,6 +4,11 @@ import "github.com/zyedidia/gpeg/isa"
 
 const InlineThreshold = 100
 
+func (p *GrammarNode) Inline() {
+	for p.inline() {
+	}
+}
+
 func (p *GrammarNode) inline() bool {
 	sizes := make(map[string]int)
 	leaves := make(map[string]bool)

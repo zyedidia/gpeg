@@ -106,7 +106,7 @@ var pegCode vm.VMCode
 func init() {
 	ids = make(map[string]int16)
 	p := pattern.CapGrammar("Grammar", grammar, ids)
-	pegCode = vm.Encode(Compile(p))
+	pegCode = vm.Encode(MustCompile(p))
 }
 
 var special = map[byte]byte{
