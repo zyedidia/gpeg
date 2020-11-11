@@ -1,6 +1,9 @@
 package pattern
 
-import "github.com/zyedidia/gpeg/isa"
+import (
+	"github.com/zyedidia/gpeg/charset"
+	"github.com/zyedidia/gpeg/isa"
+)
 
 const InlineThreshold = 100
 
@@ -41,6 +44,36 @@ func (p *GrammarNode) inline() bool {
 		}
 	})
 	return didInline
+}
+
+func combine(p1 Pattern, p2 Pattern) (charset.Set, bool) {
+	var set charset.Set
+	switch t1 := p1.(type) {
+	case *LiteralNode:
+		if len(t1.Str) != 1 {
+			return set, false
+		}
+		switch t2 := p2.(type) {
+		case *ClassNode:
+			return t2.Chars.Add(charset.New([]byte{t1.Str[0]})), true
+		case *LiteralNode:
+			if len(t2.Str) != 1 {
+				return set, false
+			}
+			return charset.New([]byte{t1.Str[0], t2.Str[0]}), true
+		}
+	case *ClassNode:
+		switch t2 := p2.(type) {
+		case *ClassNode:
+			return t2.Chars.Add(t1.Chars), true
+		case *LiteralNode:
+			if len(t2.Str) != 1 {
+				return set, false
+			}
+			return t1.Chars.Add(charset.New([]byte{t2.Str[0]})), true
+		}
+	}
+	return set, false
 }
 
 func nextInsn(p isa.Program) (isa.Insn, bool) {

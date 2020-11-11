@@ -42,13 +42,31 @@ func (i openCall) String() string {
 }
 
 func (p *AltNode) Compile() (isa.Program, error) {
-	// optimization: if p1 and p2 are charsets, return the union
-	cl, okl := p.Left.(*ClassNode)
-	cr, okr := p.Right.(*ClassNode)
-	if okl && okr {
+	// optimization: if Left and Right are charsets/single chars, return the union
+	set, ok := combine(p.Left, p.Right)
+	if ok {
 		return isa.Program{
-			isa.Set{Chars: cl.Chars.Add(cr.Chars)},
+			isa.Set{Chars: set},
 		}, nil
+	}
+
+	var disjoint bool
+	var testchar byte
+	switch lt := p.Left.(type) {
+	case *ClassNode:
+		switch rt := p.Right.(type) {
+		case *LiteralNode:
+			disjoint = !lt.Chars.Has(rt.Str[0])
+			testchar = rt.Str[0]
+		}
+	case *LiteralNode:
+		switch rt := p.Right.(type) {
+		case *LiteralNode:
+			disjoint = lt.Str[0] != rt.Str[0]
+		case *ClassNode:
+			disjoint = !rt.Chars.Has(lt.Str[0])
+		}
+		testchar = lt.Str[0]
 	}
 
 	l, err1 := p.Left.Compile()
@@ -60,16 +78,29 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		return nil, err2
 	}
 
-	code := make(isa.Program, 0, len(l)+len(r)+5)
-	L1 := isa.NewLabel()
-	L2 := isa.NewLabel()
-	code = append(code, isa.Choice{Lbl: L1})
-	code = append(code, l...)
-	code = append(code, isa.Commit{Lbl: L2})
-	code = append(code, L1)
-	code = append(code, r...)
-	code = append(code, L2)
-	return code, nil
+	if disjoint {
+		code := make(isa.Program, 0, len(l)+len(r)+3)
+		L1 := isa.NewLabel()
+		L2 := isa.NewLabel()
+		code = append(code, isa.TestCharNoChoice{Byte: testchar, Lbl: L1})
+		code = append(code, l[1:]...)
+		code = append(code, isa.Jump{Lbl: L2})
+		code = append(code, L1)
+		code = append(code, r...)
+		code = append(code, L2)
+		return code, nil
+	} else {
+		code := make(isa.Program, 0, len(l)+len(r)+5)
+		L1 := isa.NewLabel()
+		L2 := isa.NewLabel()
+		code = append(code, isa.Choice{Lbl: L1})
+		code = append(code, l...)
+		code = append(code, isa.Commit{Lbl: L2})
+		code = append(code, L1)
+		code = append(code, r...)
+		code = append(code, L2)
+		return code, nil
+	}
 }
 
 func (p *SeqNode) Compile() (isa.Program, error) {
