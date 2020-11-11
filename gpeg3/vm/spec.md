@@ -44,6 +44,21 @@ looked up whenever there is an instruction involving a character set (`Set`,
 The largest instruction is 48 bits and the smallest instruction is 16 bits. All
 instructions have a size that is a multiple of 16 bits.
 
+<!-- ## Serialized Format -->
+<!--  -->
+<!-- When bytecode is serialized, the format used is the following: -->
+<!--  -->
+<!-- ``` -->
+<!-- | 1-byte integer | character sets | 4-byte integer | instruction bytes | -->
+<!-- ``` -->
+<!--  -->
+<!-- * `1-byte integer`: represents the number of sets. -->
+<!-- * `character sets`: the character sets used by the program. Each set is a -->
+<!--   256-bit integer. -->
+<!-- * `4-byte integer`: represents the number of instruction bytes. -->
+<!-- * `instruction bytes`: the encoded bytes for each instruction, as described -->
+<!--   the previous section. -->
+
 ## Operation
 
 The virtual machine operation consists of four pieces: the instruction data, an

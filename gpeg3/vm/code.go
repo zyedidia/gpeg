@@ -3,7 +3,7 @@ package vm
 import (
 	"bytes"
 	"encoding/gob"
-	"log"
+	"encoding/json"
 	"unsafe"
 
 	"github.com/zyedidia/gpeg/charset"
@@ -27,26 +27,32 @@ func (c *VMCode) Size() int {
 	return int(unsafe.Sizeof(charset.Set{}))*len(c.data.Sets) + len(c.data.Insns)
 }
 
-func (c *VMCode) Bytes() []byte {
+func (c *VMCode) ToBytes() ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(c.data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return buf.Bytes()
+	return buf.Bytes(), err
 }
 
-func LoadCode(b []byte) VMCode {
+func FromBytes(b []byte) (VMCode, error) {
 	var c code
 	dec := gob.NewDecoder(bytes.NewBuffer(b))
 	err := dec.Decode(&c)
-	if err != nil {
-		log.Fatal(err)
-	}
 	return VMCode{
 		data: c,
-	}
+	}, err
+}
+
+func (c *VMCode) ToJson() ([]byte, error) {
+	return json.Marshal(c.data)
+}
+
+func FromJson(b []byte) (VMCode, error) {
+	var c code
+	err := json.Unmarshal(b, &c)
+	return VMCode{
+		data: c,
+	}, err
 }
 
 // Encode transforms a Pattern into VM bytecode.
