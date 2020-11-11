@@ -49,7 +49,9 @@ func Set(chars charset.Set) Pattern {
 // Any consumes n characters, and only fails if there
 // aren't enough input characters left.
 func Any(n uint8) Pattern {
-	return &DotNode{}
+	return &DotNode{
+		N: n,
+	}
 }
 
 // Repeat matches p exactly n times

@@ -77,6 +77,7 @@ type NonTermNode struct {
 }
 
 type DotNode struct {
+	N uint8
 }
 
 type EmptyNode struct {

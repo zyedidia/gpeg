@@ -12,24 +12,25 @@ instructions.
 The encoding of each instruction is given below:
 
 * `Char Byte`: `| 8-bit opcode | 8-bit Byte |`
-* `Jump Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Choice Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Call Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Commit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
+* `Jump Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Choice Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Call Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Commit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
 * `Return`: `| 8-bit opcode | 8-bit padding |`
 * `Fail`: `| 8-bit opcode | 8-bit padding |`
 * `Set Chars`: `| 8-bit opcode | 8-bit index of Chars |`
 * `Any Byte`: `| 8-bit opcode | 8-bit Byte |`
-* `PartialCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
+* `PartialCommit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
 * `Span Chars`: `| 8-bit opcode | 8-bit index of Chars |`
-* `BackCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
+* `BackCommit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
 * `FailTwice`: `| 8-bit opcode | 8-bit padding |`
-* `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit Byte | 16-bit Lbl |`
-* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit index of Chars | 16-bit Lbl |`
-* `TestAny N Lbl`: `| 8-bit opcode | 8-bit N | 16-bit Lbl |`
+* `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
+* `TestCharNoChoice Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
+* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit index of Chars | 24-bit Lbl |`
+* `TestAny N Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit N | 24-bit Lbl |`
 * `End`: `| 8-bit opcode | 8-bit padding |`
 * `Nop`: can be removed and not encoded at all.
-* `MemoOpen Lbl Id`: `| 8-bit opcode | 8-bit Padding | 16-bit Lbl | 16-bit Id |`
+* `MemoOpen Lbl Id`: `| 8-bit opcode | 24-bit Lbl | 16-bit Id |`
 * `MemoClose`: `| 8-bit opcode | 8-bit padding |`
 * `CaptureBegin`: `| 8-bit opcode | 8-bit padding | 16-bit capture Id |`
 * `CaptureLate`: `| 8-bit opcode | 8-bit N |`

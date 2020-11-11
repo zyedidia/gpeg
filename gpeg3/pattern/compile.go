@@ -282,7 +282,7 @@ func (p *NonTermNode) Compile() (isa.Program, error) {
 
 func (p *DotNode) Compile() (isa.Program, error) {
 	return isa.Program{
-		isa.Any{N: 1},
+		isa.Any{N: p.N},
 	}, nil
 }
 
