@@ -131,7 +131,7 @@ func Encode(insns isa.Program) VMCode {
 			op = opTestSet
 			args = append(encodeU8(addSet(&code, t.Chars)), encodeLabel(labels[t.Lbl])...)
 		case isa.TestSetNoChoice:
-			op = opTestSet
+			op = opTestSetNoChoice
 			args = append(encodeU8(addSet(&code, t.Chars)), encodeLabel(labels[t.Lbl])...)
 		case isa.TestAny:
 			op = opTestAny

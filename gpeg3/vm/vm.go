@@ -78,7 +78,7 @@ loop:
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stRet {
 				vm.ip = int(ent.ret)
-			} else if ent == nil {
+			} else {
 				panic("Return failed")
 			}
 		case opFail:
@@ -107,7 +107,7 @@ loop:
 				ent.btrack.off = vm.input.Offset()
 				ent.btrack.capt = vm.capt
 				vm.ip = int(lbl)
-			} else if ent == nil {
+			} else {
 				panic("PartialCommit failed")
 			}
 		case opSpan:
@@ -125,7 +125,7 @@ loop:
 				vm.input.SeekTo(ent.btrack.off)
 				vm.capt = ent.btrack.capt
 				vm.ip = int(lbl)
-			} else if ent == nil {
+			} else {
 				panic("BackCommit failed")
 			}
 		case opFailTwice:
