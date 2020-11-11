@@ -19,6 +19,13 @@ func (o *UnaryOp) Patt() Pattern {
 		if t.inlined != nil {
 			return t.inlined
 		}
+	case *AltNode:
+		set, ok := combine(t.Left(), t.Right())
+		if ok {
+			return &ClassNode{
+				Chars: set,
+			}
+		}
 	}
 	return o.patt
 }
