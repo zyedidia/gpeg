@@ -9,44 +9,80 @@ type Pattern interface {
 	Compile() (isa.Program, error)
 }
 
+type UnaryOp struct {
+	patt Pattern
+}
+
+func (o *UnaryOp) Patt() Pattern {
+	switch t := o.patt.(type) {
+	case *NonTermNode:
+		if t.inlined != nil {
+			return t.inlined
+		}
+	}
+	return o.patt
+}
+
+type BinaryOp struct {
+	left  Pattern
+	right Pattern
+}
+
+func (o *BinaryOp) Left() Pattern {
+	switch t := o.left.(type) {
+	case *NonTermNode:
+		if t.inlined != nil {
+			return t.inlined
+		}
+	}
+	return o.left
+}
+func (o *BinaryOp) Right() Pattern {
+	switch t := o.right.(type) {
+	case *NonTermNode:
+		if t.inlined != nil {
+			return t.inlined
+		}
+	}
+	return o.right
+}
+
 type AltNode struct {
-	Left  Pattern
-	Right Pattern
+	BinaryOp
 }
 
 type SeqNode struct {
-	Left  Pattern
-	Right Pattern
+	BinaryOp
 }
 
 type StarNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type PlusNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type OptionalNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type NotNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type AndNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type CapNode struct {
-	Patt Pattern
-	Id   int16
+	UnaryOp
+	Id int16
 }
 
 type MemoNode struct {
-	Patt Pattern
-	Id   int16
+	UnaryOp
+	Id int16
 }
 
 type GrammarNode struct {
@@ -55,12 +91,12 @@ type GrammarNode struct {
 }
 
 type SearchNode struct {
-	Patt Pattern
+	UnaryOp
 }
 
 type RepeatNode struct {
-	Patt Pattern
-	N    int
+	UnaryOp
+	N int
 }
 
 type ClassNode struct {
@@ -97,25 +133,25 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 	fn(p)
 	switch t := p.(type) {
 	case *AltNode:
-		WalkPattern(t.Left, followInline, fn)
-		WalkPattern(t.Right, followInline, fn)
+		WalkPattern(t.left, followInline, fn)
+		WalkPattern(t.right, followInline, fn)
 	case *SeqNode:
-		WalkPattern(t.Left, followInline, fn)
-		WalkPattern(t.Right, followInline, fn)
+		WalkPattern(t.left, followInline, fn)
+		WalkPattern(t.right, followInline, fn)
 	case *StarNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *PlusNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *OptionalNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *NotNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *AndNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *CapNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *MemoNode:
-		WalkPattern(t.Patt, followInline, fn)
+		WalkPattern(t.patt, followInline, fn)
 	case *GrammarNode:
 		for _, p := range t.Defs {
 			WalkPattern(p, followInline, fn)

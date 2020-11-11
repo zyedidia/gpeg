@@ -43,7 +43,7 @@ func (i openCall) String() string {
 
 func (p *AltNode) Compile() (isa.Program, error) {
 	// optimization: if Left and Right are charsets/single chars, return the union
-	set, ok := combine(p.Left, p.Right)
+	set, ok := combine(p.Left(), p.Right())
 	if ok {
 		return isa.Program{
 			isa.Set{Chars: set},
@@ -52,15 +52,15 @@ func (p *AltNode) Compile() (isa.Program, error) {
 
 	var disjoint bool
 	var testchar byte
-	switch lt := p.Left.(type) {
+	switch lt := p.Left().(type) {
 	case *ClassNode:
-		switch rt := p.Right.(type) {
+		switch rt := p.Right().(type) {
 		case *LiteralNode:
 			disjoint = !lt.Chars.Has(rt.Str[0])
 			testchar = rt.Str[0]
 		}
 	case *LiteralNode:
-		switch rt := p.Right.(type) {
+		switch rt := p.Right().(type) {
 		case *LiteralNode:
 			disjoint = lt.Str[0] != rt.Str[0]
 		case *ClassNode:
@@ -69,8 +69,8 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		testchar = lt.Str[0]
 	}
 
-	l, err1 := p.Left.Compile()
-	r, err2 := p.Right.Compile()
+	l, err1 := p.Left().Compile()
+	r, err2 := p.Right().Compile()
 	if err1 != nil {
 		return nil, err1
 	}
@@ -104,8 +104,8 @@ func (p *AltNode) Compile() (isa.Program, error) {
 }
 
 func (p *SeqNode) Compile() (isa.Program, error) {
-	l, err1 := p.Left.Compile()
-	r, err2 := p.Right.Compile()
+	l, err1 := p.Left().Compile()
+	r, err2 := p.Right().Compile()
 	if err1 != nil {
 		return nil, err1
 	}
@@ -118,14 +118,14 @@ func (p *SeqNode) Compile() (isa.Program, error) {
 
 func (p *StarNode) Compile() (isa.Program, error) {
 	// optimization: repeating a charset uses the dedicated instruction 'span'
-	switch t := p.Patt.(type) {
+	switch t := p.Patt().(type) {
 	case *ClassNode:
 		return isa.Program{
 			isa.Span{Chars: t.Chars},
 		}, nil
 	}
 
-	sub, err := p.Patt.Compile()
+	sub, err := p.Patt().Compile()
 	code := make(isa.Program, 0, len(sub)+4)
 
 	L1 := isa.NewLabel()
@@ -139,9 +139,9 @@ func (p *StarNode) Compile() (isa.Program, error) {
 }
 
 func (p *PlusNode) Compile() (isa.Program, error) {
-	starp := Star(p.Patt)
+	starp := Star(p.Patt())
 	star, err1 := starp.Compile()
-	sub, err2 := p.Patt.Compile()
+	sub, err2 := p.Patt().Compile()
 	if err1 != nil {
 		return nil, err1
 	}
@@ -157,14 +157,16 @@ func (p *PlusNode) Compile() (isa.Program, error) {
 
 func (p *OptionalNode) Compile() (isa.Program, error) {
 	a := AltNode{
-		Left:  p.Patt,
-		Right: &EmptyNode{},
+		BinaryOp: BinaryOp{
+			left:  p.Patt(),
+			right: &EmptyNode{},
+		},
 	}
 	return a.Compile()
 }
 
 func (p *NotNode) Compile() (isa.Program, error) {
-	sub, err := p.Patt.Compile()
+	sub, err := p.Patt().Compile()
 	L1 := isa.NewLabel()
 	code := make(isa.Program, 0, len(sub)+3)
 	code = append(code, isa.Choice{Lbl: L1})
@@ -175,7 +177,7 @@ func (p *NotNode) Compile() (isa.Program, error) {
 }
 
 func (p *AndNode) Compile() (isa.Program, error) {
-	sub, err := p.Patt.Compile()
+	sub, err := p.Patt().Compile()
 	code := make(isa.Program, 0, len(sub)+5)
 	L1 := isa.NewLabel()
 	L2 := isa.NewLabel()
@@ -190,7 +192,7 @@ func (p *AndNode) Compile() (isa.Program, error) {
 }
 
 func (p *CapNode) Compile() (isa.Program, error) {
-	sub, err := p.Patt.Compile()
+	sub, err := p.Patt().Compile()
 	code := make(isa.Program, 0, len(sub)+2)
 	code = append(code, isa.CaptureBegin{Id: p.Id})
 	code = append(code, sub...)
@@ -200,7 +202,7 @@ func (p *CapNode) Compile() (isa.Program, error) {
 
 func (p *MemoNode) Compile() (isa.Program, error) {
 	L1 := isa.NewLabel()
-	sub, err := p.Patt.Compile()
+	sub, err := p.Patt().Compile()
 	code := make(isa.Program, 0, len(sub)+3)
 	code = append(code, isa.MemoOpen{Lbl: L1, Id: p.Id})
 	code = append(code, sub...)

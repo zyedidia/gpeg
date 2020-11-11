@@ -7,16 +7,20 @@ import (
 // Cap marks a pattern to be captured.
 func Cap(p Pattern) Pattern {
 	return &CapNode{
-		Patt: p,
-		Id:   0,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
+		Id: 0,
 	}
 }
 
 // CapId marks a pattern with an ID to be captured.
 func CapId(p Pattern, id int16) Pattern {
 	return &CapNode{
-		Patt: p,
-		Id:   id,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
+		Id: id,
 	}
 }
 
@@ -25,8 +29,10 @@ var memoId int16 = 0
 // Memo marks a pattern as memoizable.
 func Memo(p Pattern) Pattern {
 	m := &MemoNode{
-		Patt: p,
-		Id:   memoId,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
+		Id: memoId,
 	}
 	memoId++
 	return m
@@ -63,8 +69,10 @@ func Repeat(p Pattern, n int) Pattern {
 	acc := p
 	for i := 1; i < n; i++ {
 		acc = &SeqNode{
-			Left:  acc,
-			Right: p,
+			BinaryOp: BinaryOp{
+				left:  acc,
+				right: p,
+			},
 		}
 	}
 	return acc
@@ -79,8 +87,10 @@ func Concat(patts ...Pattern) Pattern {
 	acc := patts[0]
 	for _, p := range patts[1:] {
 		acc = &SeqNode{
-			Left:  acc,
-			Right: p,
+			BinaryOp: BinaryOp{
+				left:  acc,
+				right: p,
+			},
 		}
 	}
 
@@ -97,8 +107,10 @@ func Or(patts ...Pattern) Pattern {
 	acc := patts[len(patts)-1]
 	for i := len(patts) - 2; i >= 0; i-- {
 		acc = &AltNode{
-			Left:  patts[i],
-			Right: acc,
+			BinaryOp: BinaryOp{
+				left:  patts[i],
+				right: acc,
+			},
 		}
 	}
 
@@ -109,7 +121,9 @@ func Or(patts ...Pattern) Pattern {
 // This matches zero or more occurrences of p.
 func Star(p Pattern) Pattern {
 	return &StarNode{
-		Patt: p,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
 	}
 }
 
@@ -117,14 +131,18 @@ func Star(p Pattern) Pattern {
 // This matches one or more occurrences of p.
 func Plus(p Pattern) Pattern {
 	return &PlusNode{
-		Patt: p,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
 	}
 }
 
 // Optional matches at most 1 occurrence of p: `p?`.
 func Optional(p Pattern) Pattern {
 	return &OptionalNode{
-		Patt: p,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
 	}
 }
 
@@ -133,7 +151,9 @@ func Optional(p Pattern) Pattern {
 // fails, and does not consume any input.
 func Not(p Pattern) Pattern {
 	return &NotNode{
-		Patt: p,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
 	}
 }
 
@@ -143,7 +163,9 @@ func Not(p Pattern) Pattern {
 // This is equivalent to `!!p`.
 func And(p Pattern) Pattern {
 	return &AndNode{
-		Patt: p,
+		UnaryOp: UnaryOp{
+			patt: p,
+		},
 	}
 }
 
