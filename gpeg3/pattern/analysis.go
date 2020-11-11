@@ -45,7 +45,7 @@ func Graph(g *GrammarNode) string {
 
 	for d, p := range g.Defs {
 		prog, _ := p.Compile()
-		sz := len(prog)
+		sz := prog.Size()
 		graph.AddNode("Grammar", d, map[string]string{
 			"label": fmt.Sprintf("\"%v/%d\"", d, sz),
 		})

@@ -50,15 +50,17 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		}, nil
 	}
 
+	L1 := isa.NewLabel()
+
 	var disjoint bool
-	var testchar byte
+	var testinsn isa.Insn
 	switch lt := p.Left().(type) {
 	case *ClassNode:
 		switch rt := p.Right().(type) {
 		case *LiteralNode:
 			disjoint = !lt.Chars.Has(rt.Str[0])
-			testchar = rt.Str[0]
 		}
+		testinsn = isa.TestSetNoChoice{Chars: lt.Chars, Lbl: L1}
 	case *LiteralNode:
 		switch rt := p.Right().(type) {
 		case *LiteralNode:
@@ -66,7 +68,7 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		case *ClassNode:
 			disjoint = !rt.Chars.Has(lt.Str[0])
 		}
-		testchar = lt.Str[0]
+		testinsn = isa.TestCharNoChoice{Byte: lt.Str[0], Lbl: L1}
 	}
 
 	l, err1 := p.Left().Compile()
@@ -80,9 +82,8 @@ func (p *AltNode) Compile() (isa.Program, error) {
 
 	if disjoint {
 		code := make(isa.Program, 0, len(l)+len(r)+3)
-		L1 := isa.NewLabel()
 		L2 := isa.NewLabel()
-		code = append(code, isa.TestCharNoChoice{Byte: testchar, Lbl: L1})
+		code = append(code, testinsn)
 		code = append(code, l[1:]...)
 		code = append(code, isa.Jump{Lbl: L2})
 		code = append(code, L1)
@@ -91,7 +92,6 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		return code, nil
 	} else {
 		code := make(isa.Program, 0, len(l)+len(r)+5)
-		L1 := isa.NewLabel()
 		L2 := isa.NewLabel()
 		code = append(code, isa.Choice{Lbl: L1})
 		code = append(code, l...)
@@ -156,6 +156,24 @@ func (p *PlusNode) Compile() (isa.Program, error) {
 }
 
 func (p *OptionalNode) Compile() (isa.Program, error) {
+	switch t := p.Patt().(type) {
+	case *LiteralNode:
+		if len(t.Str) == 1 {
+			L1 := isa.NewLabel()
+			return isa.Program{
+				isa.TestCharNoChoice{Byte: t.Str[0], Lbl: L1},
+				L1,
+			}, nil
+		}
+	case *ClassNode:
+		L1 := isa.NewLabel()
+		prog := isa.Program{
+			isa.TestSetNoChoice{Chars: t.Chars, Lbl: L1},
+			L1,
+		}
+		return prog, nil
+	}
+
 	a := AltNode{
 		BinaryOp: BinaryOp{
 			left:  p.Patt(),

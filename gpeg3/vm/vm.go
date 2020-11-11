@@ -78,7 +78,7 @@ loop:
 			ent := vm.st.pop()
 			if ent != nil && ent.stype == stRet {
 				vm.ip = int(ent.ret)
-			} else {
+			} else if ent == nil {
 				panic("Return failed")
 			}
 		case opFail:
@@ -107,7 +107,7 @@ loop:
 				ent.btrack.off = vm.input.Offset()
 				ent.btrack.capt = vm.capt
 				vm.ip = int(lbl)
-			} else {
+			} else if ent == nil {
 				panic("PartialCommit failed")
 			}
 		case opSpan:
@@ -125,7 +125,7 @@ loop:
 				vm.input.SeekTo(ent.btrack.off)
 				vm.capt = ent.btrack.capt
 				vm.ip = int(lbl)
-			} else {
+			} else if ent == nil {
 				panic("BackCommit failed")
 			}
 		case opFailTwice:
@@ -161,6 +161,16 @@ loop:
 				vm.input.Advance(1)
 				vm.ip += szTestSet
 			} else {
+				vm.ip = int(lbl)
+			}
+		case opTestSetNoChoice:
+			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
+			in, ok := vm.input.Peek()
+			if ok && set.Has(in) {
+				vm.input.Advance(1)
+				vm.ip += szTestSetNoChoice
+			} else {
+				lbl := decodeU24(idata[vm.ip+3:])
 				vm.ip = int(lbl)
 			}
 		case opTestAny:

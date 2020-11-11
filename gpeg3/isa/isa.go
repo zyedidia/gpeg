@@ -15,6 +15,21 @@ type Insn interface {
 // A Program is a sequence of instructions
 type Program []Insn
 
+// Size returns the number of instructions in a program ignoring labels and
+// nops.
+func (p Program) Size() int {
+	var sz int
+	for _, i := range p {
+		switch i.(type) {
+		case Label, Nop:
+			continue
+		default:
+			sz++
+		}
+	}
+	return sz
+}
+
 // A JumpType instruction is any instruction that refers to a Label.
 type JumpType interface {
 	jumpt()
@@ -143,6 +158,14 @@ type TestCharNoChoice struct {
 // to Lbl and the subject position from before consumption is pushed to the
 // stack.
 type TestSet struct {
+	Chars charset.Set
+	Lbl   Label
+	jump
+}
+
+// TestSetNoChoice is the same as TestSet but no backtrack entry is pushed to
+// the stack.
+type TestSetNoChoice struct {
 	Chars charset.Set
 	Lbl   Label
 	jump
@@ -280,6 +303,10 @@ func (i TestCharNoChoice) String() string {
 
 func (i TestSet) String() string {
 	return fmt.Sprintf("TestSet %v %v", i.Chars, i.Lbl)
+}
+
+func (i TestSetNoChoice) String() string {
+	return fmt.Sprintf("TestSetNoChoice %v %v", i.Chars, i.Lbl)
 }
 
 func (i TestAny) String() string {

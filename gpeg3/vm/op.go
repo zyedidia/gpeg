@@ -22,6 +22,7 @@ const (
 	opTestChar
 	opTestCharNoChoice
 	opTestSet
+	opTestSetNoChoice
 	opTestAny
 	opEnd
 	opNop
@@ -61,6 +62,7 @@ const (
 	szTestChar         = 6
 	szTestCharNoChoice = 6
 	szTestSet          = 6
+	szTestSetNoChoice  = 6
 	szTestAny          = 6
 	szMemoOpen         = 6
 )
@@ -80,7 +82,7 @@ func size(insn isa.Insn) uint {
 	// handle instructions with extra args
 	switch insn.(type) {
 	case isa.MemoOpen, isa.CaptureBegin, isa.CaptureLate, isa.CaptureFull,
-		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestAny:
+		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestSetNoChoice, isa.TestAny:
 		sz += 2
 	}
 

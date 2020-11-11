@@ -27,6 +27,7 @@ The encoding of each instruction is given below:
 * `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
 * `TestCharNoChoice Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
 * `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit index of Chars | 24-bit Lbl |`
+* `TestSetNoChoice Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit index of Chars | 24-bit Lbl |`
 * `TestAny N Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit N | 24-bit Lbl |`
 * `End`: `| 8-bit opcode | 8-bit padding |`
 * `Nop`: can be removed and not encoded at all.
