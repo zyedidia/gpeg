@@ -18,7 +18,7 @@ func (p *GrammarNode) inline() bool {
 	for n, sub := range p.Defs {
 		size := 0
 		leaf := true
-		WalkPattern(sub, func(s Pattern) {
+		WalkPattern(sub, true, func(s Pattern) {
 			switch t := s.(type) {
 			case *NonTermNode:
 				if t.inlined == nil {
@@ -32,7 +32,7 @@ func (p *GrammarNode) inline() bool {
 	}
 
 	didInline := false
-	WalkPattern(p, func(sub Pattern) {
+	WalkPattern(p, true, func(sub Pattern) {
 		switch t := sub.(type) {
 		case *NonTermNode:
 			if sz, ok := sizes[t.Name]; ok && t.inlined == nil {

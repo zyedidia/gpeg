@@ -87,42 +87,42 @@ type WalkFunc func(sub Pattern)
 
 func CountSubPatterns(p Pattern) int {
 	count := 0
-	WalkPattern(p, func(sub Pattern) {
+	WalkPattern(p, true, func(sub Pattern) {
 		count++
 	})
 	return count
 }
 
-func WalkPattern(p Pattern, fn WalkFunc) {
+func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 	fn(p)
 	switch t := p.(type) {
 	case *AltNode:
-		WalkPattern(t.Left, fn)
-		WalkPattern(t.Right, fn)
+		WalkPattern(t.Left, followInline, fn)
+		WalkPattern(t.Right, followInline, fn)
 	case *SeqNode:
-		WalkPattern(t.Left, fn)
-		WalkPattern(t.Right, fn)
+		WalkPattern(t.Left, followInline, fn)
+		WalkPattern(t.Right, followInline, fn)
 	case *StarNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *PlusNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *OptionalNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *NotNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *AndNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *CapNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *MemoNode:
-		WalkPattern(t.Patt, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *GrammarNode:
 		for _, p := range t.Defs {
-			WalkPattern(p, fn)
+			WalkPattern(p, followInline, fn)
 		}
 	case *NonTermNode:
-		if t.inlined != nil {
-			WalkPattern(t.inlined, fn)
+		if t.inlined != nil && followInline {
+			WalkPattern(t.inlined, followInline, fn)
 		}
 	}
 }

@@ -139,9 +139,7 @@ func (p *StarNode) Compile() (isa.Program, error) {
 }
 
 func (p *PlusNode) Compile() (isa.Program, error) {
-	starp := StarNode{
-		Patt: p.Patt,
-	}
+	starp := Star(p.Patt)
 	star, err1 := starp.Compile()
 	sub, err2 := p.Patt.Compile()
 	if err1 != nil {
@@ -216,7 +214,7 @@ func (p *GrammarNode) Compile() (isa.Program, error) {
 
 	used := make(map[string]bool)
 	for _, v := range p.Defs {
-		WalkPattern(v, func(sub Pattern) {
+		WalkPattern(v, true, func(sub Pattern) {
 			switch t := sub.(type) {
 			case *NonTermNode:
 				if t.inlined == nil {
