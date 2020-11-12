@@ -10,110 +10,51 @@ type Pattern interface {
 	Compile() (isa.Program, error)
 }
 
-// A UnaryOp represents an operator that applies to one subpattern.
-type UnaryOp struct {
-	patt Pattern
-}
-
-// Patt returns the pattern that this UnaryOp modifies.
-func (o *UnaryOp) Patt() Pattern {
-	switch t := o.patt.(type) {
-	case *NonTermNode:
-		if t.inlined != nil {
-			return t.inlined
-		}
-	case *AltNode:
-		set, ok := combine(t.Left(), t.Right())
-		if ok {
-			return &ClassNode{Chars: set}
-		}
-	}
-	return o.patt
-}
-
-// A BinaryOp represents an operator that acts on two subpatterns.
-type BinaryOp struct {
-	left  Pattern
-	right Pattern
-}
-
-// Left returns this BinaryOp's left subpattern.
-func (o *BinaryOp) Left() Pattern {
-	switch t := o.left.(type) {
-	case *NonTermNode:
-		if t.inlined != nil {
-			return t.inlined
-		}
-	case *AltNode:
-		set, ok := combine(t.Left(), t.Right())
-		if ok {
-			return &ClassNode{Chars: set}
-		}
-	}
-	return o.left
-}
-
-// Right returns this BinaryOp's right subpattern.
-func (o *BinaryOp) Right() Pattern {
-	switch t := o.right.(type) {
-	case *NonTermNode:
-		if t.inlined != nil {
-			return t.inlined
-		}
-	case *AltNode:
-		set, ok := combine(t.Left(), t.Right())
-		if ok {
-			return &ClassNode{Chars: set}
-		}
-	}
-	return o.right
-}
-
 // AltNode is the binary operator for alternation.
 type AltNode struct {
-	BinaryOp
+	Left, Right Pattern
 }
 
 // SeqNode is the binary operator for sequences.
 type SeqNode struct {
-	BinaryOp
+	Left, Right Pattern
 }
 
 // StarNode is the operator for the Kleene star.
 type StarNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // PlusNode is the operator for the Kleene plus.
 type PlusNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // OptionalNode is the operator for making a pattern optional.
 type OptionalNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // NotNode is the not predicate.
 type NotNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // AndNode is the and predicate.
 type AndNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // CapNode marks a pattern to be captured with a certain ID.
 type CapNode struct {
-	UnaryOp
-	Id int16
+	Patt Pattern
+	Id   int16
 }
 
 // MemoNode marks a pattern to be memoized with a certain ID.
 type MemoNode struct {
-	UnaryOp
-	Id int16
+	Patt Pattern
+	Id   int16
 }
 
 // GrammarNode represents a grammar of non-terminals and their associated
@@ -125,14 +66,14 @@ type GrammarNode struct {
 
 // SearchNode represents a search for a certain pattern.
 type SearchNode struct {
-	UnaryOp
+	Patt Pattern
 }
 
 // RepeatNode represents the repetition of a pattern a constant number of
 // times.
 type RepeatNode struct {
-	UnaryOp
-	N int
+	Patt Pattern
+	N    int
 }
 
 // ClassNode represents a character set.
@@ -181,25 +122,25 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 	fn(p)
 	switch t := p.(type) {
 	case *AltNode:
-		WalkPattern(t.left, followInline, fn)
-		WalkPattern(t.right, followInline, fn)
+		WalkPattern(t.Left, followInline, fn)
+		WalkPattern(t.Right, followInline, fn)
 	case *SeqNode:
-		WalkPattern(t.left, followInline, fn)
-		WalkPattern(t.right, followInline, fn)
+		WalkPattern(t.Left, followInline, fn)
+		WalkPattern(t.Right, followInline, fn)
 	case *StarNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *PlusNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *OptionalNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *NotNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *AndNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *CapNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *MemoNode:
-		WalkPattern(t.patt, followInline, fn)
+		WalkPattern(t.Patt, followInline, fn)
 	case *GrammarNode:
 		for _, p := range t.Defs {
 			WalkPattern(p, followInline, fn)
