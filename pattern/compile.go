@@ -3,6 +3,7 @@ package pattern
 import (
 	"fmt"
 
+	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
 )
 
@@ -57,29 +58,6 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		}, nil
 	}
 
-	L1 := isa.NewLabel()
-
-	// optimization: if the right and left nodes are disjoint, we can use
-	// NoChoice variants of the head-fail optimization instructions.
-	var disjoint bool
-	var testinsn isa.Insn
-	switch lt := Get(p.Left).(type) {
-	case *ClassNode:
-		switch rt := Get(p.Right).(type) {
-		case *LiteralNode:
-			disjoint = !lt.Chars.Has(rt.Str[0])
-		}
-		testinsn = isa.TestSetNoChoice{Chars: lt.Chars, Lbl: L1}
-	case *LiteralNode:
-		switch rt := Get(p.Right).(type) {
-		case *LiteralNode:
-			disjoint = lt.Str[0] != rt.Str[0]
-		case *ClassNode:
-			disjoint = !rt.Chars.Has(lt.Str[0])
-		}
-		testinsn = isa.TestCharNoChoice{Byte: lt.Str[0], Lbl: L1}
-	}
-
 	l, err1 := Get(p.Left).Compile()
 	r, err2 := Get(p.Right).Compile()
 	if err1 != nil {
@@ -87,6 +65,33 @@ func (p *AltNode) Compile() (isa.Program, error) {
 	}
 	if err2 != nil {
 		return nil, err2
+	}
+
+	L1 := isa.NewLabel()
+
+	// optimization: if the right and left nodes are disjoint, we can use
+	// NoChoice variants of the head-fail optimization instructions.
+	var disjoint bool
+	var testinsn isa.Insn
+	linsn, okl := nextInsn(l)
+	rinsn, okr := nextInsn(r)
+	if okl && okr {
+		switch lt := linsn.(type) {
+		case isa.Set:
+			switch rt := rinsn.(type) {
+			case isa.Char:
+				disjoint = !lt.Chars.Has(rt.Byte)
+			}
+			testinsn = isa.TestSetNoChoice{Chars: lt.Chars, Lbl: L1}
+		case isa.Char:
+			switch rt := rinsn.(type) {
+			case isa.Char:
+				disjoint = lt.Byte != rt.Byte
+			case isa.Set:
+				disjoint = !rt.Chars.Has(lt.Byte)
+			}
+			testinsn = isa.TestCharNoChoice{Byte: lt.Byte, Lbl: L1}
+		}
 	}
 
 	L2 := isa.NewLabel()
@@ -228,6 +233,45 @@ func (p *MemoNode) Compile() (isa.Program, error) {
 	code = append(code, isa.MemoClose{})
 	code = append(code, L1)
 	return code, err
+}
+
+func (p *SearchNode) Compile() (isa.Program, error) {
+	var rsearch Pattern
+	var set charset.Set
+	opt := false
+
+	sub, err := Get(p.Patt).Compile()
+	if err != nil {
+		return nil, err
+	}
+
+	next, ok := nextInsn(sub)
+	if ok {
+		switch t := next.(type) {
+		case isa.Char:
+			set = charset.New([]byte{t.Byte}).Complement()
+			opt = true
+		case isa.Set:
+			// Heuristic: if the set is smaller than 10 chars, it
+			// is unlikely enough to match that we should consume all
+			// chars from the complement before continuing the search.
+			// The number 10 was arbitrarily chosen.
+			if t.Chars.Size() < 10 {
+				set = t.Chars.Complement()
+				opt = true
+			}
+		}
+	}
+
+	if opt {
+		rsearch = Concat(Star(Set(set)), NonTerm("S"))
+	} else {
+		rsearch = NonTerm("S")
+	}
+
+	return Grammar("S", map[string]Pattern{
+		"S": Or(Get(p.Patt), Concat(Any(1), rsearch)),
+	}).Compile()
 }
 
 func (p *GrammarNode) Compile() (isa.Program, error) {

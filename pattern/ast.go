@@ -141,6 +141,8 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 		WalkPattern(t.Patt, followInline, fn)
 	case *MemoNode:
 		WalkPattern(t.Patt, followInline, fn)
+	case *SearchNode:
+		WalkPattern(t.Patt, followInline, fn)
 	case *GrammarNode:
 		for _, p := range t.Defs {
 			WalkPattern(p, followInline, fn)

@@ -150,11 +150,11 @@ func And(p Pattern) Pattern {
 // Search is a dedicated operator for creating searches. It will match
 // the first occurrence of the given pattern. Use Star(Search(p)) to match
 // the last occurrence (for a non-overlapping pattern).
-// func Search(p Pattern) Pattern {
-// 	return &SearchNode{
-// 		Patt: p,
-// 	}
-// }
+func Search(p Pattern) Pattern {
+	return &SearchNode{
+		Patt: p,
+	}
+}
 
 // NonTerm builds an unresolved non-terminal with a given name.
 // NonTerms should be used together with `Grammar` to build a recursive

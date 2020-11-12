@@ -1,6 +1,9 @@
 package gpeg
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/zyedidia/gpeg/charset"
@@ -183,24 +186,24 @@ func TestUnionSet(t *testing.T) {
 	check(p, tests, t)
 }
 
-// func TestSearch(t *testing.T) {
-// 	p := Search(Literal("ana"))
-// 	tests := []PatternTest{
-// 		{"hello ana hello", 9},
-// 		{"hello", -1},
-// 		{"hello ana ana ana", 9},
-// 	}
-// 	check(p, tests, t)
-//
-// 	// search for last occurrence
-// 	p = Plus(Search(Literal("ana")))
-// 	tests = []PatternTest{
-// 		{"hello ana hello", 9},
-// 		{"hello", -1},
-// 		{"hello ana ana ana hello", 17},
-// 	}
-// 	check(p, tests, t)
-// }
+func TestSearch(t *testing.T) {
+	p := Search(Literal("ana"))
+	tests := []PatternTest{
+		{"hello ana hello", 9},
+		{"hello", -1},
+		{"hello ana ana ana", 9},
+	}
+	check(p, tests, t)
+
+	// search for last occurrence
+	p = Plus(Search(Literal("ana")))
+	tests = []PatternTest{
+		{"hello ana hello", 9},
+		{"hello", -1},
+		{"hello ana ana ana hello", 17},
+	}
+	check(p, tests, t)
+}
 
 // func TestCapture(t *testing.T) {
 // 	wordChar := charset.Range('A', 'Z').Add(charset.Range('a', 'z'))
@@ -232,100 +235,100 @@ func TestArithmeticGrammar(t *testing.T) {
 // * Benchmarks *
 // **************
 
-// var match bool
-// var bible input.ByteReader
-// var machine *vm.VM
-//
-// func TestMain(m *testing.M) {
-// 	var err error
-// 	bible, err = ioutil.ReadFile("testdata/bible.txt")
-// 	if err != nil {
-// 		fmt.Println("Warning:", err)
-// 	}
-// 	os.Exit(m.Run())
-// }
-//
-// func BenchmarkBibleSearchFirstEartt(b *testing.B) {
-// 	code := vm.Encode(Search(Literal("eartt")))
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
-//
-// func BenchmarkBibleSearchFirstAbram(b *testing.B) {
-// 	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
-// 	code := vm.Encode(Search(abram))
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
-//
-// func BenchmarkBibleSearchLastAbram(b *testing.B) {
-// 	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
-// 	code := vm.Encode(Star(Search(abram)))
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
-//
-// func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
-// 	code := vm.Encode(Star(Search(Literal("Tubalcain"))))
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
-//
-// func BenchmarkBibleOmegaPattern(b *testing.B) {
-// 	omega := Concat(Star(Concat(Not(Literal("Omega")), Any(1))), Literal("Omega"))
-// 	code := vm.Encode(omega)
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
-//
-// func BenchmarkBibleOmegaGrammar(b *testing.B) {
-// 	omega := Grammar("S", map[string]Pattern{
-// 		"S": Concat(Star(Concat(Not(NonTerm("P")), Any(1))), NonTerm("P")),
-// 		"P": Literal("Omega"),
-// 	})
-// 	code := vm.Encode(omega)
-// 	machine := vm.NewVM(bible, code)
-// 	machine.Reset()
-//
-// 	b.ResetTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		match, _, _ = machine.Exec(memo.NoneTable{})
-// 		machine.Reset()
-// 		machine.SeekTo(0)
-// 	}
-// }
+var match bool
+var bible input.ByteReader
+var machine *vm.VM
+
+func TestMain(m *testing.M) {
+	var err error
+	bible, err = ioutil.ReadFile("testdata/bible.txt")
+	if err != nil {
+		fmt.Println("Warning:", err)
+	}
+	os.Exit(m.Run())
+}
+
+func BenchmarkBibleSearchFirstEartt(b *testing.B) {
+	code := vm.Encode(MustCompile(Search(Literal("eartt"))))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
+
+func BenchmarkBibleSearchFirstAbram(b *testing.B) {
+	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
+	code := vm.Encode(MustCompile(Search(abram)))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
+
+func BenchmarkBibleSearchLastAbram(b *testing.B) {
+	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
+	code := vm.Encode(MustCompile(Star(Search(abram))))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
+
+func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
+	code := vm.Encode(MustCompile(Star(Search(Literal("Tubalcain")))))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
+
+func BenchmarkBibleOmegaPattern(b *testing.B) {
+	omega := Concat(Star(Concat(Not(Literal("Omega")), Any(1))), Literal("Omega"))
+	code := vm.Encode(MustCompile(omega))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
+
+func BenchmarkBibleOmegaGrammar(b *testing.B) {
+	omega := Grammar("S", map[string]Pattern{
+		"S": Concat(Star(Concat(Not(NonTerm("P")), Any(1))), NonTerm("P")),
+		"P": Literal("Omega"),
+	})
+	code := vm.Encode(MustCompile(omega))
+	machine := vm.NewVM(bible, code)
+	machine.Reset()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		match, _, _ = machine.Exec(memo.NoneTable{})
+		machine.Reset()
+		machine.SeekTo(0)
+	}
+}
