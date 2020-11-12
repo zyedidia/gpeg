@@ -1,0 +1,16 @@
+doc           <- JSON !.
+JSON          <- S? (Object / Array / String / True / False / Null / Number) S?
+Object        <- '{' (String ':' JSON (',' String ':' JSON)* / S?) '}'
+Array         <- '[' (JSON (',' JSON)* / S?) ']'
+String        <- S? ["] ((!["\\\00-\37] .) / Escape)* ["] S?
+Escape        <- '\\' (["/\\bfnrt] / UnicodeEscape)
+UnicodeEscape <- 'u' [0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]
+Number        <- Minus? IntPart FractPart? ExpPart?
+Minus         <- '-'
+IntPart       <- '0' / [1-9][0-9]*
+FractPart     <- '.' [0-9]+
+ExpPart       <- [eE] [+\-]? [0-9]+
+True          <- 'true'
+False         <- 'false'
+Null          <- 'null'
+S             <- [\11\12\15\40]*

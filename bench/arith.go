@@ -21,10 +21,7 @@ func arith() {
 		"Number": Memo(Plus(Set(charset.Range('0', '9')))),
 	})
 
-	p.Optimize()
-	fmt.Println(p)
-	code := vm.Encode(p)
-	fmt.Println(code)
+	code := vm.Encode(MustCompile(p))
 
 	data, err := ioutil.ReadFile("../testdata/arith.txt")
 	if err != nil {

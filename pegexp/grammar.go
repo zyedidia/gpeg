@@ -106,7 +106,7 @@ var pegCode vm.VMCode
 func init() {
 	ids = make(map[string]int16)
 	p := pattern.CapGrammar("Grammar", grammar, ids)
-	pegCode = vm.Encode(p)
+	pegCode = vm.Encode(MustCompile(p))
 }
 
 var special = map[byte]byte{
@@ -174,7 +174,7 @@ func compileSet(n *ast.Node, in input.Reader) charset.Set {
 }
 
 func compile(n *ast.Node, in input.Reader) pattern.Pattern {
-	p := make(pattern.Pattern, 0)
+	var p pattern.Pattern
 	switch n.Id {
 	case ids["Grammar"]:
 		nonterms := make(map[string]pattern.Pattern)

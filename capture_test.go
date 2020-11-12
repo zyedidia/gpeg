@@ -13,7 +13,7 @@ import (
 func TestCaptureIndex(t *testing.T) {
 	wordChar := charset.Range('A', 'Z').Add(charset.Range('a', 'z'))
 	p := Star(Concat(Star(Set(wordChar.Complement())), Cap(Plus(Set(wordChar)))))
-	code := vm.Encode(p)
+	code := vm.Encode(MustCompile(p))
 
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)
@@ -36,7 +36,7 @@ func TestCaptureIndex(t *testing.T) {
 func TestCaptureString(t *testing.T) {
 	wordChar := charset.Range('A', 'Z').Add(charset.Range('a', 'z'))
 	p := Star(Concat(Star(Set(wordChar.Complement())), Cap(Plus(Set(wordChar)))))
-	code := vm.Encode(p)
+	code := vm.Encode(MustCompile(p))
 
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)

@@ -8,8 +8,43 @@ import (
 const log2WordSize = 6
 const wordSize = 64
 
+// A Set represents a set of chars.
 type Set struct {
+	// Bits is the bit array for indicating which chars are in the set.
+	// We have 256 bits because a char can have 256 different values.
 	Bits [4]uint64
+}
+
+// A SmallSet is the same as a Set but can only represent 128 possible chars.
+// This is an optimization, since in the common case, only ASCII bytes are
+// used which are <128. The full Set is only necessary when unicode control
+// characters must be matched.
+type SmallSet struct {
+	Bits [2]uint64
+}
+
+// Size returns the number of chars matched by this Set.
+func (c SmallSet) Size() int {
+	return bits.OnesCount64(c.Bits[0]) + bits.OnesCount64(c.Bits[1])
+}
+
+// Has checks if a charset accepts a character.
+// Pointer receiver is for performance.
+func (c *SmallSet) Has(r byte) bool {
+	return c.Bits[r>>log2WordSize]&(uint64(1)<<(r&(wordSize-1))) != 0
+}
+
+// IsSmall returns true if this set can be converted to a small set. In other
+// words, if this set only matches bytes <128.
+func (c Set) IsSmall() bool {
+	return c.Bits[2] == 0 && c.Bits[3] == 0
+}
+
+// SmallSet converts this Set to a SmallSet.
+func (c Set) SmallSet() SmallSet {
+	return SmallSet{
+		Bits: [2]uint64{c.Bits[0], c.Bits[1]},
+	}
 }
 
 // New returns a charset which accepts all chars in `chars`. Note

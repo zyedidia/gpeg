@@ -12,24 +12,26 @@ instructions.
 The encoding of each instruction is given below:
 
 * `Char Byte`: `| 8-bit opcode | 8-bit Byte |`
-* `Jump Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Choice Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Call Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Commit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
+* `Jump Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Choice Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Call Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Commit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
 * `Return`: `| 8-bit opcode | 8-bit padding |`
 * `Fail`: `| 8-bit opcode | 8-bit padding |`
-* `Set Chars`: `| 8-bit opcode | 8-bit padding | 16-bit index of Chars |`
+* `Set Chars`: `| 8-bit opcode | 8-bit index of Chars |`
 * `Any Byte`: `| 8-bit opcode | 8-bit Byte |`
-* `PartialCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
-* `Span Chars`: `| 8-bit opcode | 8-bit padding | 16-bit index of Chars |`
-* `BackCommit Lbl`: `| 8-bit opcode | 8-bit padding | 16-bit Lbl |`
+* `PartialCommit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
+* `Span Chars`: `| 8-bit opcode | 8-bit index of Chars |`
+* `BackCommit Lbl`: `| 8-bit opcode | 24-bit Lbl |`
 * `FailTwice`: `| 8-bit opcode | 8-bit padding |`
-* `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit Byte | 16-bit Lbl |`
-* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit Padding | 16-bit Lbl | 16-bit index of Chars |`
-* `TestAny N Lbl`: `| 8-bit opcode | 8-bit N | 16-bit Lbl |`
+* `TestChar Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
+* `TestCharNoChoice Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit Byte | 24-bit Lbl |`
+* `TestSet Chars Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit index of Chars | 24-bit Lbl |`
+* `TestSetNoChoice Byte Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit index of Chars | 24-bit Lbl |`
+* `TestAny N Lbl`: `| 8-bit opcode | 8-bit padding | 8-bit N | 24-bit Lbl |`
 * `End`: `| 8-bit opcode | 8-bit padding |`
 * `Nop`: can be removed and not encoded at all.
-* `MemoOpen Lbl Id`: `| 8-bit opcode | 8-bit Padding | 16-bit Lbl | 16-bit Id |`
+* `MemoOpen Lbl Id`: `| 8-bit opcode | 24-bit Lbl | 16-bit Id |`
 * `MemoClose`: `| 8-bit opcode | 8-bit padding |`
 * `CaptureBegin`: `| 8-bit opcode | 8-bit padding | 16-bit capture Id |`
 * `CaptureLate`: `| 8-bit opcode | 8-bit N |`
@@ -42,6 +44,21 @@ looked up whenever there is an instruction involving a character set (`Set`,
 
 The largest instruction is 48 bits and the smallest instruction is 16 bits. All
 instructions have a size that is a multiple of 16 bits.
+
+<!-- ## Serialized Format -->
+<!--  -->
+<!-- When bytecode is serialized, the format used is the following: -->
+<!--  -->
+<!-- ``` -->
+<!-- | 1-byte integer | character sets | 4-byte integer | instruction bytes | -->
+<!-- ``` -->
+<!--  -->
+<!-- * `1-byte integer`: represents the number of sets. -->
+<!-- * `character sets`: the character sets used by the program. Each set is a -->
+<!--   256-bit integer. -->
+<!-- * `4-byte integer`: represents the number of instruction bytes. -->
+<!-- * `instruction bytes`: the encoded bytes for each instruction, as described -->
+<!--   the previous section. -->
 
 ## Operation
 

@@ -9,7 +9,6 @@ import (
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
-	"github.com/zyedidia/gpeg/pattern"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
 )
@@ -56,15 +55,10 @@ func peg() {
 		"EndOfFile": Not(Any(1)),
 	}, ids)
 
-	p.Optimize()
-	fmt.Println(p)
-	fmt.Println(pattern.Histogram(p))
-
-	code := vm.Encode(p)
-	fmt.Println(code)
+	code := vm.Encode(MustCompile(p))
 	fmt.Println("Code size", code.Size())
 
-	data, err := ioutil.ReadFile("../testdata/peg.peg")
+	data, err := ioutil.ReadFile("../grammars/peg.peg")
 	if err != nil {
 		log.Fatal(err)
 	}

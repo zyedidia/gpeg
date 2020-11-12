@@ -37,11 +37,7 @@ func json() {
 		"jarray":        Concat(Literal("["), Or(Concat(NonTerm("JSON"), Star(Concat(Literal(","), NonTerm("JSON")))), Optional(NonTerm("S"))), Literal("]")),
 	})
 
-	p.Optimize()
-	fmt.Println(p)
-
-	code := vm.Encode(p)
-	fmt.Println(code)
+	code := vm.Encode(MustCompile(p))
 	fmt.Println("Code size", code.Size())
 
 	data, err := ioutil.ReadFile("../testdata/test.json")

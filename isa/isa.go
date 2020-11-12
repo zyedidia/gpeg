@@ -12,6 +12,24 @@ type Insn interface {
 	insn()
 }
 
+// A Program is a sequence of instructions
+type Program []Insn
+
+// Size returns the number of instructions in a program ignoring labels and
+// nops.
+func (p Program) Size() int {
+	var sz int
+	for _, i := range p {
+		switch i.(type) {
+		case Label, Nop:
+			continue
+		default:
+			sz++
+		}
+	}
+	return sz
+}
+
 // A JumpType instruction is any instruction that refers to a Label.
 type JumpType interface {
 	jumpt()
@@ -145,6 +163,14 @@ type TestSet struct {
 	jump
 }
 
+// TestSetNoChoice is the same as TestSet but no backtrack entry is pushed to
+// the stack.
+type TestSetNoChoice struct {
+	Chars charset.Set
+	Lbl   Label
+	jump
+}
+
 // TestAny consumes the next N bytes and jumps to Lbl if that is not possible.
 // If the consumption is possible, a backtrack entry referring to Lbl and
 // the subject position from before consumption is pushed to the stack.
@@ -169,7 +195,7 @@ type Nop struct {
 // jump to if the pattern is found in the memoization table.
 type MemoOpen struct {
 	Lbl Label
-	Id  int
+	Id  int16
 	jump
 }
 
@@ -279,6 +305,10 @@ func (i TestSet) String() string {
 	return fmt.Sprintf("TestSet %v %v", i.Chars, i.Lbl)
 }
 
+func (i TestSetNoChoice) String() string {
+	return fmt.Sprintf("TestSetNoChoice %v %v", i.Chars, i.Lbl)
+}
+
 func (i TestAny) String() string {
 	return fmt.Sprintf("TestAny %v %v", i.N, i.Lbl)
 }
@@ -313,4 +343,27 @@ func (i CaptureEnd) String() string {
 
 func (i CaptureFull) String() string {
 	return fmt.Sprintf("Capture full %v %v", i.Back, i.Id)
+}
+
+// String returns the string representation of the pattern.
+func (p Program) String() string {
+	s := ""
+	var last Insn
+	for _, insn := range p {
+		switch insn.(type) {
+		case Nop:
+			continue
+		case Label:
+			if _, ok := last.(Label); ok {
+				s += "\rL...:"
+			} else {
+				s += fmt.Sprintf("%v:", insn)
+			}
+		default:
+			s += fmt.Sprintf("\t%v\n", insn)
+		}
+		last = insn
+	}
+	s += "\n"
+	return s
 }
