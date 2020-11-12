@@ -1,9 +1,9 @@
 doc           <- JSON !.
-JSON          <- S? (Number / Object / Array / String / True / False / Null) S?
-Object        <- '{' (String ':' JSON (',' String ':' JSON)* / S?) '}'
-Array         <- '[' (JSON (',' JSON)* / S?) ']'
+JSON          <- S (Number / Object / Array / String / True / False / Null) S
+Object        <- '{' (String ':' JSON (',' String ':' JSON)* / S) '}'
+Array         <- '[' (JSON (',' JSON)* / S) ']'
 StringBody    <- Escape? ((!["\\\00-\37] .)+ Escape*)*
-String        <- S? '"' StringBody '"' S?
+String        <- S '"' StringBody '"' S
 Escape        <- '\\' (["{|\\bfnrt] / UnicodeEscape)
 UnicodeEscape <- 'u' [0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]
 Number        <- Minus? IntPart FractPart? ExpPart?
