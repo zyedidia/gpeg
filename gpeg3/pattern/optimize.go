@@ -7,6 +7,7 @@ import (
 
 const InlineThreshold = 100
 
+// Inline performs inlining passes until the inliner reaches a steady-state.
 func (p *GrammarNode) Inline() {
 	for p.inline() {
 	}
@@ -46,6 +47,8 @@ func (p *GrammarNode) inline() bool {
 	return didInline
 }
 
+// If the bytes matched by p1 and p2 can be matched by a single charset, then
+// that single combined charset is returned.
 func combine(p1 Pattern, p2 Pattern) (charset.Set, bool) {
 	var set charset.Set
 	switch t1 := p1.(type) {

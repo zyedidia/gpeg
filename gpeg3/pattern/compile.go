@@ -6,12 +6,17 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
+// A NotFoundError means a a non-terminal was not found during grammar
+// compilation.
 type NotFoundError struct {
 	Name string
 }
 
+// Error returns the error message.
 func (e *NotFoundError) Error() string { return "non-terminal " + e.Name + ": not found" }
 
+// Compile takes an input pattern and returns the result of compiling it into a
+// parsing program, and optimizing the program.
 func Compile(p Pattern) (isa.Program, error) {
 	c, err := p.Compile()
 	if err != nil {
@@ -22,6 +27,8 @@ func Compile(p Pattern) (isa.Program, error) {
 	return c, nil
 }
 
+// MustCompile is the same as Compile but panics if there is an error during
+// compilation.
 func MustCompile(p Pattern) isa.Program {
 	c, err := Compile(p)
 	if err != nil {
@@ -52,6 +59,8 @@ func (p *AltNode) Compile() (isa.Program, error) {
 
 	L1 := isa.NewLabel()
 
+	// optimization: if the right and left nodes are disjoint, we can use
+	// NoChoice variants of the head-fail optimization instructions.
 	var disjoint bool
 	var testinsn isa.Insn
 	switch lt := p.Left().(type) {
@@ -80,27 +89,21 @@ func (p *AltNode) Compile() (isa.Program, error) {
 		return nil, err2
 	}
 
+	L2 := isa.NewLabel()
+	code := make(isa.Program, 0, len(l)+len(r)+5)
 	if disjoint {
-		code := make(isa.Program, 0, len(l)+len(r)+3)
-		L2 := isa.NewLabel()
 		code = append(code, testinsn)
 		code = append(code, l[1:]...)
 		code = append(code, isa.Jump{Lbl: L2})
-		code = append(code, L1)
-		code = append(code, r...)
-		code = append(code, L2)
-		return code, nil
 	} else {
-		code := make(isa.Program, 0, len(l)+len(r)+5)
-		L2 := isa.NewLabel()
 		code = append(code, isa.Choice{Lbl: L1})
 		code = append(code, l...)
 		code = append(code, isa.Commit{Lbl: L2})
-		code = append(code, L1)
-		code = append(code, r...)
-		code = append(code, L2)
-		return code, nil
 	}
+	code = append(code, L1)
+	code = append(code, r...)
+	code = append(code, L2)
+	return code, nil
 }
 
 func (p *SeqNode) Compile() (isa.Program, error) {
@@ -336,6 +339,5 @@ func (p *DotNode) Compile() (isa.Program, error) {
 }
 
 func (p *EmptyNode) Compile() (isa.Program, error) {
-	code := make(isa.Program, 0)
-	return code, nil
+	return make(isa.Program, 0), nil
 }
