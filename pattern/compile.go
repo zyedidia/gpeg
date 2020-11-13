@@ -164,6 +164,8 @@ func (p *PlusNode) Compile() (isa.Program, error) {
 }
 
 func (p *OptionalNode) Compile() (isa.Program, error) {
+	// optimization: if the pattern is a class node or single char literal, we
+	// can use the Test*NoChoice instructions.
 	switch t := Get(p.Patt).(type) {
 	case *LiteralNode:
 		if len(t.Str) == 1 {

@@ -133,15 +133,15 @@ func (c Set) String() string {
 	inRange := false
 	for b := int(0); b <= 255; b++ {
 		if c.Has(byte(b)) && b == 255 {
-			s += strconv.QuoteRune(rune(b))
+			s += strconv.QuoteRuneToASCII(rune(b))
 		} else if c.Has(byte(b)) && !inRange {
 			inRange = true
 			if c.Has(byte(b + 1)) {
-				s += strconv.QuoteRune(rune(b)) + ".."
+				s += strconv.QuoteRuneToASCII(rune(b)) + ".."
 			}
 		} else if !c.Has(byte(b)) && inRange {
 			inRange = false
-			s += strconv.QuoteRune(rune(b-1)) + ","
+			s += strconv.QuoteRuneToASCII(rune(b-1)) + ","
 		}
 	}
 	if s != "" && s[len(s)-1] == ',' {
