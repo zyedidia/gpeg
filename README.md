@@ -26,12 +26,15 @@ heavily inspired by LPeg.
 * [x] AST generation/captures.
 * [x] Parse non-string data structures (reader interface).
     * [ ] Support for custom offset types (e.g. line/col instead of index).
+* [x] Incremental matching.
 * [ ] Incremental AST/captures.
 * [ ] Support for an extended PEG syntax (TBD).
 * [ ] Compilation of VM code to native code (JIT or static compilation TBD).
 * [ ] Documentation and examples.
 * [ ] Creation of a large bundle of PEGs for common programming languages.
 * [ ] Additional niceties (TBD).
+    * [x] Grammar tree visualizer.
+    * [ ] AST visualizer.
     * [ ] Error recovery.
     * [ ] Support for left recursion.
 
@@ -50,7 +53,9 @@ heavily inspired by LPeg.
       Programming 96 (2014): 177-190.
       [Link](https://arxiv.org/pdf/1207.0443.pdf).
 * [NPeg](https://github.com/zevv/npeg).
+* [Papa Carlo](https://lakhin.com/projects/papa-carlo/).
 * Dubroy, Patrick, and Alessandro Warth. "Incremental packrat parsing."
   Proceedings of the 10th ACM SIGPLAN International Conference on Software
   Language Engineering. 2017.
   [Link](https://ohmlang.github.io/pubs/sle2017/incremental-packrat-parsing.pdf).
+* [Tree Sitter](https://tree-sitter.github.io/tree-sitter/).
