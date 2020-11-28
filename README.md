@@ -40,6 +40,7 @@ heavily inspired by LPeg.
 
 # Related work
 
+* Ford, Bryan. "Parsing expression grammars: a recognition-based syntactic foundation." Proceedings of the 31st ACM SIGPLAN-SIGACT symposium on Principles of programming languages. 2004. [Link](https://bford.info/pub/lang/peg.pdf).
 * [LPeg](http://www.inf.puc-rio.br/~roberto/lpeg/).
     * Ierusalimschy, Roberto. "A text pattern‐matching tool based on Parsing
       Expression Grammars." Software: Practice and Experience 39.3 (2009):
