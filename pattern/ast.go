@@ -91,7 +91,7 @@ type LiteralNode struct {
 // that is inlined.
 type NonTermNode struct {
 	Name    string
-	inlined Pattern
+	Inlined Pattern
 }
 
 // DotNode represents the pattern to match any byte.
@@ -148,8 +148,8 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 			WalkPattern(p, followInline, fn)
 		}
 	case *NonTermNode:
-		if t.inlined != nil && followInline {
-			WalkPattern(t.inlined, followInline, fn)
+		if t.Inlined != nil && followInline {
+			WalkPattern(t.Inlined, followInline, fn)
 		}
 	}
 }

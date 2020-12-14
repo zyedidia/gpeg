@@ -1,32 +1,20 @@
-package pattern
+package viz
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/awalterschulze/gographviz"
-	"github.com/zyedidia/gpeg/isa"
+	"github.com/zyedidia/gpeg/pattern"
 )
 
-// Histogram returns the number of times each instruction occurs in the given
-// parsing program.
-func Histogram(p isa.Program) map[reflect.Type]int {
-	hist := make(map[reflect.Type]int)
-	for _, insn := range p {
-		t := reflect.TypeOf(insn)
-		hist[t]++
-	}
-	return hist
-}
-
-func exploreCalls(def string, defs map[string]Pattern, explored map[string]bool, graph *gographviz.Graph) {
+func exploreCalls(def string, defs map[string]pattern.Pattern, explored map[string]bool, graph *gographviz.Graph) {
 	explored[def] = true
 	p := defs[def]
-	WalkPattern(p, false, func(sub Pattern) {
+	pattern.WalkPattern(p, false, func(sub pattern.Pattern) {
 		switch t := sub.(type) {
-		case *NonTermNode:
+		case *pattern.NonTermNode:
 			color := "black"
-			if t.inlined != nil {
+			if t.Inlined != nil {
 				color = "blue"
 			}
 			graph.AddEdge(def, t.Name, true, map[string]string{
@@ -41,7 +29,7 @@ func exploreCalls(def string, defs map[string]Pattern, explored map[string]bool,
 
 // Graph returns the string form of a GraphViz Dot graph displaying the
 // call-structure of a grammar.
-func Graph(g *GrammarNode) string {
+func Graph(g *pattern.GrammarNode) string {
 	graph := gographviz.NewGraph()
 	graph.SetName("Grammar")
 	graph.SetDir(true)
@@ -50,7 +38,7 @@ func Graph(g *GrammarNode) string {
 	for d, p := range g.Defs {
 		prog, _ := p.Compile()
 		sz := prog.Size()
-		astsz := CountSubPatterns(p)
+		astsz := pattern.CountSubPatterns(p)
 		var color string
 		if astsz >= 100 {
 			color = "red"

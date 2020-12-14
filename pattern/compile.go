@@ -284,7 +284,7 @@ func (p *GrammarNode) Compile() (isa.Program, error) {
 		WalkPattern(v, true, func(sub Pattern) {
 			switch t := sub.(type) {
 			case *NonTermNode:
-				if t.inlined == nil {
+				if t.Inlined == nil {
 					used[t.Name] = true
 				}
 			}
@@ -368,8 +368,8 @@ func (p *LiteralNode) Compile() (isa.Program, error) {
 }
 
 func (p *NonTermNode) Compile() (isa.Program, error) {
-	if p.inlined != nil {
-		return p.inlined.Compile()
+	if p.Inlined != nil {
+		return p.Inlined.Compile()
 	}
 	return isa.Program{
 		openCall{name: p.Name},

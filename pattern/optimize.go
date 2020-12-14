@@ -21,8 +21,8 @@ func Get(p Pattern) Pattern {
 	switch t := p.(type) {
 	case *NonTermNode:
 		// Return the inlined pattern for a non-terminal that has been inlined.
-		if t.inlined != nil {
-			return t.inlined
+		if t.Inlined != nil {
+			return t.Inlined
 		}
 	case *AltNode:
 		// Combine the left and right sides of an alternation into a class node
@@ -85,7 +85,7 @@ func (p *GrammarNode) inline() bool {
 		WalkPattern(sub, true, func(s Pattern) {
 			switch t := s.(type) {
 			case *NonTermNode:
-				if t.inlined == nil {
+				if t.Inlined == nil {
 					leaf = false
 				}
 			}
@@ -99,12 +99,12 @@ func (p *GrammarNode) inline() bool {
 	WalkPattern(p, true, func(sub Pattern) {
 		switch t := sub.(type) {
 		case *NonTermNode:
-			if sz, ok := sizes[t.Name]; ok && t.inlined == nil {
+			if sz, ok := sizes[t.Name]; ok && t.Inlined == nil {
 				// We only inline nodes if they are small enough and don't use
 				// any non-terminals themselves.
 				if sz < InlineThreshold && leaves[t.Name] {
 					didInline = true
-					t.inlined = p.Defs[t.Name]
+					t.Inlined = p.Defs[t.Name]
 				}
 			}
 		}

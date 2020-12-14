@@ -4,3 +4,5 @@ main/
 todo.txt
 testdata/
 bench/bench
+gpeg
+!cmd/gpeg
