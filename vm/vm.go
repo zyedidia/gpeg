@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"unsafe"
+	"encoding/binary"
 
 	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/charset"
@@ -284,15 +284,15 @@ func decodeU8(b []byte) byte {
 }
 
 func decodeI8(b []byte) int8 {
-	return *(*int8)(unsafe.Pointer(&b[0]))
+	return int8(b[0])
 }
 
 func decodeU16(b []byte) uint16 {
-	return *(*uint16)(unsafe.Pointer(&b[0]))
+	return binary.LittleEndian.Uint16(b[0:])
 }
 
 func decodeI16(b []byte) int16 {
-	return *(*int16)(unsafe.Pointer(&b[0]))
+	return int16(binary.LittleEndian.Uint16(b[0:]))
 }
 
 func decodeU24(b []byte) uint32 {

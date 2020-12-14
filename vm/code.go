@@ -2,9 +2,9 @@ package vm
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
-	"unsafe"
 
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
@@ -24,7 +24,7 @@ type code struct {
 }
 
 func (c *VMCode) Size() int {
-	return int(unsafe.Sizeof(charset.Set{}))*len(c.data.Sets) + len(c.data.Insns)
+	return len(c.data.Insns)
 }
 
 func (c *VMCode) ToBytes() ([]byte, error) {
@@ -185,8 +185,7 @@ func encodeI8(x int) []byte {
 		panic("I8 out of bounds")
 	}
 
-	bytes := *(*[1]byte)(unsafe.Pointer(&x))
-	return bytes[:]
+	return []byte{byte(x)}
 }
 
 func encodeU16(x uint) []byte {
@@ -194,8 +193,9 @@ func encodeU16(x uint) []byte {
 		panic("U16 out of bounds")
 	}
 
-	bytes := *(*[2]byte)(unsafe.Pointer(&x))
-	return bytes[:]
+	b := make([]byte, 2)
+	binary.LittleEndian.PutUint16(b[0:], uint16(x))
+	return b
 }
 
 func encodeI16(x int) []byte {
@@ -203,8 +203,9 @@ func encodeI16(x int) []byte {
 		panic("I16 out of bounds")
 	}
 
-	bytes := *(*[2]byte)(unsafe.Pointer(&x))
-	return bytes[:]
+	b := make([]byte, 2)
+	binary.LittleEndian.PutUint16(b[0:], uint16(x))
+	return b
 }
 
 func encodeU24(x uint) []byte {
@@ -212,13 +213,13 @@ func encodeU24(x uint) []byte {
 		panic("I24 out of bounds")
 	}
 
-	i1 := (x >> 16) & 0xff
-	i2 := int16(x)
+	b := make([]byte, 4)
+	i1 := uint16((x >> 16) & 0xff)
+	i2 := uint16(x)
 
-	bytes1 := *(*[1]byte)(unsafe.Pointer(&i1))
-	bytes2 := *(*[2]byte)(unsafe.Pointer(&i2))
-	bytes := append(bytes1[:], bytes2[:]...)
-	return bytes
+	binary.LittleEndian.PutUint16(b[0:], i1)
+	binary.LittleEndian.PutUint16(b[2:], i2)
+	return b[1:4]
 }
 
 func encodeLabel(x uint) []byte {
