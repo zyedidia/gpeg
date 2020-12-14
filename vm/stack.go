@@ -1,19 +1,28 @@
 package vm
 
-import "github.com/zyedidia/gpeg/input"
+import (
+	"github.com/zyedidia/gpeg/ast"
+	"github.com/zyedidia/gpeg/input"
+)
 
 type stack struct {
 	entries []stackEntry
+	capt    []*ast.Node
 }
 
-// type stackEntry interface {
-// 	isStackEntry()
-// }
+func (s *stack) addCapt(capt ...*ast.Node) {
+	if len(s.entries) == 0 {
+		s.capt = append(s.capt, capt...)
+	} else {
+		s.entries[len(s.entries)-1].addCapt(capt)
+	}
+}
 
 const (
 	stRet = iota
 	stBtrack
 	stMemo
+	stCapt
 )
 
 type stackEntry struct {
@@ -21,6 +30,16 @@ type stackEntry struct {
 	ret    stackRet
 	btrack stackBacktrack
 	memo   stackMemo
+
+	capt []*ast.Node
+}
+
+func (se *stackEntry) addCapt(capt []*ast.Node) {
+	if se.capt == nil {
+		se.capt = capt
+	} else {
+		se.capt = append(se.capt, capt...)
+	}
 }
 
 type stackRet int
@@ -28,9 +47,8 @@ type stackRet int
 func (s stackRet) isStackEntry() {}
 
 type stackBacktrack struct {
-	ip   int
-	off  input.Pos
-	capt []capt
+	ip  int
+	off input.Pos
 }
 
 func (s stackBacktrack) isStackEntry() {}
@@ -45,6 +63,7 @@ func (s stackMemo) isStackEntry() {}
 func newStack() *stack {
 	return &stack{
 		entries: make([]stackEntry, 0, 4),
+		capt:    make([]*ast.Node, 0),
 	}
 }
 
@@ -56,13 +75,37 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
-func (s *stack) pop() *stackEntry {
+// propagate marks whether captures should be propagated up the stack.
+func (s *stack) pop(propagate bool) *stackEntry {
 	if len(s.entries) == 0 {
 		return nil
 	}
 
 	ret := s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
+	// For non-capture entries, propagate the captures upward.
+	if propagate && ret.capt != nil {
+		s.addCapt(ret.capt...)
+	}
+	return &ret
+}
+
+func (s *stack) popCapt(end input.Pos) *stackEntry {
+	if len(s.entries) == 0 {
+		return nil
+	}
+
+	ret := s.entries[len(s.entries)-1]
+	s.entries = s.entries[:len(s.entries)-1]
+	// For capture entries, we create a new node with the corresponding
+	// children.
+	node := &ast.Node{
+		Id:       int16(ret.memo.id),
+		Start:    ret.memo.pos,
+		End:      end,
+		Children: ret.capt,
+	}
+	s.addCapt(node)
 	return &ret
 }
 
@@ -90,6 +133,13 @@ func (s *stack) pushBacktrack(b stackBacktrack) {
 func (s *stack) pushMemo(m stackMemo) {
 	s.push(stackEntry{
 		stype: stMemo,
+		memo:  m,
+	})
+}
+
+func (s *stack) pushCapt(m stackMemo) {
+	s.push(stackEntry{
+		stype: stCapt,
 		memo:  m,
 	})
 }

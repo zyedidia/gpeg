@@ -2,5 +2,6 @@
 *.test
 main/
 todo.txt
+capt.txt
 testdata/
 bench/bench
