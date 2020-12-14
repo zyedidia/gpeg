@@ -18,6 +18,19 @@ func (s *stack) addCapt(capt ...*ast.Node) {
 	}
 }
 
+func (s *stack) propCapt() {
+	if len(s.entries) == 0 {
+		return
+	}
+
+	top := s.entries[len(s.entries)-1]
+	if len(s.entries) == 1 {
+		s.capt = append(s.capt, top.capt...)
+	} else {
+		s.entries[len(s.entries)-2].addCapt(top.capt)
+	}
+}
+
 const (
 	stRet = iota
 	stBtrack

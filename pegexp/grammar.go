@@ -279,7 +279,6 @@ func CompilePatt(s string) (pattern.Pattern, error) {
 		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
 
-	// root := machine.CaptureAST(caps, pegCode)
 	return compile(root[0], in), nil
 }
 

@@ -104,6 +104,8 @@ loop:
 			ent := vm.st.peek()
 			if ent != nil && ent.stype == stBtrack {
 				ent.btrack.off = vm.input.Offset()
+				vm.st.propCapt()
+				ent.capt = nil
 				vm.ip = int(lbl)
 			} else {
 				panic("PartialCommit failed")
@@ -126,7 +128,7 @@ loop:
 				panic("BackCommit failed")
 			}
 		case opFailTwice:
-			vm.st.pop(true)
+			vm.st.pop(false)
 			goto fail
 		case opTestChar:
 			b := decodeU8(idata[vm.ip+2:])
@@ -250,7 +252,6 @@ fail:
 		return false, vm.input.Offset(), []*ast.Node{}
 	}
 
-	// fmt.Println("discard", ent.capt, ent.stype)
 	switch ent.stype {
 	case stBtrack:
 		vm.ip = ent.btrack.ip
