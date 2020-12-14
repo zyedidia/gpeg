@@ -3,14 +3,17 @@ package viz
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/awalterschulze/gographviz"
 	"github.com/zyedidia/gpeg/ast"
 )
 
 func text(n *ast.Node, data []byte) string {
-	str := data[n.Start:n.End]
-	return strconv.QuoteToASCII(fmt.Sprintf("'%s'", string(str)))
+	str := string(data[n.Start:n.End])
+	str = strings.ReplaceAll(str, ">", "&gt;")
+	str = strings.ReplaceAll(str, "<", "&lt;")
+	return strconv.Quote(strconv.QuoteToASCII(str))
 }
 
 func uniqueID(n *ast.Node) string {
