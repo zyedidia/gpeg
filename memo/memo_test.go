@@ -14,7 +14,7 @@ func TestEntry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ent := NewEntry(tt.match, tt.exam)
+			ent := NewEntry(tt.match, tt.exam, nil)
 			if ent.MatchLength() != tt.match {
 				t.Errorf("Incorrect match length %v should be %v", ent.MatchLength(), tt.match)
 			}
@@ -32,10 +32,10 @@ func TestLRUTable(t *testing.T) {
 	k2 := Key{2, 10}
 	k3 := Key{8, 17}
 
-	e1 := NewEntry(1, 1)
-	e2 := NewEntry(2, 2)
-	e3 := NewEntry(3, 3)
-	e4 := NewEntry(4, 4)
+	e1 := NewEntry(1, 1, nil)
+	e2 := NewEntry(2, 2, nil)
+	e3 := NewEntry(3, 3, nil)
+	e4 := NewEntry(4, 4, nil)
 
 	var ret Entry
 	var ok bool

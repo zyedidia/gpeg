@@ -11,17 +11,17 @@ type capt struct {
 	ip  int
 }
 
-func (vm *VM) Captures(capt []capt, code VMCode) [][]byte {
-	ind := vm.CapturesIndex(capt, code)
-	caps := make([][]byte, len(ind))
-	for i, c := range ind {
-		caps[i] = vm.input.Slice(c[0], c[1])
-	}
-	return caps
-}
+// func (vm *VM) Captures(capt []capt, code VMCode) [][]byte {
+// 	ind := vm.CapturesIndex(capt, code)
+// 	caps := make([][]byte, len(ind))
+// 	for i, c := range ind {
+// 		caps[i] = vm.input.Slice(c[0], c[1])
+// 	}
+// 	return caps
+// }
 
-func (vm *VM) CapturesString(capt []capt, code VMCode) []string {
-	ind := vm.CapturesIndex(capt, code)
+func (vm *VM) CapturesString(capt []*ast.Node) []string {
+	ind := vm.CapturesIndex(capt)
 	caps := make([]string, len(ind))
 	for i, c := range ind {
 		caps[i] = string(vm.input.Slice(c[0], c[1]))
@@ -29,28 +29,14 @@ func (vm *VM) CapturesString(capt []capt, code VMCode) []string {
 	return caps
 }
 
-func (vm *VM) CapturesIndex(capt []capt, code VMCode) [][2]input.Pos {
-	stack := newCapStack()
+func (vm *VM) CapturesIndex(capt []*ast.Node) [][2]input.Pos {
 	caps := make([][2]input.Pos, 0, len(capt))
 	for _, c := range capt {
-		op := code.data.Insns[c.ip]
-
-		switch op {
-		case opCaptureBegin, opCaptureLate:
-			stack.push(astCapt{
-				off:  c.off,
-				ip:   c.ip,
-				node: nil,
-			})
-		case opCaptureEnd:
-			ent, ok := stack.pop()
-			if !ok {
-				panic("Error: capture closed but not opened")
-			}
-			caps = append(caps, [2]input.Pos{ent.off, c.off})
-		case opCaptureFull:
-			back := decodeU8(code.data.Insns[c.ip+1:])
-			caps = append(caps, [2]input.Pos{c.off, c.off - input.Pos(back)})
+		caps = append(caps, [2]input.Pos{
+			c.Start, c.End,
+		})
+		if c.Children != nil {
+			caps = append(caps, vm.CapturesIndex(c.Children)...)
 		}
 	}
 	return caps

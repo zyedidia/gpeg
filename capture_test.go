@@ -18,7 +18,7 @@ func TestCaptureIndex(t *testing.T) {
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)
 	_, _, capt := machine.Exec(memo.NoneTable{})
-	results := machine.CapturesIndex(capt, code)
+	results := machine.CapturesIndex(capt)
 	expected := [][2]input.Pos{
 		[2]input.Pos{0, 1},
 		[2]input.Pos{2, 5},
@@ -36,15 +36,37 @@ func TestCaptureIndex(t *testing.T) {
 func TestCaptureString(t *testing.T) {
 	wordChar := charset.Range('A', 'Z').Add(charset.Range('a', 'z'))
 	p := Star(Concat(Star(Set(wordChar.Complement())), Cap(Plus(Set(wordChar)))))
-	code := vm.Encode(MustCompile(p))
+	peg := MustCompile(p)
+	code := vm.Encode(peg)
 
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)
 	_, _, capt := machine.Exec(memo.NoneTable{})
-	results := machine.CapturesString(capt, code)
+	results := machine.CapturesString(capt)
 	expected := []string{"a", "few", "more", "words"}
 	for i, r := range results {
 		if r != expected[i] {
+			t.Errorf("Error: got %v", results)
+		}
+	}
+}
+
+func TestCaptureBacktrack(t *testing.T) {
+	p := Or(Concat(CapId(Literal("abc"), 0), Literal("def")), CapId(Literal("abcdea"), 1))
+	peg := MustCompile(p)
+	code := vm.Encode(peg)
+
+	var bytes input.ByteReader = []byte("abcdea")
+	machine := vm.NewVM(bytes, code)
+	_, _, capt := machine.Exec(memo.NoneTable{})
+
+	results := machine.CapturesIndex(capt)
+	expected := [][2]input.Pos{
+		[2]input.Pos{0, 6},
+	}
+
+	for i, r := range results {
+		if r[0] != expected[i][0] || r[1] != expected[i][1] {
 			t.Errorf("Error: got %v", results)
 		}
 	}

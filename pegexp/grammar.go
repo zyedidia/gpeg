@@ -273,13 +273,12 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
-	match, length, caps := machine.Exec(memo.NoneTable{})
+	match, length, root := machine.Exec(memo.NoneTable{})
 
 	if !match {
 		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
 
-	root := machine.CaptureAST(caps, pegCode)
 	return compile(root[0], in), nil
 }
 
