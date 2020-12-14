@@ -201,7 +201,7 @@ loop:
 			break loop
 		case opMemoOpen:
 			lbl := decodeU24(idata[vm.ip+1:])
-			id := decodeI16(idata[vm.ip+2:])
+			id := decodeI16(idata[vm.ip+4:])
 
 			ment, ok := memtbl.Get(memo.Key{
 				Id:  uint16(id),

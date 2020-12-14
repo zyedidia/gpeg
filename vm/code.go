@@ -149,7 +149,7 @@ func Encode(insns isa.Program) VMCode {
 			args = append([]byte{t.Back}, encodeI16(int(t.Id))...)
 		case isa.MemoOpen:
 			op = opMemoOpen
-			args = append(encodeI16(int(t.Id)), encodeLabel(labels[t.Lbl])...)
+			args = append(encodeLabel(labels[t.Lbl]), encodeI16(int(t.Id))...)
 		case isa.MemoClose:
 			op = opMemoClose
 		case isa.End:
