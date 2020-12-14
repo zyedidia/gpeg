@@ -47,12 +47,12 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	p, err := pegexp.CompilePatt(string(data))
-	if err != nil {
-		fatal(err)
-	}
-
 	if src != "" {
+		p, ids, err := pegexp.CompileGrammar(string(data))
+		if err != nil {
+			fatal(err)
+		}
+
 		peg, err := pattern.Compile(p)
 		if err != nil {
 			fatal(err)
@@ -62,8 +62,7 @@ func main() {
 		if err != nil {
 			fatal(err)
 		}
-		in := input.ByteReader(srcdata)
-		machine := vm.NewVM(in, code)
+		machine := vm.NewVM(input.ByteReader(srcdata), code)
 		match, _, ast := machine.Exec(memo.NoneTable{})
 		if !match {
 			fatal("Parse failed")
@@ -72,8 +71,16 @@ func main() {
 		if *out != "" {
 			outf = *out
 		}
-		viz.WriteDotViz(outf, viz.GraphAST(ast, map[string]int16{}))
+		err = viz.WriteDotViz(outf, viz.GraphAST(ast, srcdata, ids))
+		if err != nil {
+			fatal(err)
+		}
 	} else {
+		p, err := pegexp.CompilePatt(string(data))
+		if err != nil {
+			fatal(err)
+		}
+
 		g, ok := p.(*pattern.GrammarNode)
 		if !ok {
 			fatal("error: top-level node is not a grammar")
@@ -85,6 +92,9 @@ func main() {
 			outf = *out
 		}
 
-		viz.WriteDotViz(outf, viz.Graph(g))
+		err = viz.WriteDotViz(outf, viz.Graph(g))
+		if err != nil {
+			fatal(err)
+		}
 	}
 }

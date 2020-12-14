@@ -1,5 +1,5 @@
 # Hierarchical syntax
-Grammar    <- Spacing Definition+ EndOfFile
+Grammar    <- Spacing_ Definition+ EndOfFile_
 Definition <- Identifier LEFTARROW Expression
 
 Expression <- Sequence (SLASH Sequence)*
@@ -11,32 +11,32 @@ Primary    <- Identifier !LEFTARROW
             / Literal / Class / DOT
 
 # Lexical syntax
-Identifier <- IdentStart IdentCont* Spacing
+Identifier <- IdentStart IdentCont* Spacing_
 IdentStart <- [a-zA-Z_]
 IdentCont  <- IdentStart / [0-9]
 
-Literal    <- ['] (!['] Char)* ['] Spacing
-            / ["] (!["] Char)* ["] Spacing
-Class      <- '[' (!']' Range)* ']' Spacing
+Literal    <- ['] (!['] Char)* ['] Spacing_
+            / ["] (!["] Char)* ["] Spacing_
+Class      <- '[' (!']' Range)* ']' Spacing_
 Range      <- Char '-' Char / Char
 Char       <- '\\' [nrt'"\[\]\\]
             / '\\' [0-2][0-7][0-7]
             / '\\' [0-7][0-7]?
             / !'\\' .
 
-LEFTARROW  <- '<-' Spacing
-SLASH      <- '/' Spacing
-AND        <- '&' Spacing
-NOT        <- '!' Spacing
-QUESTION   <- '?' Spacing
-STAR       <- '*' Spacing
-PLUS       <- '+' Spacing
-OPEN       <- '(' Spacing
-CLOSE      <- ')' Spacing
-DOT        <- '.' Spacing
+LEFTARROW  <- '<-' Spacing_
+SLASH      <- '/' Spacing_
+AND        <- '&' Spacing_
+NOT        <- '!' Spacing_
+QUESTION   <- '?' Spacing_
+STAR       <- '*' Spacing_
+PLUS       <- '+' Spacing_
+OPEN       <- '(' Spacing_
+CLOSE      <- ')' Spacing_
+DOT        <- '.' Spacing_
 
-Spacing    <- (Space / Comment)*
-Comment    <- '#' (!EndOfLine .)* EndOfLine
-Space      <- ' ' / '\t' / EndOfLine
-EndOfLine  <- '\r\n' / '\n' / '\r'
-EndOfFile  <- !.
+Spacing_   <- (Space_ / Comment_)*
+Comment_   <- '#' (!EndOfLine_ .)* EndOfLine_
+Space_     <- ' ' / '\t' / EndOfLine_
+EndOfLine_ <- '\r\n' / '\n' / '\r'
+EndOfFile_ <- !.

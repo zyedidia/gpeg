@@ -17,7 +17,7 @@ import (
 
 // Peg grammar from Ford:
 // # Hierarchical syntax
-// Grammar    <- Spacing Definition+ EndOfFile
+// Grammar    <- Spacing_ Definition+ EndOfFile_
 // Definition <- Identifier LEFTARROW Expression
 //
 // Expression <- Sequence (SLASH Sequence)*
@@ -29,38 +29,38 @@ import (
 //             / Literal / Class / DOT
 //
 // # Lexical syntax
-// Identifier <- IdentStart IdentCont* Spacing
+// Identifier <- IdentStart IdentCont* Spacing_
 // IdentStart <- [a-zA-Z_]
 // IdentCont  <- IdentStart / [0-9]
 //
-// Literal    <- ['] (!['] Char)* ['] Spacing
-//             / ["] (!["] Char)* ["] Spacing
-// Class      <- '[' (!']' Range)* ']' Spacing
+// Literal    <- ['] (!['] Char)* ['] Spacing_
+//             / ["] (!["] Char)* ["] Spacing_
+// Class      <- '[' (!']' Range)* ']' Spacing_
 // Range      <- Char '-' Char / Char
 // Char       <- '\\' [\-nrt'"\[\]\\]
 //             / '\\' [0-2][0-7][0-7]
 //             / '\\' [0-7][0-7]?
 //             / !'\\' .
 //
-// LEFTARROW  <- '<-' Spacing
-// SLASH      <- '/' Spacing
-// AND        <- '&' Spacing
-// NOT        <- '!' Spacing
-// QUESTION   <- '?' Spacing
-// STAR       <- '*' Spacing
-// PLUS       <- '+' Spacing
-// OPEN       <- '(' Spacing
-// CLOSE      <- ')' Spacing
-// DOT        <- '.' Spacing
+// LEFTARROW  <- '<-' Spacing_
+// SLASH      <- '/' Spacing_
+// AND        <- '&' Spacing_
+// NOT        <- '!' Spacing_
+// QUESTION   <- '?' Spacing_
+// STAR       <- '*' Spacing_
+// PLUS       <- '+' Spacing_
+// OPEN       <- '(' Spacing_
+// CLOSE      <- ')' Spacing_
+// DOT        <- '.' Spacing_
 //
-// Spacing    <- (Space / Comment)*
-// Comment    <- '#' (!EndOfLine .)* EndOfLine
-// Space      <- ' ' / '\t' / EndOfLine
-// EndOfLine  <- '\r\n' / '\n' / '\r'
-// EndOfFile  <- !.
+// Spacing_    <- (Space_ / Comment_)*
+// Comment_    <- '#' (!EndOfLine_ .)* EndOfLine_
+// Space_      <- ' ' / '\t' / EndOfLine_
+// EndOfLine_  <- '\r\n' / '\n' / '\r'
+// EndOfFile_  <- !.
 
 var grammar = map[string]Pattern{
-	"Grammar":    Concat(NonTerm("Spacing"), Plus(NonTerm("Definition")), NonTerm("EndOfFile")),
+	"Grammar":    Concat(NonTerm("Spacing_"), Plus(NonTerm("Definition")), NonTerm("EndOfFile_")),
 	"Definition": Concat(NonTerm("Identifier"), NonTerm("LEFTARROW"), NonTerm("Expression")),
 	"Expression": Concat(NonTerm("Sequence"), Star(Concat(NonTerm("SLASH"), NonTerm("Sequence")))),
 	"Sequence":   Star(NonTerm("Prefix")),
@@ -69,34 +69,34 @@ var grammar = map[string]Pattern{
 	"Primary": Or(Concat(NonTerm("Identifier"), Not(NonTerm("LEFTARROW"))),
 		Concat(NonTerm("OPEN"), NonTerm("Expression"), NonTerm("CLOSE")),
 		NonTerm("Literal"), NonTerm("Class"), NonTerm("DOT")),
-	"Identifier": Concat(NonTerm("IdentStart"), Star(NonTerm("IdentCont")), NonTerm("Spacing")),
+	"Identifier": Concat(NonTerm("IdentStart"), Star(NonTerm("IdentCont")), NonTerm("Spacing_")),
 	"IdentStart": Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')).Add(charset.New([]byte{'_'}))),
 	"IdentCont":  Or(NonTerm("IdentStart"), Set(charset.Range('0', '9'))),
-	"Literal": Or(Concat(Literal("'"), Star(Concat(Not(Literal("'")), NonTerm("Char"))), Literal("'"), NonTerm("Spacing")),
-		Concat(Literal("\""), Star(Concat(Not(Literal("\"")), NonTerm("Char"))), Literal("\""), NonTerm("Spacing"))),
-	"Class": Concat(Literal("["), Star(Concat(Not(Literal("]")), NonTerm("Range"))), Literal("]"), NonTerm("Spacing")),
+	"Literal": Or(Concat(Literal("'"), Star(Concat(Not(Literal("'")), NonTerm("Char"))), Literal("'"), NonTerm("Spacing_")),
+		Concat(Literal("\""), Star(Concat(Not(Literal("\"")), NonTerm("Char"))), Literal("\""), NonTerm("Spacing_"))),
+	"Class": Concat(Literal("["), Star(Concat(Not(Literal("]")), NonTerm("Range"))), Literal("]"), NonTerm("Spacing_")),
 	"Range": Or(Concat(NonTerm("Char"), Literal("-"), NonTerm("Char")), NonTerm("Char")),
 	"Char": Or(Concat(Literal("\\"), Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\', '-'}))),
 		Concat(Literal("\\"), Set(charset.Range('0', '2')), Set(charset.Range('0', '7')), Set(charset.Range('0', '7'))),
 		Concat(Literal("\\"), Set(charset.Range('0', '7')), Optional(Set(charset.Range('0', '7')))),
 		Concat(Not(Literal("\\")), Any(1))),
 
-	"LEFTARROW": Concat(Literal("<-"), NonTerm("Spacing")),
-	"SLASH":     Concat(Literal("/"), NonTerm("Spacing")),
-	"AND":       Concat(Literal("&"), NonTerm("Spacing")),
-	"NOT":       Concat(Literal("!"), NonTerm("Spacing")),
-	"QUESTION":  Concat(Literal("?"), NonTerm("Spacing")),
-	"STAR":      Concat(Literal("*"), NonTerm("Spacing")),
-	"PLUS":      Concat(Literal("+"), NonTerm("Spacing")),
-	"OPEN":      Concat(Literal("("), NonTerm("Spacing")),
-	"CLOSE":     Concat(Literal(")"), NonTerm("Spacing")),
-	"DOT":       Concat(Literal("."), NonTerm("Spacing")),
+	"LEFTARROW": Concat(Literal("<-"), NonTerm("Spacing_")),
+	"SLASH":     Concat(Literal("/"), NonTerm("Spacing_")),
+	"AND":       Concat(Literal("&"), NonTerm("Spacing_")),
+	"NOT":       Concat(Literal("!"), NonTerm("Spacing_")),
+	"QUESTION":  Concat(Literal("?"), NonTerm("Spacing_")),
+	"STAR":      Concat(Literal("*"), NonTerm("Spacing_")),
+	"PLUS":      Concat(Literal("+"), NonTerm("Spacing_")),
+	"OPEN":      Concat(Literal("("), NonTerm("Spacing_")),
+	"CLOSE":     Concat(Literal(")"), NonTerm("Spacing_")),
+	"DOT":       Concat(Literal("."), NonTerm("Spacing_")),
 
-	"Spacing":   Star(Or(NonTerm("Space"), NonTerm("Comment"))),
-	"Comment":   Concat(Literal("#"), Star(Concat(Not(NonTerm("EndOfLine")), Any(1))), NonTerm("EndOfLine")),
-	"Space":     Or(Literal(" "), Literal("\t"), NonTerm("EndOfLine")),
-	"EndOfLine": Or(Literal("\r\n"), Literal("\n"), Literal("\r")),
-	"EndOfFile": Not(Any(1)),
+	"Spacing_":   Star(Or(NonTerm("Space_"), NonTerm("Comment_"))),
+	"Comment_":   Concat(Literal("#"), Star(Concat(Not(NonTerm("EndOfLine_")), Any(1))), NonTerm("EndOfLine_")),
+	"Space_":     Or(Literal(" "), Literal("\t"), NonTerm("EndOfLine_")),
+	"EndOfLine_": Or(Literal("\r\n"), Literal("\n"), Literal("\r")),
+	"EndOfFile_": Not(Any(1)),
 }
 
 var ids map[string]int16
@@ -158,7 +158,7 @@ func parseId(n *ast.Node, in input.Reader) string {
 func compileDef(n *ast.Node, in input.Reader) (string, pattern.Pattern) {
 	id := n.Children[0]
 	exp := n.Children[2]
-	return parseId(id, in), compile(exp, in)
+	return parseId(id, in), compile(exp, in, nil)
 }
 
 func compileSet(n *ast.Node, in input.Reader) charset.Set {
@@ -173,7 +173,7 @@ func compileSet(n *ast.Node, in input.Reader) charset.Set {
 	return charset.Set{}
 }
 
-func compile(n *ast.Node, in input.Reader) pattern.Pattern {
+func compile(n *ast.Node, in input.Reader, capids map[string]int16) pattern.Pattern {
 	var p pattern.Pattern
 	switch n.Id {
 	case ids["Grammar"]:
@@ -190,14 +190,18 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 			}
 			nonterms[k] = v
 		}
-		p = pattern.Grammar(first, nonterms)
+		if capids != nil {
+			p = pattern.CapGrammar(first, nonterms, capids)
+		} else {
+			p = pattern.Grammar(first, nonterms)
+		}
 	case ids["Expression"]:
 		alternations := make([]pattern.Pattern, 0, len(n.Children))
 		for _, c := range n.Children {
 			if c.Id != ids["Sequence"] {
 				continue
 			}
-			alternations = append(alternations, compile(c, in))
+			alternations = append(alternations, compile(c, in, nil))
 		}
 		p = pattern.Or(alternations...)
 	case ids["Sequence"]:
@@ -206,38 +210,38 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 			if c.Id != ids["Prefix"] {
 				continue
 			}
-			concats = append(concats, compile(c, in))
+			concats = append(concats, compile(c, in, nil))
 		}
 		p = pattern.Concat(concats...)
 	case ids["Prefix"]:
 		c := n.Children[0]
 		switch c.Id {
 		case ids["AND"]:
-			p = pattern.And(compile(n.Children[1], in))
+			p = pattern.And(compile(n.Children[1], in, nil))
 		case ids["NOT"]:
-			p = pattern.Not(compile(n.Children[1], in))
+			p = pattern.Not(compile(n.Children[1], in, nil))
 		default:
-			p = compile(n.Children[0], in)
+			p = compile(n.Children[0], in, nil)
 		}
 	case ids["Suffix"]:
 		if len(n.Children) == 2 {
 			c := n.Children[1]
 			switch c.Id {
 			case ids["QUESTION"]:
-				p = pattern.Optional(compile(n.Children[0], in))
+				p = pattern.Optional(compile(n.Children[0], in, nil))
 			case ids["STAR"]:
-				p = pattern.Star(compile(n.Children[0], in))
+				p = pattern.Star(compile(n.Children[0], in, nil))
 			case ids["PLUS"]:
-				p = pattern.Plus(compile(n.Children[0], in))
+				p = pattern.Plus(compile(n.Children[0], in, nil))
 			}
 		} else {
-			p = compile(n.Children[0], in)
+			p = compile(n.Children[0], in, nil)
 		}
 	case ids["Primary"]:
 		for _, c := range n.Children {
 			switch c.Id {
 			case ids["Identifier"], ids["Expression"], ids["Literal"], ids["Class"]:
-				p = compile(c, in)
+				p = compile(c, in, nil)
 			case ids["DOT"]:
 				p = pattern.Any(1)
 			default:
@@ -270,6 +274,19 @@ func compile(n *ast.Node, in input.Reader) pattern.Pattern {
 	return p
 }
 
+func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
+	in := input.StringReader(s)
+	machine := vm.NewVM(in, pegCode)
+	match, length, root := machine.Exec(memo.NoneTable{})
+
+	if !match {
+		return nil, nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
+	}
+
+	capids := make(map[string]int16)
+	return compile(root[0], in, capids), capids, nil
+}
+
 func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
@@ -279,7 +296,7 @@ func CompilePatt(s string) (pattern.Pattern, error) {
 		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
 
-	return compile(root[0], in), nil
+	return compile(root[0], in, nil), nil
 }
 
 func MustCompilePatt(s string) pattern.Pattern {

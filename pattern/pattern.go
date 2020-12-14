@@ -1,6 +1,8 @@
 package pattern
 
 import (
+	"strings"
+
 	"github.com/zyedidia/gpeg/charset"
 )
 
@@ -168,9 +170,11 @@ func NonTerm(name string) Pattern {
 func CapGrammar(start string, nonterms map[string]Pattern, nontermIds map[string]int16) Pattern {
 	var id int16
 	for k, v := range nonterms {
-		nonterms[k] = CapId(v, id)
-		nontermIds[k] = id
-		id++
+		if !strings.HasSuffix(k, "_") {
+			nonterms[k] = CapId(v, id)
+			nontermIds[k] = id
+			id++
+		}
 	}
 	return Grammar(start, nonterms)
 }
