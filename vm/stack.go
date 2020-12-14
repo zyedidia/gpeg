@@ -94,13 +94,13 @@ func (s *stack) pop(propagate bool) *stackEntry {
 		return nil
 	}
 
-	ret := s.entries[len(s.entries)-1]
+	ret := &s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
 	// For non-capture entries, propagate the captures upward.
 	if propagate && ret.capt != nil {
 		s.addCapt(ret.capt...)
 	}
-	return &ret
+	return ret
 }
 
 func (s *stack) popCapt(end input.Pos) *stackEntry {
