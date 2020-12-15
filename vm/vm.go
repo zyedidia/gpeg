@@ -190,6 +190,25 @@ loop:
 				pos: vm.input.Offset(),
 			})
 			vm.ip += szCaptureBegin
+		case opCaptureLate:
+			back := decodeU8(idata[vm.ip+1:])
+			id := decodeI16(idata[vm.ip+2:])
+			vm.st.pushCapt(stackMemo{
+				id:  uint16(id),
+				pos: vm.input.Offset() - input.Pos(back),
+			})
+			vm.ip += szCaptureLate
+		case opCaptureFull:
+			back := decodeU8(idata[vm.ip+1:])
+			id := decodeI16(idata[vm.ip+2:])
+			node := &ast.Node{
+				Id:       id,
+				Start:    vm.input.Offset() - input.Pos(back),
+				End:      vm.input.Offset(),
+				Children: nil,
+			}
+			vm.st.addCapt(node)
+			vm.ip += szCaptureFull
 		case opCaptureEnd:
 			ent := vm.st.popCapt(vm.input.Offset())
 			if ent == nil || ent.stype != stCapt {

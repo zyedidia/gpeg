@@ -219,11 +219,40 @@ func (p *AndNode) Compile() (isa.Program, error) {
 
 func (p *CapNode) Compile() (isa.Program, error) {
 	sub, err := Get(p.Patt).Compile()
+	if err != nil {
+		return nil, err
+	}
 	code := make(isa.Program, 0, len(sub)+2)
-	code = append(code, isa.CaptureBegin{Id: p.Id})
-	code = append(code, sub...)
+
+	i := 0
+	back := 0
+loop:
+	for _, insn := range sub {
+		switch t := insn.(type) {
+		case isa.Char, isa.Set:
+			back++
+		case isa.Any:
+			back += int(t.N)
+		default:
+			break loop
+		}
+		i++
+	}
+
+	if i == 0 || back >= 256 {
+		code = append(code, isa.CaptureBegin{Id: p.Id})
+		i = 0
+	} else if i == len(sub) && back < 256 {
+		code = append(code, sub...)
+		code = append(code, isa.CaptureFull{Back: byte(back), Id: p.Id})
+		return code, nil
+	} else {
+		code = append(code, sub[:i]...)
+		code = append(code, isa.CaptureLate{Back: byte(back), Id: p.Id})
+	}
+	code = append(code, sub[i:]...)
 	code = append(code, isa.CaptureEnd{})
-	return code, err
+	return code, nil
 }
 
 func (p *MemoNode) Compile() (isa.Program, error) {

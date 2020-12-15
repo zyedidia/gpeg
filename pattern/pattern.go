@@ -8,10 +8,7 @@ import (
 
 // Cap marks a pattern to be captured.
 func Cap(p Pattern) Pattern {
-	return &CapNode{
-		Patt: p,
-		Id:   0,
-	}
+	return CapId(p, 0)
 }
 
 // CapId marks a pattern with an ID to be captured.
