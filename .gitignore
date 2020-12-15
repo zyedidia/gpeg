@@ -7,4 +7,6 @@ testdata/
 bench/bench
 gpeg
 !cmd/gpeg
+perg
+!cmd/perg
 *.pdf
