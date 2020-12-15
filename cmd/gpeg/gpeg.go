@@ -17,7 +17,9 @@ import (
 )
 
 var peg = flag.String("peg", "", "PEG input grammar")
-var out = flag.String("o", "", "Output file")
+var out = flag.String("o", "", "output file")
+var visualize = flag.Bool("viz", false, "visualize")
+var size = flag.Bool("size", false, "display size information")
 
 func fatal(msg ...interface{}) {
 	fmt.Fprintln(os.Stderr, msg...)
@@ -47,54 +49,75 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	if src != "" {
-		p, ids, err := pegexp.CompileGrammar(string(data))
-		if err != nil {
-			fatal(err)
-		}
 
-		peg, err := pattern.Compile(p)
-		if err != nil {
-			fatal(err)
-		}
-		code := vm.Encode(peg)
-		srcdata, err := ioutil.ReadFile(src)
-		if err != nil {
-			fatal(err)
-		}
-		machine := vm.NewVM(input.ByteReader(srcdata), code)
-		match, _, ast := machine.Exec(memo.NoneTable{})
-		if !match {
-			fatal("Parse failed")
-		}
-		outf := srcname + ".pdf"
-		if *out != "" {
-			outf = *out
-		}
-		err = viz.WriteDotViz(outf, viz.GraphAST(ast, srcdata, ids))
-		if err != nil {
-			fatal(err)
-		}
-	} else {
+	if *size {
 		p, err := pegexp.CompilePatt(string(data))
 		if err != nil {
 			fatal(err)
 		}
-
-		g, ok := p.(*pattern.GrammarNode)
-		if !ok {
-			fatal("error: top-level node is not a grammar")
-		}
-		g.Inline()
-
-		outf := pegname + ".pdf"
-		if *out != "" {
-			outf = *out
-		}
-
-		err = viz.WriteDotViz(outf, viz.Graph(g))
+		prog, err := pattern.Compile(p)
 		if err != nil {
 			fatal(err)
+		}
+		fmt.Println(viz.ToHistogram(prog))
+		code := vm.Encode(prog)
+		serialized, err := code.ToBytes()
+		if err != nil {
+			fatal(err)
+		}
+		fmt.Println("Size:", code.Size(), "Serialized size:", len(serialized))
+	}
+
+	if *visualize {
+		if src != "" {
+			p, ids, err := pegexp.CompileGrammar(string(data))
+			if err != nil {
+				fatal(err)
+			}
+
+			prog, err := pattern.Compile(p)
+			if err != nil {
+				fatal(err)
+			}
+			code := vm.Encode(prog)
+			srcdata, err := ioutil.ReadFile(src)
+			if err != nil {
+				fatal(err)
+			}
+			machine := vm.NewVM(input.ByteReader(srcdata), code)
+			match, _, ast := machine.Exec(memo.NoneTable{})
+			if !match {
+				fatal("Parse failed")
+			}
+			outf := srcname + ".pdf"
+			if *out != "" {
+				outf = *out
+			}
+			err = viz.WriteDotViz(outf, viz.GraphAST(ast, srcdata, ids))
+			if err != nil {
+				fatal(err)
+			}
+		} else {
+			p, err := pegexp.CompilePatt(string(data))
+			if err != nil {
+				fatal(err)
+			}
+
+			g, ok := p.(*pattern.GrammarNode)
+			if !ok {
+				fatal("error: top-level node is not a grammar")
+			}
+			g.Inline()
+
+			outf := pegname + ".pdf"
+			if *out != "" {
+				outf = *out
+			}
+
+			err = viz.WriteDotViz(outf, viz.Graph(g))
+			if err != nil {
+				fatal(err)
+			}
 		}
 	}
 }

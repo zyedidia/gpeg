@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
@@ -29,15 +30,22 @@ func (c *VMCode) Size() int {
 
 func (c *VMCode) ToBytes() ([]byte, error) {
 	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
+	fz := gzip.NewWriter(&buf)
+	enc := gob.NewEncoder(fz)
 	err := enc.Encode(c.data)
+	fz.Close()
 	return buf.Bytes(), err
 }
 
 func FromBytes(b []byte) (VMCode, error) {
 	var c code
-	dec := gob.NewDecoder(bytes.NewBuffer(b))
-	err := dec.Decode(&c)
+	fz, err := gzip.NewReader(bytes.NewBuffer(b))
+	if err != nil {
+		return VMCode{}, err
+	}
+	dec := gob.NewDecoder(fz)
+	err = dec.Decode(&c)
+	fz.Close()
 	return VMCode{
 		data: c,
 	}, err

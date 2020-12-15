@@ -1,19 +1,50 @@
 package viz
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
+	"sort"
 
 	"github.com/zyedidia/gpeg/isa"
 )
 
+type Histogram map[reflect.Type]int
+
+func (h Histogram) String() string {
+	type kv struct {
+		Key   reflect.Type
+		Value int
+	}
+
+	var ss []kv
+	for k, v := range h {
+		ss = append(ss, kv{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].Value > ss[j].Value
+	})
+
+	buf := &bytes.Buffer{}
+	for _, kv := range ss {
+		buf.WriteString(fmt.Sprintf("%v: %d\n", kv.Key, kv.Value))
+	}
+	return buf.String()
+}
+
 // Histogram returns the number of times each instruction occurs in the given
 // parsing program.
-func Histogram(p isa.Program) map[reflect.Type]int {
-	hist := make(map[reflect.Type]int)
+func ToHistogram(p isa.Program) Histogram {
+	hist := make(Histogram)
 	for _, insn := range p {
+		switch insn.(type) {
+		case isa.Label, isa.Nop:
+			continue
+		}
 		t := reflect.TypeOf(insn)
 		hist[t]++
 	}
