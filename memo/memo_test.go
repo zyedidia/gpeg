@@ -43,7 +43,7 @@ func TestLRUTable(t *testing.T) {
 	table.Put(k1, e1)
 
 	ret, ok = table.Get(k1)
-	if !ok || ret != e1 {
+	if !ok || ret.length != e1.length {
 		t.Error("Incorrect entry for k1")
 	}
 	ret, ok = table.Get(k2)
@@ -54,11 +54,11 @@ func TestLRUTable(t *testing.T) {
 	table.Put(k2, e2)
 	table.Put(k2, e3)
 	ret, ok = table.Get(k2)
-	if !ok || ret != e3 {
+	if !ok || ret.length != e3.length {
 		t.Error("Incorrect entry for k2")
 	}
 	ret, ok = table.Get(k1)
-	if !ok || ret != e1 {
+	if !ok || ret.length != e1.length {
 		t.Error("Incorrect entry for k1")
 	}
 
@@ -68,7 +68,7 @@ func TestLRUTable(t *testing.T) {
 		t.Error("Incorrect entry for k2")
 	}
 	ret, ok = table.Get(k3)
-	if !ok || ret != e4 {
+	if !ok || ret.length != e4.length {
 		t.Error("Incorrect entry for k3")
 	}
 }

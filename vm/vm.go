@@ -232,7 +232,7 @@ loop:
 				}
 				capt := ment.Value()
 				if capt != nil {
-					vm.st.addCapt(capt.([]*ast.Node)...)
+					vm.st.addCapt(capt...)
 				}
 				vm.input.Advance(ment.MatchLength())
 				vm.ip = int(lbl)

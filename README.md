@@ -27,14 +27,14 @@ heavily inspired by LPeg.
 * [x] Parse non-string data structures (reader interface).
     * [ ] Support for custom offset types (e.g. line/col instead of index).
 * [x] Incremental matching.
-* [ ] Incremental AST/captures.
+* [x] Incremental AST/captures.
 * [ ] Support for an extended PEG syntax (TBD).
 * [ ] Compilation of VM code to native code (JIT or static compilation TBD).
 * [ ] Documentation and examples.
 * [ ] Creation of a large bundle of PEGs for common programming languages.
 * [ ] Additional niceties (TBD).
     * [x] Grammar tree visualizer.
-    * [ ] AST visualizer.
+    * [x] AST visualizer.
     * [ ] Error recovery.
     * [ ] Support for left recursion.
 

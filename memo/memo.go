@@ -1,6 +1,7 @@
 package memo
 
 import (
+	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/input"
 )
 
@@ -20,11 +21,11 @@ type Key struct {
 type Entry struct {
 	examined int
 	length   int
-	val      interface{}
+	val      []*ast.Node
 }
 
 // NewEntry returns a new entry with the given information.
-func NewEntry(matchlen, examlen int, val interface{}) Entry {
+func NewEntry(matchlen, examlen int, val []*ast.Node) Entry {
 	return Entry{
 		examined: examlen,
 		length:   matchlen,
@@ -43,6 +44,6 @@ func (e *Entry) Examined() int {
 	return e.examined
 }
 
-func (e *Entry) Value() interface{} {
+func (e *Entry) Value() []*ast.Node {
 	return e.val
 }

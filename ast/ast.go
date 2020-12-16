@@ -23,3 +23,10 @@ func (n *Node) String() string {
 	}
 	return fmt.Sprintf("{%d, [%s]}", n.Id, buf.String())
 }
+
+func (n *Node) Each(fn func(*Node)) {
+	fn(n)
+	for _, c := range n.Children {
+		c.Each(fn)
+	}
+}

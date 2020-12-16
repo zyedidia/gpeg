@@ -1,6 +1,7 @@
 package memo
 
 import (
+	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/input"
 )
 
@@ -40,6 +41,14 @@ func (t MapTable) ApplyEdit(e Edit) {
 			delete(t, key)
 			// TODO: not sure if this is fully correct
 			key.Pos += input.Pos(size)
+
+			for _, n := range ent.Value() {
+				n.Each(func(child *ast.Node) {
+					child.Start += input.Pos(size)
+					child.End += input.Pos(size)
+				})
+			}
+
 			// If there is an entry where we want to move to, that is
 			// unfortunate we will just invalidate this entry, even though
 			// it's not strictly necessary for simplicity (hopefully this
