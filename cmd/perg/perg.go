@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/golang-collections/go-datastructures/augmentedtree"
+	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
 	"github.com/zyedidia/gpeg/pattern"
@@ -31,7 +31,7 @@ func fatal(msg ...interface{}) {
 
 func search(p pattern.Pattern) pattern.Pattern {
 	if *capture {
-		p = pattern.Cap(p)
+		p = pattern.CapId(p, 0)
 	}
 	if !*patt {
 		p = pattern.Search(p)
@@ -94,25 +94,38 @@ func main() {
 		fatal(err)
 	}
 
-	code := vm.Encode(search)
-	machine := vm.NewVM(input.ByteReader(data), code)
-	start := time.Now()
-	_, _, ast := machine.Exec(memo.NoneTable{})
-	fmt.Println(time.Since(start))
-	caps := machine.CapturesIndex(ast)
-
 	tree := augmentedtree.New(1)
 	tree.Add(lines...)
-	for _, c := range caps {
+
+	code := vm.Encode(search)
+	machine := vm.NewVM(input.ByteReader(data), code)
+	machine.AddCapFunc(0, func(n *ast.Node, in *input.BufferedReader) bool {
 		start := tree.Query(Line{
-			Start: int(c[0]),
-			End:   int(c[0]),
+			Start: int(n.Start()),
+			End:   int(n.Start()),
 		})
 		end := tree.Query(Line{
-			Start: int(c[1]),
-			End:   int(c[1]),
+			Start: int(n.End()),
+			End:   int(n.End()),
 		})
 		text := string(data[start[0].LowAtDimension(0):end[0].HighAtDimension(0)])
 		fmt.Printf("%d: %s\n", start[0].ID(), text)
-	}
+
+		return true
+	})
+	machine.Exec(memo.NoneTable{})
+	// caps := machine.CapturesIndex(ast)
+	//
+	// for _, c := range caps {
+	// 	start := tree.Query(Line{
+	// 		Start: int(c[0]),
+	// 		End:   int(c[0]),
+	// 	})
+	// 	end := tree.Query(Line{
+	// 		Start: int(c[1]),
+	// 		End:   int(c[1]),
+	// 	})
+	// 	text := string(data[start[0].LowAtDimension(0):end[0].HighAtDimension(0)])
+	// 	fmt.Printf("%d: %s\n", start[0].ID(), text)
+	// }
 }
