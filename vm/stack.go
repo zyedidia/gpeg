@@ -101,24 +101,12 @@ func (s *stack) pop(propagate bool) *stackEntry {
 	ret := &s.entries[len(s.entries)-1]
 	s.entries = s.entries[:len(s.entries)-1]
 	// For non-capture entries, propagate the captures upward.
+	// For capture entries, we create a new node with the corresponding
+	// children, and this is manually handled by the caller.
 	if propagate && ret.capt != nil {
 		s.addCapt(ret.capt...)
 	}
 	return ret
-}
-
-func (s *stack) popCapt(end input.Pos) *stackEntry {
-	if len(s.entries) == 0 {
-		return nil
-	}
-
-	ret := s.entries[len(s.entries)-1]
-	s.entries = s.entries[:len(s.entries)-1]
-	// For capture entries, we create a new node with the corresponding
-	// children.
-	node := ast.NewNode(ret.memo.id, ret.memo.pos, int(end-ret.memo.pos), ret.capt)
-	s.addCapt(node)
-	return &ret
 }
 
 func (s *stack) peek() *stackEntry {

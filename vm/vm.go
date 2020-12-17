@@ -11,10 +11,13 @@ import (
 
 const memoCutoff = 128
 
+type CapFunc func(capt *ast.Node, in *input.BufferedReader) bool
+
 type VM struct {
-	ip   int
-	st   *stack
-	code VMCode
+	ip     int
+	st     *stack
+	code   VMCode
+	capfns map[int16]CapFunc
 
 	input *input.BufferedReader
 }
@@ -26,6 +29,23 @@ func NewVM(r input.Reader, code VMCode) *VM {
 		input: input.NewBufferedReader(r),
 		code:  code,
 	}
+}
+
+func (vm *VM) AddCapFunc(id int16, fn CapFunc) {
+	if vm.capfns == nil {
+		vm.capfns = make(map[int16]CapFunc)
+	}
+	vm.capfns[id] = fn
+}
+
+func (vm *VM) callCapFunc(id int16, node *ast.Node) bool {
+	if vm.capfns == nil {
+		return true
+	}
+	if fn, ok := vm.capfns[id]; ok {
+		return fn(node, vm.input)
+	}
+	return true
 }
 
 func (vm *VM) SeekTo(p input.Pos) {
@@ -203,10 +223,23 @@ loop:
 			id := decodeI16(idata[vm.ip+2:])
 			pos := vm.input.Offset()
 			node := ast.NewNode(id, pos-input.Pos(back), int(back), nil)
+
+			success := vm.callCapFunc(id, node)
+			if !success {
+				goto fail
+			}
+
 			vm.st.addCapt(node)
 			vm.ip += szCaptureFull
 		case opCaptureEnd:
-			ent := vm.st.popCapt(vm.input.Offset())
+			ent := vm.st.pop(false)
+			end := vm.input.Offset()
+			node := ast.NewNode(ent.memo.id, ent.memo.pos, int(end-ent.memo.pos), ent.capt)
+			success := vm.callCapFunc(ent.memo.id, node)
+			if !success {
+				goto fail
+			}
+			vm.st.addCapt(node)
 			if ent == nil || ent.stype != stCapt {
 				panic("CaptureEnd did not find capture entry")
 			}
