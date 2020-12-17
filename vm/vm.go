@@ -201,12 +201,8 @@ loop:
 		case opCaptureFull:
 			back := decodeU8(idata[vm.ip+1:])
 			id := decodeI16(idata[vm.ip+2:])
-			node := &ast.Node{
-				Id:       id,
-				Start:    vm.input.Offset() - input.Pos(back),
-				End:      vm.input.Offset(),
-				Children: nil,
-			}
+			pos := vm.input.Offset()
+			node := ast.NewNode(id, pos-input.Pos(back), int(back), nil)
 			vm.st.addCapt(node)
 			vm.ip += szCaptureFull
 		case opCaptureEnd:

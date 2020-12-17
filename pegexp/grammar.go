@@ -150,7 +150,7 @@ func parseId(n *ast.Node, in input.Reader) string {
 			continue
 		}
 
-		ident.Write(in.Slice(c.Start, c.End))
+		ident.Write(in.Slice(c.Start(), c.End()))
 	}
 	return ident.String()
 }
@@ -165,10 +165,10 @@ func compileSet(n *ast.Node, in input.Reader) charset.Set {
 	switch len(n.Children) {
 	case 1:
 		c := n.Children[0]
-		return charset.New([]byte{parseChar(in.Slice(c.Start, c.End))})
+		return charset.New([]byte{parseChar(in.Slice(c.Start(), c.End()))})
 	case 2:
 		c1, c2 := n.Children[0], n.Children[1]
-		return charset.Range(parseChar(in.Slice(c1.Start, c1.End)), parseChar(in.Slice(c2.Start, c2.End)))
+		return charset.Range(parseChar(in.Slice(c1.Start(), c1.End())), parseChar(in.Slice(c2.Start(), c2.End())))
 	}
 	return charset.Set{}
 }
@@ -255,7 +255,7 @@ func compile(n *ast.Node, in input.Reader, capids map[string]int16) pattern.Patt
 			if c.Id != ids["Char"] {
 				continue
 			}
-			lit.WriteByte(parseChar(in.Slice(c.Start, c.End)))
+			lit.WriteByte(parseChar(in.Slice(c.Start(), c.End())))
 		}
 		p = pattern.Literal(lit.String())
 	case ids["Class"]:

@@ -10,7 +10,7 @@ import (
 )
 
 func text(n *ast.Node, data []byte) string {
-	str := string(data[n.Start:n.End])
+	str := string(data[n.Start():n.End()])
 	str = strings.ReplaceAll(str, ">", "&gt;")
 	str = strings.ReplaceAll(str, "<", "&lt;")
 	return strconv.Quote(strconv.QuoteToASCII(str))

@@ -116,12 +116,7 @@ func (s *stack) popCapt(end input.Pos) *stackEntry {
 	s.entries = s.entries[:len(s.entries)-1]
 	// For capture entries, we create a new node with the corresponding
 	// children.
-	node := &ast.Node{
-		Id:       int16(ret.memo.id),
-		Start:    ret.memo.pos,
-		End:      end,
-		Children: ret.capt,
-	}
+	node := ast.NewNode(ret.memo.id, ret.memo.pos, int(end-ret.memo.pos), ret.capt)
 	s.addCapt(node)
 	return &ret
 }

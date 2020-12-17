@@ -44,8 +44,7 @@ func (t MapTable) ApplyEdit(e Edit) {
 
 			for _, n := range ent.Value() {
 				n.Each(func(child *ast.Node) {
-					child.Start += input.Pos(size)
-					child.End += input.Pos(size)
+					child.Advance(size)
 				})
 			}
 

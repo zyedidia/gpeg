@@ -33,7 +33,7 @@ func (vm *VM) CapturesIndex(capt []*ast.Node) [][2]input.Pos {
 	caps := make([][2]input.Pos, 0, len(capt))
 	for _, c := range capt {
 		caps = append(caps, [2]input.Pos{
-			c.Start, c.End,
+			c.Start(), c.End(),
 		})
 		if c.Children != nil {
 			caps = append(caps, vm.CapturesIndex(c.Children)...)

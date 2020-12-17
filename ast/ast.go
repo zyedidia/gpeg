@@ -8,9 +8,19 @@ import (
 )
 
 type Node struct {
-	Id         int16
-	Start, End input.Pos
-	Children   []*Node
+	Id       int16
+	start    input.Pos
+	length   int
+	Children []*Node
+}
+
+func NewNode(id int16, start input.Pos, length int, children []*Node) *Node {
+	return &Node{
+		Id:       id,
+		start:    start,
+		length:   length,
+		Children: children,
+	}
 }
 
 func (n *Node) String() string {
@@ -29,4 +39,16 @@ func (n *Node) Each(fn func(*Node)) {
 	for _, c := range n.Children {
 		c.Each(fn)
 	}
+}
+
+func (n *Node) Start() input.Pos {
+	return n.start
+}
+
+func (n *Node) End() input.Pos {
+	return n.start + input.Pos(n.length)
+}
+
+func (n *Node) Advance(k int) {
+	n.start += input.Pos(k)
 }
