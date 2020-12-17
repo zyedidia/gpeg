@@ -31,6 +31,13 @@ func Get(p Pattern) Pattern {
 		if ok {
 			return &ClassNode{Chars: set}
 		}
+	case *OptionalNode:
+		// Optional of a Kleene star is unnecessary and we can remove the
+		// optional.
+		star, ok := Get(t.Patt).(*StarNode)
+		if ok {
+			return star
+		}
 	case *SeqNode:
 		// This optimizes patterns like `![a-z] .`. Instead of using a not
 		// predicate in this case, we can just complement the set and use a

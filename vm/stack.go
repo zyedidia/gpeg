@@ -81,7 +81,11 @@ func newStack() *stack {
 }
 
 func (s *stack) reset() {
-	s.entries = s.entries[:1]
+	s.capt = nil
+	// need to complete remake the slice so that the underlying captures can be
+	// released to the garbage collector if the user has no references to them
+	// (unused stack entries shouldn't keep references to those captures).
+	s.entries = make([]stackEntry, 0, 4)
 }
 
 func (s *stack) push(ent stackEntry) {
