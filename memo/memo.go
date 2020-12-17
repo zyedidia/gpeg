@@ -11,7 +11,7 @@ import (
 // "Number", the key would be Key{id("Number"), textpos} to check if a number
 // has already been parsed and memoized at textpos.
 type Key struct {
-	Id  uint16
+	Id  int16
 	Pos input.Pos
 }
 

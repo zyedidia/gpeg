@@ -67,7 +67,7 @@ type stackBacktrack struct {
 func (s stackBacktrack) isStackEntry() {}
 
 type stackMemo struct {
-	id  uint16
+	id  int16
 	pos input.Pos
 }
 

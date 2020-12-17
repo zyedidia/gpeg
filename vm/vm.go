@@ -186,7 +186,7 @@ loop:
 		case opCaptureBegin:
 			id := decodeI16(idata[vm.ip+2:])
 			vm.st.pushCapt(stackMemo{
-				id:  uint16(id),
+				id:  id,
 				pos: vm.input.Offset(),
 			})
 			vm.ip += szCaptureBegin
@@ -194,7 +194,7 @@ loop:
 			back := decodeU8(idata[vm.ip+1:])
 			id := decodeI16(idata[vm.ip+2:])
 			vm.st.pushCapt(stackMemo{
-				id:  uint16(id),
+				id:  id,
 				pos: vm.input.Offset() - input.Pos(back),
 			})
 			vm.ip += szCaptureLate
@@ -223,7 +223,7 @@ loop:
 			id := decodeI16(idata[vm.ip+4:])
 
 			ment, ok := memtbl.Get(memo.Key{
-				Id:  uint16(id),
+				Id:  id,
 				Pos: vm.input.Offset(),
 			})
 			if ok {
@@ -238,7 +238,7 @@ loop:
 				vm.ip = int(lbl)
 			} else {
 				vm.st.pushMemo(stackMemo{
-					id:  uint16(id),
+					id:  id,
 					pos: vm.input.Offset(),
 				})
 				vm.ip += szMemoOpen
