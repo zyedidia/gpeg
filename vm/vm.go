@@ -38,13 +38,24 @@ func (vm *VM) AddCapFunc(id int16, fn CapFunc) {
 	vm.capfns[id] = fn
 }
 
-func (vm *VM) callCapFunc(id int16, node *ast.Node) bool {
+func (vm *VM) callCapFunc(node *ast.Node) bool {
 	if vm.capfns == nil {
 		return true
 	}
-	if fn, ok := vm.capfns[id]; ok {
+	if fn, ok := vm.capfns[node.Id]; ok {
 		return fn(node, vm.input)
 	}
+	return true
+}
+
+func (vm *VM) addCapt(nodes ...*ast.Node) bool {
+	for _, n := range nodes {
+		ok := vm.callCapFunc(n)
+		if !ok {
+			return false
+		}
+	}
+	vm.st.addCapt(nodes...)
 	return true
 }
 
@@ -224,22 +235,20 @@ loop:
 			pos := vm.input.Offset()
 			node := ast.NewNode(id, pos-input.Pos(back), int(back), nil)
 
-			success := vm.callCapFunc(id, node)
+			success := vm.addCapt(node)
 			if !success {
 				goto fail
 			}
 
-			vm.st.addCapt(node)
 			vm.ip += szCaptureFull
 		case opCaptureEnd:
 			ent := vm.st.pop(false)
 			end := vm.input.Offset()
 			node := ast.NewNode(ent.memo.id, ent.memo.pos, int(end-ent.memo.pos), ent.capt)
-			success := vm.callCapFunc(ent.memo.id, node)
+			success := vm.addCapt(node)
 			if !success {
 				goto fail
 			}
-			vm.st.addCapt(node)
 			if ent == nil || ent.stype != stCapt {
 				panic("CaptureEnd did not find capture entry")
 			}
@@ -261,7 +270,10 @@ loop:
 				}
 				capt := ment.Value()
 				if capt != nil {
-					vm.st.addCapt(capt...)
+					success := vm.addCapt(capt...)
+					if !success {
+						goto fail
+					}
 				}
 				vm.input.Advance(ment.MatchLength())
 				vm.ip = int(lbl)
