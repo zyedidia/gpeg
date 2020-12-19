@@ -6,11 +6,7 @@ import (
 	"github.com/zyedidia/gpeg/input"
 )
 
-type capt struct {
-	off input.Pos
-	ip  int
-}
-
+// Captures returns the captures as byte slices.
 func (vm *VM) Captures(capt []*ast.Node) [][]byte {
 	ind := vm.CapturesIndex(capt)
 	caps := make([][]byte, len(ind))
@@ -20,6 +16,7 @@ func (vm *VM) Captures(capt []*ast.Node) [][]byte {
 	return caps
 }
 
+// CapturesString returns the captures as strings.
 func (vm *VM) CapturesString(capt []*ast.Node) []string {
 	ind := vm.CapturesIndex(capt)
 	caps := make([]string, len(ind))
@@ -29,6 +26,8 @@ func (vm *VM) CapturesString(capt []*ast.Node) []string {
 	return caps
 }
 
+// CapturesIndex returns the indices of the captures. This is returned as a
+// start position and end position.
 func (vm *VM) CapturesIndex(capt []*ast.Node) [][2]input.Pos {
 	caps := make([][2]input.Pos, 0, len(capt))
 	for _, c := range capt {

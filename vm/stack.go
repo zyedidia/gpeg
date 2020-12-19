@@ -39,10 +39,13 @@ const (
 )
 
 type stackEntry struct {
-	stype  byte
+	stype byte
+	// we could use a union to avoid the space cost but I have found this
+	// doesn't impact performance and the space cost itself is quite small
+	// because the stack is usually small.
 	ret    stackRet
 	btrack stackBacktrack
-	memo   stackMemo
+	memo   stackMemo // stackMemo is reused for stCapt
 
 	capt []*ast.Node
 }
@@ -57,21 +60,15 @@ func (se *stackEntry) addCapt(capt []*ast.Node) {
 
 type stackRet int
 
-func (s stackRet) isStackEntry() {}
-
 type stackBacktrack struct {
 	ip  int
 	off input.Pos
 }
 
-func (s stackBacktrack) isStackEntry() {}
-
 type stackMemo struct {
 	id  int16
 	pos input.Pos
 }
-
-func (s stackMemo) isStackEntry() {}
 
 func newStack() *stack {
 	return &stack{

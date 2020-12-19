@@ -164,6 +164,9 @@ func NonTerm(name string) Pattern {
 	}
 }
 
+// CapGrammar is equivalent to grammar but it captures every non-terminal that
+// doesn't end with '_' and maps non-terminal names to their capture IDs in the
+// map 'nontermIds'.
 func CapGrammar(start string, nonterms map[string]Pattern, nontermIds map[string]int16) Pattern {
 	var id int16
 	for k, v := range nonterms {

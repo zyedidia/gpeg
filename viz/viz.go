@@ -12,8 +12,10 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
+// A Histogram maps instruction types to number of uses.
 type Histogram map[reflect.Type]int
 
+// String prints a histogram in sorted form.
 func (h Histogram) String() string {
 	type kv struct {
 		Key   reflect.Type
@@ -36,7 +38,7 @@ func (h Histogram) String() string {
 	return buf.String()
 }
 
-// Histogram returns the number of times each instruction occurs in the given
+// ToHistogram returns the number of times each instruction occurs in the given
 // parsing program.
 func ToHistogram(p isa.Program) Histogram {
 	hist := make(Histogram)

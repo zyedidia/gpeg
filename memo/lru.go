@@ -139,6 +139,7 @@ func (t *LRUTable) ApplyEdit(e Edit) {
 	}
 }
 
+// Size returns the number of entries in the table.
 func (t *LRUTable) Size() int {
 	return t.size
 }

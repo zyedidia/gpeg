@@ -1,7 +1,9 @@
 package memo
 
+// NoneTable implements a memoization table that does nothing.
 type NoneTable struct{}
 
+// Get always returns 'not found'
 func (t NoneTable) Get(k Key) (Entry, bool) {
 	return Entry{}, false
 }

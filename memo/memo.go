@@ -44,6 +44,7 @@ func (e *Entry) Examined() int {
 	return e.examined
 }
 
+// Value returns the parse result associated with this memo entry.
 func (e *Entry) Value() []*ast.Node {
 	return e.val
 }

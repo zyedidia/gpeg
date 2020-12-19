@@ -15,6 +15,7 @@ func (b ByteReader) ReadAtPos(pos Pos) ([]byte, error) {
 	return b[pos:], nil
 }
 
+// Slice returns the corresponding slice from the byte reader.
 func (b ByteReader) Slice(low, high Pos) []byte {
 	return b[low:high]
 }
@@ -30,9 +31,7 @@ func (b StringReader) ReadAtPos(pos Pos) ([]byte, error) {
 	return b[pos:], nil
 }
 
+// Slice returns the corresponding slice from the string reader.
 func (b StringReader) Slice(low, high Pos) []byte {
-	if int(high) > len(b) {
-		return []byte{}
-	}
 	return b[low:high]
 }

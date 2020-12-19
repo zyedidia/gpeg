@@ -9,10 +9,15 @@ import (
 	"github.com/zyedidia/gpeg/memo"
 )
 
+// do not memoize results that are smaller than this threshold.
 const memoCutoff = 128
 
+// A CapFunc is a function that is called immediately when a capture happens.
+// If 'false' is returned then the pattern fails immediately. Note that this
+// function may also modify the capture.
 type CapFunc func(capt *ast.Node, in *input.BufferedReader) bool
 
+// A VM is a virtual machine capable of interpreting GPeg programs.
 type VM struct {
 	ip     int
 	st     *stack
@@ -22,6 +27,7 @@ type VM struct {
 	input *input.BufferedReader
 }
 
+// NewVM returns a new parsing machine.
 func NewVM(r input.Reader, code VMCode) *VM {
 	return &VM{
 		ip:    0,
@@ -31,6 +37,7 @@ func NewVM(r input.Reader, code VMCode) *VM {
 	}
 }
 
+// AddCapFunc registers a given capture function to the specified capture ID.
 func (vm *VM) AddCapFunc(id int16, fn CapFunc) {
 	if vm.capfns == nil {
 		vm.capfns = make(map[int16]CapFunc)
@@ -59,20 +66,26 @@ func (vm *VM) addCapt(nodes ...*ast.Node) bool {
 	return true
 }
 
+// SeekTo moves the current subject position to the given position.
 func (vm *VM) SeekTo(p input.Pos) {
 	vm.input.SeekTo(p)
 }
 
+// Reset resets the virtual machine.
 func (vm *VM) Reset() {
 	vm.ip = 0
 	vm.input.ResetMaxExamined()
 	vm.st.reset()
 }
 
+// SetReader assigns a new reader to this virtual machine.
 func (vm *VM) SetReader(r input.Reader) {
 	vm.input = input.NewBufferedReader(r)
 }
 
+// Exec executes the parsing program this virtual machine was created with. It
+// returns whether the parse was a match, the last position in the subject
+// string that was matched, and any captures that were created.
 func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []*ast.Node) {
 	idata := vm.code.data.Insns
 

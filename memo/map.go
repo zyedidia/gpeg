@@ -5,25 +5,32 @@ import (
 	"github.com/zyedidia/gpeg/input"
 )
 
+// A MapTable implements a map-based memoization table
 type MapTable map[Key]Entry
 
+// NewMapTable constructs a new MapTable.
 func NewMapTable() MapTable {
 	return make(MapTable)
 }
 
+// Get returns the memo entry associated with the given key.
 func (t MapTable) Get(k Key) (Entry, bool) {
 	e, ok := t[k]
 	return e, ok
 }
 
+// Put places a new memoization entry at the given key.
 func (t MapTable) Put(k Key, e Entry) {
 	t[k] = e
 }
 
+// Delete deletes a memoization entry associated with a key.
 func (t MapTable) Delete(k Key) {
 	delete(t, k)
 }
 
+// ApplyEdit invalidates memoization entries that overlap with the edit, and
+// updates memoization entries that are to the right of the edit.
 func (t MapTable) ApplyEdit(e Edit) {
 	size := e.Len - int(e.End-e.Start)
 
@@ -60,6 +67,7 @@ func (t MapTable) ApplyEdit(e Edit) {
 	}
 }
 
+// Size returns the number of memoization entries in the table.
 func (t MapTable) Size() int {
 	return len(t)
 }

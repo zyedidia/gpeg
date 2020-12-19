@@ -274,6 +274,8 @@ func compile(n *ast.Node, in input.Reader, capids map[string]int16) pattern.Patt
 	return p
 }
 
+// CompileGrammar compiles the given pegexp grammar and captures every
+// non-terminal. It also returns a map from non-terminal names to capture IDs.
 func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
@@ -287,6 +289,7 @@ func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
 	return compile(root[0], in, capids), capids, nil
 }
 
+// CompilePatt attempts to compile the given pegexp pattern.
 func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
@@ -299,6 +302,7 @@ func CompilePatt(s string) (pattern.Pattern, error) {
 	return compile(root[0], in, nil), nil
 }
 
+// MustCompilePatt is the same as CompilePatt but panics on an error.
 func MustCompilePatt(s string) pattern.Pattern {
 	p, err := CompilePatt(s)
 	if err != nil {

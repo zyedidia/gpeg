@@ -49,6 +49,7 @@ func (i openCall) String() string {
 	return fmt.Sprintf("OpenCall %v", i.name)
 }
 
+// Compile this node.
 func (p *AltNode) Compile() (isa.Program, error) {
 	// optimization: if Left and Right are charsets/single chars, return the union
 	set, ok := combine(Get(p.Left), Get(p.Right))
@@ -111,6 +112,7 @@ func (p *AltNode) Compile() (isa.Program, error) {
 	return code, nil
 }
 
+// Compile this node.
 func (p *SeqNode) Compile() (isa.Program, error) {
 	l, err1 := Get(p.Left).Compile()
 	r, err2 := Get(p.Right).Compile()
@@ -124,6 +126,7 @@ func (p *SeqNode) Compile() (isa.Program, error) {
 	return append(l, r...), nil
 }
 
+// Compile this node.
 func (p *StarNode) Compile() (isa.Program, error) {
 	// optimization: repeating a charset uses the dedicated instruction 'span'
 	switch t := Get(p.Patt).(type) {
@@ -146,6 +149,7 @@ func (p *StarNode) Compile() (isa.Program, error) {
 	return code, err
 }
 
+// Compile this node.
 func (p *PlusNode) Compile() (isa.Program, error) {
 	starp := Star(Get(p.Patt))
 	star, err1 := starp.Compile()
@@ -163,6 +167,7 @@ func (p *PlusNode) Compile() (isa.Program, error) {
 	return code, nil
 }
 
+// Compile this node.
 func (p *OptionalNode) Compile() (isa.Program, error) {
 	// optimization: if the pattern is a class node or single char literal, we
 	// can use the Test*NoChoice instructions.
@@ -191,6 +196,7 @@ func (p *OptionalNode) Compile() (isa.Program, error) {
 	return a.Compile()
 }
 
+// Compile this node.
 func (p *NotNode) Compile() (isa.Program, error) {
 	sub, err := Get(p.Patt).Compile()
 	L1 := isa.NewLabel()
@@ -202,6 +208,7 @@ func (p *NotNode) Compile() (isa.Program, error) {
 	return code, err
 }
 
+// Compile this node.
 func (p *AndNode) Compile() (isa.Program, error) {
 	sub, err := Get(p.Patt).Compile()
 	code := make(isa.Program, 0, len(sub)+5)
@@ -217,6 +224,7 @@ func (p *AndNode) Compile() (isa.Program, error) {
 	return code, err
 }
 
+// Compile this node.
 func (p *CapNode) Compile() (isa.Program, error) {
 	sub, err := Get(p.Patt).Compile()
 	if err != nil {
@@ -255,6 +263,7 @@ loop:
 	return code, nil
 }
 
+// Compile this node.
 func (p *MemoNode) Compile() (isa.Program, error) {
 	L1 := isa.NewLabel()
 	sub, err := Get(p.Patt).Compile()
@@ -266,6 +275,7 @@ func (p *MemoNode) Compile() (isa.Program, error) {
 	return code, err
 }
 
+// Compile this node.
 func (p *SearchNode) Compile() (isa.Program, error) {
 	var rsearch Pattern
 	var set charset.Set
@@ -305,6 +315,7 @@ func (p *SearchNode) Compile() (isa.Program, error) {
 	}).Compile()
 }
 
+// Compile this node.
 func (p *GrammarNode) Compile() (isa.Program, error) {
 	p.Inline()
 
@@ -382,12 +393,14 @@ func (p *GrammarNode) Compile() (isa.Program, error) {
 	return code, nil
 }
 
+// Compile this node.
 func (p *ClassNode) Compile() (isa.Program, error) {
 	return isa.Program{
 		isa.Set{Chars: p.Chars},
 	}, nil
 }
 
+// Compile this node.
 func (p *LiteralNode) Compile() (isa.Program, error) {
 	code := make(isa.Program, len(p.Str))
 	for i := 0; i < len(p.Str); i++ {
@@ -396,6 +409,7 @@ func (p *LiteralNode) Compile() (isa.Program, error) {
 	return code, nil
 }
 
+// Compile this node.
 func (p *NonTermNode) Compile() (isa.Program, error) {
 	if p.Inlined != nil {
 		return p.Inlined.Compile()
@@ -405,12 +419,14 @@ func (p *NonTermNode) Compile() (isa.Program, error) {
 	}, nil
 }
 
+// Compile this node.
 func (p *DotNode) Compile() (isa.Program, error) {
 	return isa.Program{
 		isa.Any{N: p.N},
 	}, nil
 }
 
+// Compile this node.
 func (p *EmptyNode) Compile() (isa.Program, error) {
 	return make(isa.Program, 0), nil
 }

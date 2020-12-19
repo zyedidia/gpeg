@@ -180,7 +180,8 @@ func nextInsnLabel(p isa.Program) (int, bool) {
 	return -1, hadLabel
 }
 
-// Optimize performs some optimization passes on the code in p.
+// Optimize performs some optimization passes on the code in p. In particular
+// it performs head-fail optimization and jump replacement.
 func Optimize(p isa.Program) {
 	// map from label to index in code
 	labels := make(map[isa.Label]int)

@@ -47,6 +47,8 @@ func exploreNode(n *ast.Node, data []byte, ids map[int16]string, graph *gographv
 	}
 }
 
+// GraphAST renders the given AST to a graphviz dot graph, returned as a
+// string.
 func GraphAST(root []*ast.Node, data []byte, ids map[string]int16) string {
 	graph := gographviz.NewGraph()
 	graph.SetName("AST")

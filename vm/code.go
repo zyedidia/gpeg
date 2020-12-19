@@ -24,10 +24,12 @@ type code struct {
 	Insns []byte
 }
 
+// Size returns the size of the encoded instructions.
 func (c *VMCode) Size() int {
 	return len(c.data.Insns)
 }
 
+// ToBytes serializes and compresses this VMCode.
 func (c *VMCode) ToBytes() ([]byte, error) {
 	var buf bytes.Buffer
 	fz := gzip.NewWriter(&buf)
@@ -37,6 +39,7 @@ func (c *VMCode) ToBytes() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+// FromBytes loads a VMCode from a compressed and serialized object.
 func FromBytes(b []byte) (VMCode, error) {
 	var c code
 	fz, err := gzip.NewReader(bytes.NewBuffer(b))
@@ -51,10 +54,12 @@ func FromBytes(b []byte) (VMCode, error) {
 	}, err
 }
 
+// ToJson returns this VMCode serialized to JSON form.
 func (c *VMCode) ToJson() ([]byte, error) {
 	return json.Marshal(c.data)
 }
 
+// FromJson returns a VMCode loaded from JSON form.
 func FromJson(b []byte) (VMCode, error) {
 	var c code
 	err := json.Unmarshal(b, &c)
@@ -63,7 +68,7 @@ func FromJson(b []byte) (VMCode, error) {
 	}, err
 }
 
-// Encode transforms a Pattern into VM bytecode.
+// Encode transforms a program into VM bytecode.
 func Encode(insns isa.Program) VMCode {
 	code := VMCode{
 		data: code{

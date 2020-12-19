@@ -205,22 +205,29 @@ type MemoClose struct {
 	basic
 }
 
+// CaptureBegin begins capturing the given ID.
 type CaptureBegin struct {
 	Id int16
 	basic
 }
 
+// CaptureLate begins capturing the given ID at the current subject position
+// minus Back.
 type CaptureLate struct {
 	Back byte
 	Id   int16
 	basic
 }
 
+// CaptureEnd completes an active capture.
 type CaptureEnd struct {
 	Id int16
 	basic
 }
 
+// CaptureFull begins a capture for the given ID at the current subject
+// position minus Back, and immediately completes the capture. This is
+// equivalent to CaptureLate Back ID; CaptureEnd.
 type CaptureFull struct {
 	Back byte
 	Id   int16
@@ -237,115 +244,142 @@ type jump struct {
 
 func (j jump) jumpt() {}
 
+// String returns the string representation of this instruction.
 func (i Label) String() string {
 	return fmt.Sprintf("L%v", i.Id)
 }
 
+// String returns the string representation of this instruction.
 func (i Char) String() string {
 	return fmt.Sprintf("Char %v", strconv.QuoteRune(rune(i.Byte)))
 }
 
+// String returns the string representation of this instruction.
 func (i Jump) String() string {
 	return fmt.Sprintf("Jump %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i Choice) String() string {
 	return fmt.Sprintf("Choice %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i Call) String() string {
 	return fmt.Sprintf("Call %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i Commit) String() string {
 	return fmt.Sprintf("Commit %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i Return) String() string {
 	return "Return"
 }
 
+// String returns the string representation of this instruction.
 func (i Fail) String() string {
 	return "Fail"
 }
 
+// String returns the string representation of this instruction.
 func (i Set) String() string {
 	return fmt.Sprintf("Set %v", i.Chars)
 }
 
+// String returns the string representation of this instruction.
 func (i Any) String() string {
 	return fmt.Sprintf("Any %v", i.N)
 }
 
+// String returns the string representation of this instruction.
 func (i PartialCommit) String() string {
 	return fmt.Sprintf("PartialCommit %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i Span) String() string {
 	return fmt.Sprintf("Span %v", i.Chars)
 }
 
+// String returns the string representation of this instruction.
 func (i BackCommit) String() string {
 	return fmt.Sprintf("BackCommit %v", i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i FailTwice) String() string {
 	return "FailTwice"
 }
 
+// String returns the string representation of this instruction.
 func (i TestChar) String() string {
 	return fmt.Sprintf("TestChar %v %v", strconv.QuoteRune(rune(i.Byte)), i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i TestCharNoChoice) String() string {
 	return fmt.Sprintf("TestCharNoChoice %v %v", strconv.QuoteRune(rune(i.Byte)), i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i TestSet) String() string {
 	return fmt.Sprintf("TestSet %v %v", i.Chars, i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i TestSetNoChoice) String() string {
 	return fmt.Sprintf("TestSetNoChoice %v %v", i.Chars, i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i TestAny) String() string {
 	return fmt.Sprintf("TestAny %v %v", i.N, i.Lbl)
 }
 
+// String returns the string representation of this instruction.
 func (i End) String() string {
 	return "End"
 }
 
+// String returns the string representation of this instruction.
 func (i Nop) String() string {
 	return "Nop"
 }
 
+// String returns the string representation of this instruction.
 func (i MemoOpen) String() string {
 	return fmt.Sprintf("MemoOpen %v %v", i.Lbl, i.Id)
 }
 
+// String returns the string representation of this instruction.
 func (i MemoClose) String() string {
 	return "MemoClose"
 }
 
+// String returns the string representation of this instruction.
 func (i CaptureBegin) String() string {
 	return fmt.Sprintf("Capture begin %v", i.Id)
 }
 
+// String returns the string representation of this instruction.
 func (i CaptureLate) String() string {
 	return fmt.Sprintf("Capture late %v %v", i.Back, i.Id)
 }
 
+// String returns the string representation of this instruction.
 func (i CaptureEnd) String() string {
 	return fmt.Sprintf("Capture end")
 }
 
+// String returns the string representation of this instruction.
 func (i CaptureFull) String() string {
 	return fmt.Sprintf("Capture full %v %v", i.Back, i.Id)
 }
 
-// String returns the string representation of the pattern.
+// String returns the string representation of the program.
 func (p Program) String() string {
 	s := ""
 	var last Insn
