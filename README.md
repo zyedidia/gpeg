@@ -35,7 +35,7 @@ heavily inspired by LPeg.
 * [ ] Additional niceties (TBD).
     * [x] Grammar tree visualizer.
     * [x] AST visualizer.
-    * [ ] Error recovery.
+    * [x] Error recovery.
     * [ ] Support for left recursion.
 
 # Related work
