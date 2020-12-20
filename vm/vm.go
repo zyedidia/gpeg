@@ -149,8 +149,9 @@ loop:
 			}
 		case opAny:
 			n := decodeU8(idata[vm.ip+1:])
-			ok := vm.input.Advance(int(n))
+			ok := vm.input.Advance(int(n - 1))
 			if ok {
+				vm.input.Advance(1)
 				vm.ip += szAny
 			} else {
 				goto fail
@@ -232,8 +233,9 @@ loop:
 			n := decodeU8(idata[vm.ip+2:])
 			lbl := decodeU24(idata[vm.ip+3:])
 			ent := stackBacktrack{vm.ip + int(lbl), vm.input.Offset()}
-			ok := vm.input.Advance(int(n))
+			ok := vm.input.Advance(int(n - 1))
 			if ok {
+				vm.input.Advance(1)
 				vm.st.pushBacktrack(ent)
 				vm.ip += szTestAny
 			} else {

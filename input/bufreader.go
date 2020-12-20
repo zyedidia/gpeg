@@ -65,6 +65,10 @@ func (br *BufferedReader) SeekTo(pos Pos) bool {
 
 // Advance moves the reader forward from its current position by n bytes.
 func (br *BufferedReader) Advance(n int) bool {
+	if br.end {
+		return false
+	}
+
 	br.off += n
 
 	if br.off >= len(br.chunk) {
