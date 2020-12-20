@@ -279,7 +279,7 @@ func compile(n *ast.Node, in input.Reader, capids map[string]int16) pattern.Patt
 func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
-	match, length, root := machine.Exec(memo.NoneTable{})
+	match, length, root, _ := machine.Exec(memo.NoneTable{})
 
 	if !match {
 		return nil, nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
@@ -293,7 +293,7 @@ func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
 func CompilePatt(s string) (pattern.Pattern, error) {
 	in := input.StringReader(s)
 	machine := vm.NewVM(in, pegCode)
-	match, length, root := machine.Exec(memo.NoneTable{})
+	match, length, root, _ := machine.Exec(memo.NoneTable{})
 
 	if !match {
 		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))

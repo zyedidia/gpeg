@@ -32,6 +32,7 @@ const (
 	opCaptureFull
 	opMemoOpen
 	opMemoClose
+	opError
 )
 
 // instruction sizes
@@ -51,6 +52,7 @@ const (
 	szCaptureEnd   = 2
 	szCaptureFull  = 4
 	szMemoClose    = 2
+	szError        = 4
 
 	// jumps
 	szJump             = 4
@@ -82,7 +84,8 @@ func size(insn isa.Insn) uint {
 	// handle instructions with extra args
 	switch insn.(type) {
 	case isa.MemoOpen, isa.CaptureBegin, isa.CaptureLate, isa.CaptureFull,
-		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestSetNoChoice, isa.TestAny:
+		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestSetNoChoice,
+		isa.TestAny, isa.Error:
 		sz += 2
 	}
 

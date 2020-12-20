@@ -2,6 +2,7 @@ package vm
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/charset"
@@ -16,6 +17,15 @@ const memoCutoff = 128
 // If 'false' is returned then the pattern fails immediately. Note that this
 // function may also modify the capture.
 type CapFunc func(capt *ast.Node, in *input.BufferedReader) bool
+
+type ParseError struct {
+	Message string
+	Pos     input.Pos
+}
+
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("%v: %s", e.Pos, e.Message)
+}
 
 // A VM is a virtual machine capable of interpreting GPeg programs.
 type VM struct {
@@ -86,8 +96,10 @@ func (vm *VM) SetReader(r input.Reader) {
 // Exec executes the parsing program this virtual machine was created with. It
 // returns whether the parse was a match, the last position in the subject
 // string that was matched, and any captures that were created.
-func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []*ast.Node) {
+func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []*ast.Node, []error) {
 	idata := vm.code.data.Insns
+	success := true
+	var errs []error = nil
 
 loop:
 	for {
@@ -267,7 +279,8 @@ loop:
 			}
 			vm.ip += szCaptureEnd
 		case opEnd:
-			// ends the machine with a success
+			fail := decodeU8(idata[vm.ip+1:])
+			success = fail != 1
 			break loop
 		case opMemoOpen:
 			lbl := decodeU24(idata[vm.ip+1:])
@@ -311,18 +324,29 @@ loop:
 			} else {
 				panic("MemoClose found no partial memo entry!")
 			}
+		case opError:
+			errid := decodeU16(idata[vm.ip+2:])
+			msg := vm.code.data.Errors[errid]
+			if errs == nil {
+				errs = make([]error, 0, 1)
+			}
+			errs = append(errs, &ParseError{
+				Pos:     vm.input.Offset(),
+				Message: msg,
+			})
+			vm.ip += szError
 		default:
 			panic("Invalid opcode")
 		}
 	}
 
-	return true, vm.input.Offset(), vm.st.capt
+	return success, vm.input.Offset(), vm.st.capt, errs
 
 fail:
 	ent := vm.st.pop(false)
 	if ent == nil {
 		// match failed
-		return false, vm.input.Offset(), []*ast.Node{}
+		return false, vm.input.Offset(), []*ast.Node{}, errs
 	}
 
 	switch ent.stype {

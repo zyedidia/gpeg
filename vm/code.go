@@ -19,6 +19,8 @@ type VMCode struct {
 type code struct {
 	// list of charsets
 	Sets []charset.Set
+	// list of error messages
+	Errors []string
 
 	// the encoded instructions
 	Insns []byte
@@ -165,8 +167,12 @@ func Encode(insns isa.Program) VMCode {
 			args = append(encodeLabel(labels[t.Lbl]), encodeI16(int(t.Id))...)
 		case isa.MemoClose:
 			op = opMemoClose
+		case isa.Error:
+			op = opError
+			args = encodeU16(addError(&code, t.Message))
 		case isa.End:
 			op = opEnd
+			args = encodeBool(t.Fail)
 		default:
 			continue
 		}
@@ -239,6 +245,13 @@ func encodeLabel(x uint) []byte {
 	return encodeU24(x)
 }
 
+func encodeBool(b bool) []byte {
+	if b {
+		return []byte{1}
+	}
+	return []byte{0}
+}
+
 // Adds the set to the code's list of charsets, and returns the index it was
 // added at. If there are duplicate charsets, this may not actually insert
 // the new charset.
@@ -251,4 +264,15 @@ func addSet(code *VMCode, set charset.Set) uint {
 
 	code.data.Sets = append(code.data.Sets, set)
 	return uint(len(code.data.Sets) - 1)
+}
+
+func addError(code *VMCode, msg string) uint {
+	for i, s := range code.data.Errors {
+		if msg == s {
+			return uint(i)
+		}
+	}
+
+	code.data.Errors = append(code.data.Errors, msg)
+	return uint(len(code.data.Errors) - 1)
 }

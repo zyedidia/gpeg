@@ -30,7 +30,7 @@ func checkWithFuncs(p Pattern, tests []PatternTest, t *testing.T, capfns map[int
 			for k, v := range capfns {
 				machine.AddCapFunc(k, v)
 			}
-			match, off, _ := machine.Exec(memo.NoneTable{})
+			match, off, _, _ := machine.Exec(memo.NoneTable{})
 			if tt.match == -1 && match || tt.match != -1 && !match || tt.match != -1 && tt.match != int(off) {
 				t.Errorf("%s: got: (%t, %d), but expected (%d)\n", tt.in, match, off, tt.match)
 			}
@@ -290,7 +290,7 @@ func BenchmarkBibleSearchFirstEartt(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}
@@ -304,7 +304,7 @@ func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}
@@ -318,7 +318,7 @@ func BenchmarkBibleSearchLastAbram(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}
@@ -331,7 +331,7 @@ func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}
@@ -345,7 +345,7 @@ func BenchmarkBibleOmegaPattern(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}
@@ -362,7 +362,7 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _ = machine.Exec(memo.NoneTable{})
+		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
 		machine.SeekTo(0)
 	}

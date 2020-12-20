@@ -17,7 +17,7 @@ func TestCaptureIndex(t *testing.T) {
 
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)
-	_, _, capt := machine.Exec(memo.NoneTable{})
+	_, _, capt, _ := machine.Exec(memo.NoneTable{})
 	results := machine.CapturesIndex(capt)
 	expected := [][2]input.Pos{
 		[2]input.Pos{0, 1},
@@ -41,7 +41,7 @@ func TestCaptureString(t *testing.T) {
 
 	var bytes input.ByteReader = []byte("a few more words")
 	machine := vm.NewVM(bytes, code)
-	_, _, capt := machine.Exec(memo.NoneTable{})
+	_, _, capt, _ := machine.Exec(memo.NoneTable{})
 	results := machine.CapturesString(capt)
 	expected := []string{"a", "few", "more", "words"}
 	for i, r := range results {
@@ -58,7 +58,7 @@ func TestCaptureBacktrack(t *testing.T) {
 
 	var bytes input.ByteReader = []byte("abcdea")
 	machine := vm.NewVM(bytes, code)
-	_, _, capt := machine.Exec(memo.NoneTable{})
+	_, _, capt, _ := machine.Exec(memo.NoneTable{})
 
 	results := machine.CapturesIndex(capt)
 	expected := [][2]input.Pos{

@@ -183,6 +183,7 @@ type TestAny struct {
 // End immediately completes the pattern as a match.
 type End struct {
 	basic
+	Fail bool
 }
 
 // Nop does nothing.
@@ -232,6 +233,11 @@ type CaptureFull struct {
 	Back byte
 	Id   int16
 	basic
+}
+
+type Error struct {
+	basic
+	Message string
 }
 
 type basic struct{}
@@ -341,7 +347,13 @@ func (i TestAny) String() string {
 
 // String returns the string representation of this instruction.
 func (i End) String() string {
-	return "End"
+	var result string
+	if i.Fail {
+		result = "Fail"
+	} else {
+		result = "Success"
+	}
+	return fmt.Sprintf("End %s", result)
 }
 
 // String returns the string representation of this instruction.
@@ -377,6 +389,11 @@ func (i CaptureEnd) String() string {
 // String returns the string representation of this instruction.
 func (i CaptureFull) String() string {
 	return fmt.Sprintf("Capture full %v %v", i.Back, i.Id)
+}
+
+// String returns the string representation of this instruction.
+func (i Error) String() string {
+	return fmt.Sprintf("Error %s", strconv.QuoteToASCII(i.Message))
 }
 
 // String returns the string representation of the program.

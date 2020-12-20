@@ -427,6 +427,25 @@ func (p *DotNode) Compile() (isa.Program, error) {
 }
 
 // Compile this node.
+func (p *ErrorNode) Compile() (isa.Program, error) {
+	var recovery isa.Program
+	var err error
+
+	if p.Recover == nil {
+		recovery = isa.Program{
+			isa.End{Fail: true},
+		}
+	} else {
+		recovery, err = Get(p.Recover).Compile()
+	}
+
+	code := make(isa.Program, 0, len(recovery)+1)
+	code = append(code, isa.Error{Message: p.Message})
+	code = append(code, recovery...)
+	return code, err
+}
+
+// Compile this node.
 func (p *EmptyNode) Compile() (isa.Program, error) {
-	return make(isa.Program, 0), nil
+	return isa.Program{}, nil
 }

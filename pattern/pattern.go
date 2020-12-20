@@ -188,3 +188,11 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 		Start: start,
 	}
 }
+
+// Error is a pattern that throws an error with the given message.
+func Error(msg string, recovery Pattern) Pattern {
+	return &ErrorNode{
+		Message: msg,
+		Recover: recovery,
+	}
+}

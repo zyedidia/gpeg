@@ -99,6 +99,12 @@ type DotNode struct {
 	N uint8
 }
 
+// ErrorNode represents a pattern that fails with a certain error message.
+type ErrorNode struct {
+	Message string
+	Recover Pattern
+}
+
 // EmtpyNode represents the empty pattern.
 type EmptyNode struct {
 }
@@ -143,6 +149,8 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 		WalkPattern(t.Patt, followInline, fn)
 	case *SearchNode:
 		WalkPattern(t.Patt, followInline, fn)
+	case *ErrorNode:
+		WalkPattern(t.Recover, followInline, fn)
 	case *GrammarNode:
 		for _, p := range t.Defs {
 			WalkPattern(p, followInline, fn)
