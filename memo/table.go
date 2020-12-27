@@ -13,10 +13,10 @@ type Edit struct {
 type Table interface {
 	// Get returns the entry associated with a given key, and a boolean indicating
 	// whether the key exists in the table.
-	Get(Key) (Entry, bool)
+	Get(Key) (*Entry, bool)
 
 	// Put adds a new key-entry pair to the table.
-	Put(Key, Entry)
+	Put(Key, *Entry)
 
 	// Delete causes the entry associated with the given key to be immediately
 	// evicted from the table.

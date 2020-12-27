@@ -1,7 +1,9 @@
+// Package memo defines data structures and functions for creating memoization
+// tables.
 package memo
 
 import (
-	"github.com/zyedidia/gpeg/ast"
+	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/input"
 )
 
@@ -19,18 +21,24 @@ type Key struct {
 // stores the number of characters examined to parse the pattern being
 // memoized, and the length of the match.
 type Entry struct {
+	start    input.Pos
 	examined int
 	length   int
-	val      []*ast.Node
+	val      []*capture.Node
 }
 
 // NewEntry returns a new entry with the given information.
-func NewEntry(matchlen, examlen int, val []*ast.Node) Entry {
-	return Entry{
+func NewEntry(start input.Pos, matchlen, examlen int, val []*capture.Node) *Entry {
+	e := &Entry{
+		start:    start,
 		examined: examlen,
 		length:   matchlen,
 		val:      val,
 	}
+	for _, c := range e.val {
+		c.Loc = e
+	}
+	return e
 }
 
 // MatchLength returns the match length of this entry
@@ -45,6 +53,16 @@ func (e *Entry) Examined() int {
 }
 
 // Value returns the parse result associated with this memo entry.
-func (e *Entry) Value() []*ast.Node {
+func (e *Entry) Value() []*capture.Node {
 	return e.val
+}
+
+// Start returns the start position of this memo entry.
+func (e *Entry) Start() input.Pos {
+	return e.start
+}
+
+// End returns the end position of this memo entry.
+func (e *Entry) End() input.Pos {
+	return e.start.Move(e.length)
 }

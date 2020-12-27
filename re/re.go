@@ -1,4 +1,6 @@
-package pegexp
+// Package re provides functions for compiling 're' patterns (given as strings)
+// into standard patterns.
+package re
 
 import (
 	"bytes"
@@ -6,7 +8,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/zyedidia/gpeg/ast"
+	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
@@ -143,7 +145,7 @@ func parseChar(char []byte) byte {
 	}
 }
 
-func parseId(n *ast.Node, in input.Reader) string {
+func parseId(n *capture.Node, in *input.Input) string {
 	ident := &bytes.Buffer{}
 	for _, c := range n.Children {
 		if c.Id != ids["IdentStart"] && c.Id != ids["IdentCont"] {
@@ -155,13 +157,13 @@ func parseId(n *ast.Node, in input.Reader) string {
 	return ident.String()
 }
 
-func compileDef(n *ast.Node, in input.Reader) (string, pattern.Pattern) {
+func compileDef(n *capture.Node, in *input.Input) (string, pattern.Pattern) {
 	id := n.Children[0]
 	exp := n.Children[2]
 	return parseId(id, in), compile(exp, in, nil)
 }
 
-func compileSet(n *ast.Node, in input.Reader) charset.Set {
+func compileSet(n *capture.Node, in *input.Input) charset.Set {
 	switch len(n.Children) {
 	case 1:
 		c := n.Children[0]
@@ -173,7 +175,7 @@ func compileSet(n *ast.Node, in input.Reader) charset.Set {
 	return charset.Set{}
 }
 
-func compile(n *ast.Node, in input.Reader, capids map[string]int16) pattern.Pattern {
+func compile(n *capture.Node, in *input.Input, capids map[string]int16) pattern.Pattern {
 	var p pattern.Pattern
 	switch n.Id {
 	case ids["Grammar"]:
@@ -284,9 +286,10 @@ func CompileGrammar(s string) (pattern.Pattern, map[string]int16, error) {
 	if !match {
 		return nil, nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
+	input := input.NewInput(in)
 
 	capids := make(map[string]int16)
-	return compile(root[0], in, capids), capids, nil
+	return compile(root[0], input, capids), capids, nil
 }
 
 // CompilePatt attempts to compile the given pegexp pattern.
@@ -298,8 +301,9 @@ func CompilePatt(s string) (pattern.Pattern, error) {
 	if !match {
 		return nil, errors.New("Not a valid PEG expression: failed at " + fmt.Sprintf("%v", length))
 	}
+	input := input.NewInput(in)
 
-	return compile(root[0], in, nil), nil
+	return compile(root[0], input, nil), nil
 }
 
 // MustCompilePatt is the same as CompilePatt but panics on an error.

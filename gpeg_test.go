@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"testing"
 
-	"github.com/zyedidia/gpeg/ast"
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
 	. "github.com/zyedidia/gpeg/pattern"
-	"github.com/zyedidia/gpeg/pegexp"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -21,54 +18,18 @@ type PatternTest struct {
 	match int
 }
 
-func checkWithFuncs(p Pattern, tests []PatternTest, t *testing.T, capfns map[int16]vm.CapFunc) {
+func check(p Pattern, tests []PatternTest, t *testing.T) {
 	code := vm.Encode(MustCompile(p))
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
 			var bytes input.ByteReader = []byte(tt.in)
 			machine := vm.NewVM(bytes, code)
-			for k, v := range capfns {
-				machine.AddCapFunc(k, v)
-			}
 			match, off, _, _ := machine.Exec(memo.NoneTable{})
-			if tt.match == -1 && match || tt.match != -1 && !match || tt.match != -1 && tt.match != int(off) {
+			if tt.match == -1 && match || tt.match != -1 && !match || tt.match != -1 && tt.match != off.Off {
 				t.Errorf("%s: got: (%t, %d), but expected (%d)\n", tt.in, match, off, tt.match)
 			}
 		})
 	}
-}
-
-func check(p Pattern, tests []PatternTest, t *testing.T) {
-	checkWithFuncs(p, tests, t, nil)
-}
-
-func TestCaptureFunc(t *testing.T) {
-	const number = 0
-	p := CapId(Plus(Set(charset.Range('0', '9'))), number)
-	tests := []PatternTest{
-		{"123", 3},
-		{"256", -1},
-		{"321498072398057239850743", -1},
-		{"0", 1},
-		{"-124", -1},
-	}
-	checkWithFuncs(p, tests, t, map[int16]vm.CapFunc{
-		number: func(n *ast.Node, in *input.BufferedReader) bool {
-			i, err := strconv.Atoi(string(in.Slice(n.Start(), n.End())))
-			return err == nil && i >= 0 && i < 256
-		},
-	})
-}
-
-func TestPegexp(t *testing.T) {
-	p := pegexp.MustCompilePatt("ID <- [a-zA-Z][a-zA-Z0-9_]*")
-	tests := []PatternTest{
-		{"hello", 5},
-		{"test_1", 6},
-		{"_not_allowed", -1},
-		{"123", -1},
-	}
-	check(p, tests, t)
 }
 
 func TestConcat(t *testing.T) {
@@ -273,6 +234,7 @@ func TestArithmeticGrammar(t *testing.T) {
 var match bool
 var bible input.ByteReader
 var machine *vm.VM
+var start input.Pos
 
 func TestMain(m *testing.M) {
 	var err error
@@ -292,7 +254,7 @@ func BenchmarkBibleSearchFirstEartt(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }
 
@@ -306,7 +268,7 @@ func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }
 
@@ -320,7 +282,7 @@ func BenchmarkBibleSearchLastAbram(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }
 
@@ -333,7 +295,7 @@ func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }
 
@@ -347,7 +309,7 @@ func BenchmarkBibleOmegaPattern(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }
 
@@ -364,6 +326,6 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		match, _, _, _ = machine.Exec(memo.NoneTable{})
 		machine.Reset()
-		machine.SeekTo(0)
+		machine.SeekTo(start)
 	}
 }

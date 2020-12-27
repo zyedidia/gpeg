@@ -5,7 +5,8 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
-const InlineThreshold = 100
+// Nodes with trees larger than this size will not be inlined.
+const inlineThreshold = 100
 
 // Inline performs inlining passes until the inliner reaches a steady-state.
 func (p *GrammarNode) Inline() {
@@ -83,6 +84,7 @@ func Get(p Pattern) Pattern {
 	return p
 }
 
+// Performs inlining on a grammar node.
 func (p *GrammarNode) inline() bool {
 	sizes := make(map[string]int)
 	leaves := make(map[string]bool)
@@ -109,7 +111,7 @@ func (p *GrammarNode) inline() bool {
 			if sz, ok := sizes[t.Name]; ok && t.Inlined == nil {
 				// We only inline nodes if they are small enough and don't use
 				// any non-terminals themselves.
-				if sz < InlineThreshold && leaves[t.Name] {
+				if sz < inlineThreshold && leaves[t.Name] {
 					didInline = true
 					t.Inlined = p.Defs[t.Name]
 				}
@@ -151,6 +153,8 @@ func combine(p1 Pattern, p2 Pattern) (charset.Set, bool) {
 	return set, false
 }
 
+// Returns the next instruction in p, skipping labels and nops.
+// If false is returned, there is no next instruction.
 func nextInsn(p isa.Program) (isa.Insn, bool) {
 	for i := 0; i < len(p); i++ {
 		switch p[i].(type) {
@@ -164,6 +168,8 @@ func nextInsn(p isa.Program) (isa.Insn, bool) {
 	return isa.Nop{}, false
 }
 
+// Returns the index of the next instruction and if there was a label before
+// it.
 func nextInsnLabel(p isa.Program) (int, bool) {
 	hadLabel := false
 	for i := 0; i < len(p); i++ {

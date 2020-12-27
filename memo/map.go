@@ -1,12 +1,7 @@
 package memo
 
-import (
-	"github.com/zyedidia/gpeg/ast"
-	"github.com/zyedidia/gpeg/input"
-)
-
 // A MapTable implements a map-based memoization table
-type MapTable map[Key]Entry
+type MapTable map[Key]*Entry
 
 // NewMapTable constructs a new MapTable.
 func NewMapTable() MapTable {
@@ -14,13 +9,13 @@ func NewMapTable() MapTable {
 }
 
 // Get returns the memo entry associated with the given key.
-func (t MapTable) Get(k Key) (Entry, bool) {
+func (t MapTable) Get(k Key) (*Entry, bool) {
 	e, ok := t[k]
 	return e, ok
 }
 
 // Put places a new memoization entry at the given key.
-func (t MapTable) Put(k Key, e Entry) {
+func (t MapTable) Put(k Key, e *Entry) {
 	t[k] = e
 }
 
@@ -32,28 +27,23 @@ func (t MapTable) Delete(k Key) {
 // ApplyEdit invalidates memoization entries that overlap with the edit, and
 // updates memoization entries that are to the right of the edit.
 func (t MapTable) ApplyEdit(e Edit) {
-	size := e.Len - int(e.End-e.Start)
+	size := e.Len - e.End.Cmp(e.Start)
 
 	for key, ent := range t {
-		x1, x2 := int(key.Pos), int(key.Pos)+ent.examined
-		y1, y2 := int(e.Start), int(e.End)
-		if x1 <= y2 && y1 <= x2 {
+		x1, x2 := key.Pos, key.Pos.Move(ent.examined)
+		y1, y2 := e.Start, e.End
+		if x1.Cmp(y2) <= 0 && y1.Cmp(x2) <= 0 {
 			delete(t, key)
 			continue
 		}
 
 		// shift entries that are to the right of the edited interval
-		if key.Pos >= e.Start {
+		if key.Pos.Cmp(e.Start) >= 0 {
 			// Since the key is changed, we need to rehash the value
 			delete(t, key)
 			// TODO: not sure if this is fully correct
-			key.Pos += input.Pos(size)
-
-			for _, n := range ent.Value() {
-				n.Each(func(child *ast.Node) {
-					child.Advance(size)
-				})
-			}
+			key.Pos.Move(size)
+			ent.start.Move(size)
 
 			// If there is an entry where we want to move to, that is
 			// unfortunate we will just invalidate this entry, even though

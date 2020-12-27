@@ -1,10 +1,11 @@
+// Package vm implements the GPeg virtual machine.
 package vm
 
 import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/zyedidia/gpeg/ast"
+	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
@@ -13,10 +14,8 @@ import (
 // do not memoize results that are smaller than this threshold.
 const memoCutoff = 128
 
-// A CapFunc is a function that is called immediately when a capture happens.
-// If 'false' is returned then the pattern fails immediately. Note that this
-// function may also modify the capture.
-type CapFunc func(capt *ast.Node, in *input.BufferedReader) bool
+// type CapFunc func(id int16, start input.Pos, size int,
+// 	caps []capture.Capture, in *input.Input) capture.Capture
 
 type ParseError struct {
 	Message string
@@ -29,51 +28,21 @@ func (e *ParseError) Error() string {
 
 // A VM is a virtual machine capable of interpreting GPeg programs.
 type VM struct {
-	ip     int
-	st     *stack
-	code   VMCode
-	capfns map[int16]CapFunc
+	ip   int
+	st   *stack
+	code VMCode
 
-	input *input.BufferedReader
+	input *input.Input
 }
 
 // NewVM returns a new parsing machine.
-func NewVM(r input.Reader, code VMCode) *VM {
+func NewVM(r input.ReaderAtPos, code VMCode) *VM {
 	return &VM{
 		ip:    0,
 		st:    newStack(),
-		input: input.NewBufferedReader(r),
+		input: input.NewInput(r),
 		code:  code,
 	}
-}
-
-// AddCapFunc registers a given capture function to the specified capture ID.
-func (vm *VM) AddCapFunc(id int16, fn CapFunc) {
-	if vm.capfns == nil {
-		vm.capfns = make(map[int16]CapFunc)
-	}
-	vm.capfns[id] = fn
-}
-
-func (vm *VM) callCapFunc(node *ast.Node) bool {
-	if vm.capfns == nil {
-		return true
-	}
-	if fn, ok := vm.capfns[node.Id]; ok {
-		return fn(node, vm.input)
-	}
-	return true
-}
-
-func (vm *VM) addCapt(nodes ...*ast.Node) bool {
-	for _, n := range nodes {
-		ok := vm.callCapFunc(n)
-		if !ok {
-			return false
-		}
-	}
-	vm.st.addCapt(nodes...)
-	return true
 }
 
 // SeekTo moves the current subject position to the given position.
@@ -84,19 +53,19 @@ func (vm *VM) SeekTo(p input.Pos) {
 // Reset resets the virtual machine.
 func (vm *VM) Reset() {
 	vm.ip = 0
-	vm.input.ResetMaxExamined()
+	vm.input.ResetFurthest()
 	vm.st.reset()
 }
 
 // SetReader assigns a new reader to this virtual machine.
-func (vm *VM) SetReader(r input.Reader) {
-	vm.input = input.NewBufferedReader(r)
+func (vm *VM) SetReader(r input.ReaderAtPos) {
+	vm.input = input.NewInput(r)
 }
 
 // Exec executes the parsing program this virtual machine was created with. It
 // returns whether the parse was a match, the last position in the subject
 // string that was matched, and any captures that were created.
-func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []*ast.Node, []error) {
+func (vm *VM) Exec(memtbl memo.Table) (bool, input.Pos, []*capture.Node, []error) {
 	idata := vm.code.data.Insns
 	success := true
 	var errs []error = nil
@@ -119,7 +88,7 @@ loop:
 			vm.ip = int(lbl)
 		case opChoice:
 			lbl := decodeU24(idata[vm.ip+1:])
-			vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset()})
+			vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Pos()})
 			vm.ip += szChoice
 		case opCall:
 			lbl := decodeU24(idata[vm.ip+1:])
@@ -149,9 +118,8 @@ loop:
 			}
 		case opAny:
 			n := decodeU8(idata[vm.ip+1:])
-			ok := vm.input.Advance(int(n - 1))
+			ok := vm.input.Advance(int(n))
 			if ok {
-				vm.input.Advance(1)
 				vm.ip += szAny
 			} else {
 				goto fail
@@ -160,7 +128,7 @@ loop:
 			lbl := decodeU24(idata[vm.ip+1:])
 			ent := vm.st.peek()
 			if ent != nil && ent.stype == stBtrack {
-				ent.btrack.off = vm.input.Offset()
+				ent.btrack.off = vm.input.Pos()
 				vm.st.propCapt()
 				ent.capt = nil
 				vm.ip = int(lbl)
@@ -192,7 +160,7 @@ loop:
 			lbl := decodeU24(idata[vm.ip+3:])
 			in, ok := vm.input.Peek()
 			if ok && in == b {
-				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset()})
+				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Pos()})
 				vm.input.Advance(1)
 				vm.ip += szTestChar
 			} else {
@@ -213,7 +181,7 @@ loop:
 			set := decodeSet(idata[vm.ip+2:], vm.code.data.Sets)
 			in, ok := vm.input.Peek()
 			if ok && set.Has(in) {
-				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Offset()})
+				vm.st.pushBacktrack(stackBacktrack{int(lbl), vm.input.Pos()})
 				vm.input.Advance(1)
 				vm.ip += szTestSet
 			} else {
@@ -232,10 +200,9 @@ loop:
 		case opTestAny:
 			n := decodeU8(idata[vm.ip+2:])
 			lbl := decodeU24(idata[vm.ip+3:])
-			ent := stackBacktrack{vm.ip + int(lbl), vm.input.Offset()}
-			ok := vm.input.Advance(int(n - 1))
+			ent := stackBacktrack{vm.ip + int(lbl), vm.input.Pos()}
+			ok := vm.input.Advance(int(n))
 			if ok {
-				vm.input.Advance(1)
 				vm.st.pushBacktrack(ent)
 				vm.ip += szTestAny
 			} else {
@@ -245,7 +212,7 @@ loop:
 			id := decodeI16(idata[vm.ip+2:])
 			vm.st.pushCapt(stackMemo{
 				id:  id,
-				pos: vm.input.Offset(),
+				pos: vm.input.Pos(),
 			})
 			vm.ip += szCaptureBegin
 		case opCaptureLate:
@@ -253,32 +220,36 @@ loop:
 			id := decodeI16(idata[vm.ip+2:])
 			vm.st.pushCapt(stackMemo{
 				id:  id,
-				pos: vm.input.Offset() - input.Pos(back),
+				pos: vm.input.Pos().Move(-int(back)),
 			})
 			vm.ip += szCaptureLate
 		case opCaptureFull:
-			back := decodeU8(idata[vm.ip+1:])
+			back := int(decodeU8(idata[vm.ip+1:]))
 			id := decodeI16(idata[vm.ip+2:])
-			pos := vm.input.Offset()
-			node := ast.NewNode(id, pos-input.Pos(back), int(back), nil)
+			pos := vm.input.Pos()
 
-			success := vm.addCapt(node)
-			if !success {
-				goto fail
+			loc := basicLocator{
+				start: pos.Move(-back),
+				size:  back,
 			}
+			capt := capture.NewNode(id, loc, nil)
+			vm.st.addCapt(capt)
 
 			vm.ip += szCaptureFull
 		case opCaptureEnd:
 			ent := vm.st.pop(false)
-			end := vm.input.Offset()
-			node := ast.NewNode(ent.memo.id, ent.memo.pos, int(end-ent.memo.pos), ent.capt)
-			success := vm.addCapt(node)
-			if !success {
-				goto fail
-			}
+
 			if ent == nil || ent.stype != stCapt {
 				panic("CaptureEnd did not find capture entry")
 			}
+
+			end := vm.input.Pos()
+			loc := basicLocator{
+				start: ent.memo.pos,
+				size:  end.Cmp(ent.memo.pos),
+			}
+			capt := capture.NewNode(ent.memo.id, loc, ent.capt)
+			vm.st.addCapt(capt)
 			vm.ip += szCaptureEnd
 		case opEnd:
 			fail := decodeU8(idata[vm.ip+1:])
@@ -290,7 +261,7 @@ loop:
 
 			ment, ok := memtbl.Get(memo.Key{
 				Id:  id,
-				Pos: vm.input.Offset(),
+				Pos: vm.input.Pos(),
 			})
 			if ok {
 				if ment.MatchLength() == -1 {
@@ -298,29 +269,26 @@ loop:
 				}
 				capt := ment.Value()
 				if capt != nil {
-					success := vm.addCapt(capt...)
-					if !success {
-						goto fail
-					}
+					vm.st.addCapt(capt...)
 				}
 				vm.input.Advance(ment.MatchLength())
 				vm.ip = int(lbl)
 			} else {
 				vm.st.pushMemo(stackMemo{
 					id:  id,
-					pos: vm.input.Offset(),
+					pos: vm.input.Pos(),
 				})
 				vm.ip += szMemoOpen
 			}
 		case opMemoClose:
 			ent := vm.st.pop(true)
 			if ent != nil && ent.stype == stMemo {
-				mlen := int(vm.input.Offset()) - int(ent.memo.pos)
+				mlen := vm.input.Pos().Cmp(ent.memo.pos)
 				if mlen >= memoCutoff {
 					memtbl.Put(memo.Key{
 						Id:  ent.memo.id,
 						Pos: ent.memo.pos,
-					}, memo.NewEntry(mlen, int(vm.input.MaxExaminedPos())-int(ent.memo.pos)+1, ent.capt)) // TODO: +1?
+					}, memo.NewEntry(ent.memo.pos, mlen, vm.input.Furthest().Cmp(ent.memo.pos)+1, ent.capt)) // TODO: +1?
 				}
 				vm.ip += szMemoClose
 			} else {
@@ -333,7 +301,7 @@ loop:
 				errs = make([]error, 0, 1)
 			}
 			errs = append(errs, &ParseError{
-				Pos:     vm.input.Offset(),
+				Pos:     vm.input.Pos(),
 				Message: msg,
 			})
 			vm.ip += szError
@@ -342,13 +310,13 @@ loop:
 		}
 	}
 
-	return success, vm.input.Offset(), vm.st.capt, errs
+	return success, vm.input.Pos(), vm.st.capt, errs
 
 fail:
 	ent := vm.st.pop(false)
 	if ent == nil {
 		// match failed
-		return false, vm.input.Offset(), []*ast.Node{}, errs
+		return false, vm.input.Pos(), []*capture.Node{}, errs
 	}
 
 	switch ent.stype {
@@ -358,12 +326,12 @@ fail:
 		ent.capt = nil
 	case stMemo:
 		// Mark this position in the memoTable as a failed match
-		mlen := int(vm.input.Offset()) - int(ent.memo.pos)
+		mlen := vm.input.Pos().Cmp(ent.memo.pos)
 		if mlen >= memoCutoff {
 			memtbl.Put(memo.Key{
 				Id:  ent.memo.id,
 				Pos: ent.memo.pos,
-			}, memo.NewEntry(-1, -1, nil))
+			}, memo.NewEntry(ent.memo.pos, -1, -1, nil))
 		}
 		ent.capt = nil
 		goto fail
@@ -404,4 +372,17 @@ func decodeU24(b []byte) uint32 {
 func decodeSet(b []byte, sets []charset.Set) charset.Set {
 	i := decodeU8(b)
 	return sets[i]
+}
+
+type basicLocator struct {
+	start input.Pos
+	size  int
+}
+
+func (l basicLocator) Start() input.Pos {
+	return l.start
+}
+
+func (l basicLocator) End() input.Pos {
+	return l.start.Move(l.size)
 }

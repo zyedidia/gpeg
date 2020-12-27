@@ -1,3 +1,5 @@
+// Package pattern provides data types and functions for compiling patterns
+// into GPeg VM programs.
 package pattern
 
 import (

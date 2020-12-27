@@ -1,16 +1,16 @@
 package vm
 
 import (
-	"github.com/zyedidia/gpeg/ast"
+	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/input"
 )
 
 type stack struct {
 	entries []stackEntry
-	capt    []*ast.Node
+	capt    []*capture.Node
 }
 
-func (s *stack) addCapt(capt ...*ast.Node) {
+func (s *stack) addCapt(capt ...*capture.Node) {
 	if len(s.entries) == 0 {
 		s.capt = append(s.capt, capt...)
 	} else {
@@ -24,10 +24,12 @@ func (s *stack) propCapt() {
 	}
 
 	top := s.entries[len(s.entries)-1]
-	if len(s.entries) == 1 {
-		s.capt = append(s.capt, top.capt...)
-	} else {
-		s.entries[len(s.entries)-2].addCapt(top.capt)
+	if top.capt != nil && len(top.capt) > 0 {
+		if len(s.entries) == 1 {
+			s.capt = append(s.capt, top.capt...)
+		} else {
+			s.entries[len(s.entries)-2].addCapt(top.capt)
+		}
 	}
 }
 
@@ -47,10 +49,10 @@ type stackEntry struct {
 	btrack stackBacktrack
 	memo   stackMemo // stackMemo is reused for stCapt
 
-	capt []*ast.Node
+	capt []*capture.Node
 }
 
-func (se *stackEntry) addCapt(capt []*ast.Node) {
+func (se *stackEntry) addCapt(capt []*capture.Node) {
 	if se.capt == nil {
 		se.capt = capt
 	} else {
@@ -73,7 +75,7 @@ type stackMemo struct {
 func newStack() *stack {
 	return &stack{
 		entries: make([]stackEntry, 0, 4),
-		capt:    make([]*ast.Node, 0),
+		capt:    make([]*capture.Node, 0),
 	}
 }
 

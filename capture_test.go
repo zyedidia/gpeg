@@ -20,10 +20,10 @@ func TestCaptureIndex(t *testing.T) {
 	_, _, capt, _ := machine.Exec(memo.NoneTable{})
 	results := machine.CapturesIndex(capt)
 	expected := [][2]input.Pos{
-		[2]input.Pos{0, 1},
-		[2]input.Pos{2, 5},
-		[2]input.Pos{6, 10},
-		[2]input.Pos{11, 16},
+		[2]input.Pos{input.PosFromOff(0), input.PosFromOff(1)},
+		[2]input.Pos{input.PosFromOff(2), input.PosFromOff(5)},
+		[2]input.Pos{input.PosFromOff(6), input.PosFromOff(10)},
+		[2]input.Pos{input.PosFromOff(11), input.PosFromOff(16)},
 	}
 
 	for i, r := range results {
@@ -62,7 +62,7 @@ func TestCaptureBacktrack(t *testing.T) {
 
 	results := machine.CapturesIndex(capt)
 	expected := [][2]input.Pos{
-		[2]input.Pos{0, 6},
+		[2]input.Pos{input.PosFromOff(0), input.PosFromOff(6)},
 	}
 
 	for i, r := range results {

@@ -1,3 +1,4 @@
+// Package isa provides types for all instructions in the GPeg virtual machine.
 package isa
 
 import (

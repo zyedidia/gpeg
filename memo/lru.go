@@ -1,7 +1,5 @@
 package memo
 
-import "github.com/zyedidia/gpeg/input"
-
 // TODO: use a memory pool for the objects
 
 // Doubly linked list for keeping track of the least recently used entry.
@@ -11,7 +9,7 @@ type list struct {
 
 type node struct {
 	key        Key
-	ent        Entry
+	ent        *Entry
 	prev, next *node
 }
 
@@ -67,16 +65,16 @@ func NewLRUTable(capacity int) *LRUTable {
 
 // Get returns the entry associated with a given key, and a boolean indicating
 // whether the key exists in the table.
-func (t *LRUTable) Get(k Key) (Entry, bool) {
+func (t *LRUTable) Get(k Key) (*Entry, bool) {
 	if n, ok := t.table[k]; ok {
 		t.lru.moveHead(n)
 		return n.ent, true
 	}
-	return Entry{}, false
+	return nil, false
 }
 
 // Put adds a new key-entry pair to the table.
-func (t *LRUTable) Put(k Key, e Entry) {
+func (t *LRUTable) Put(k Key, e *Entry) {
 	if n, ok := t.table[k]; ok {
 		n.ent = e
 		t.lru.moveHead(n)
@@ -112,13 +110,13 @@ func (t *LRUTable) Delete(k Key) {
 // locations properly and invaliding any entries in the modified interval.
 func (t *LRUTable) ApplyEdit(e Edit) {
 	n := t.lru.head
-	size := e.Len - int(e.End-e.Start)
+	size := e.Len - e.End.Cmp(e.Start)
 	for n != nil {
 		// fmt.Println(n.key.Id, n.key.Pos, n.ent.MatchLength(), n.ent.Examined())
 		// invalidate entries that overlap with the edited interval
-		x1, x2 := int(n.key.Pos), int(n.key.Pos)+n.ent.examined
-		y1, y2 := int(e.Start), int(e.End)
-		if x1 <= y2 && y1 <= x2 {
+		x1, x2 := n.key.Pos, n.key.Pos.Move(n.ent.examined)
+		y1, y2 := e.Start, e.End
+		if x1.Cmp(y2) <= 0 && y1.Cmp(x2) <= 0 {
 			torm := n
 			n = n.next
 			t.lru.remove(torm)
@@ -128,10 +126,11 @@ func (t *LRUTable) ApplyEdit(e Edit) {
 		}
 
 		// shift entries that are to the right of the edited interval
-		if n.key.Pos >= e.Start {
+		if n.key.Pos.Cmp(e.Start) >= 0 {
 			// Since the key is changed, we need to rehash the value
 			delete(t.table, n.key)
-			n.key.Pos += input.Pos(size)
+			n.key.Pos.Move(size)
+			n.ent.start.Move(size)
 			t.table[n.key] = n
 		}
 

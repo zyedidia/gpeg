@@ -1,3 +1,5 @@
+// Package charset provides data types and functions for managing sets of
+// characters.
 package charset
 
 import (
@@ -47,7 +49,7 @@ func (c Set) SmallSet() SmallSet {
 	}
 }
 
-// New returns a charset which accepts all chars in `chars`. Note
+// New returns a charset which accepts all chars in 'chars'. Note
 // that all chars must be valid ASCII characters (<128).
 func New(chars []byte) Set {
 	var set Set
@@ -110,6 +112,7 @@ func (c Set) Add(c1 Set) Set {
 	}
 }
 
+// Sub removes from 'c' any characters in 'c1'.
 func (c Set) Sub(c1 Set) Set {
 	return Set{
 		Bits: [4]uint64{^c1.Bits[0] & c.Bits[0], ^c1.Bits[1] & c.Bits[1], ^c1.Bits[2] & c.Bits[2], ^c1.Bits[3] & c.Bits[3]},

@@ -1,4 +1,6 @@
-package ast
+// Package capture provides interfaces for describing values captured during a
+// GPeg parse.
+package capture
 
 import (
 	"bytes"
@@ -7,21 +9,24 @@ import (
 	"github.com/zyedidia/gpeg/input"
 )
 
+type Locator interface {
+	Start() input.Pos
+	End() input.Pos
+}
+
 // A Node represents an AST capture node. It stores the ID of the capture, the
 // start position and length, and any children.
 type Node struct {
 	Id       int16
-	start    input.Pos
-	length   int
+	Loc      Locator
 	Children []*Node
 }
 
 // NewNode constructs a new AST node.
-func NewNode(id int16, start input.Pos, length int, children []*Node) *Node {
+func NewNode(id int16, Loc Locator, children []*Node) *Node {
 	return &Node{
 		Id:       id,
-		start:    start,
-		length:   length,
+		Loc:      Loc,
 		Children: children,
 	}
 }
@@ -39,25 +44,12 @@ func (n *Node) String() string {
 	return fmt.Sprintf("{%d, [%s]}", n.Id, buf.String())
 }
 
-// Each applies a function to this node and all children.
-func (n *Node) Each(fn func(*Node)) {
-	fn(n)
-	for _, c := range n.Children {
-		c.Each(fn)
-	}
-}
-
 // Start returns the start index of this AST capture.
 func (n *Node) Start() input.Pos {
-	return n.start
+	return n.Loc.Start()
 }
 
 // End returns the end index of this AST capture.
 func (n *Node) End() input.Pos {
-	return n.start + input.Pos(n.length)
-}
-
-// Advance shifts this capture position by k.
-func (n *Node) Advance(k int) {
-	n.start += input.Pos(k)
+	return n.Loc.End()
 }

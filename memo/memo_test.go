@@ -1,6 +1,10 @@
 package memo
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/zyedidia/gpeg/input"
+)
 
 func TestEntry(t *testing.T) {
 	tests := []struct {
@@ -28,9 +32,9 @@ func TestEntry(t *testing.T) {
 func TestLRUTable(t *testing.T) {
 
 	table := NewLRUTable(2)
-	k1 := Key{1, 0}
-	k2 := Key{2, 10}
-	k3 := Key{8, 17}
+	k1 := Key{1, input.Pos{0}}
+	k2 := Key{2, input.Pos{10}}
+	k3 := Key{8, input.Pos{17}}
 
 	e1 := NewEntry(1, 1, nil)
 	e2 := NewEntry(2, 2, nil)
