@@ -1,6 +1,8 @@
 package input
 
-import "io"
+import (
+	"io"
+)
 
 const bufsz = 4096
 
@@ -51,6 +53,9 @@ func FromReaderAt(r io.ReaderAt) ReaderAtPos {
 
 // ReadAtPos reads from the given position (Pos must represent an offset).
 func (r *readerAtWrapper) ReadAtPos(p Pos) ([]byte, error) {
-	_, err := r.readerAt.ReadAt(r.buf[:], int64(p.Off))
-	return r.buf[:], err
+	n, err := r.readerAt.ReadAt(r.buf[:], int64(p.Off))
+	if err == io.EOF && n > 0 {
+		err = nil
+	}
+	return r.buf[:n], err
 }
