@@ -169,7 +169,7 @@ func Encode(insns isa.Program) VMCode {
 			op = opMemoClose
 		case isa.Error:
 			op = opError
-			args = encodeU16(addError(&code, t.Message))
+			args = encodeU24(addError(&code, t.Message))
 		case isa.End:
 			op = opEnd
 			args = encodeBool(t.Fail)

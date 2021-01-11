@@ -295,7 +295,7 @@ loop:
 				panic("MemoClose found no partial memo entry!")
 			}
 		case opError:
-			errid := decodeU16(idata[vm.ip+2:])
+			errid := decodeU24(idata[vm.ip+1:])
 			msg := vm.code.data.Errors[errid]
 			if errs == nil {
 				errs = make([]error, 0, 1)
