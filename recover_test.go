@@ -18,7 +18,14 @@ func TestRecover(t *testing.T) {
 	id := Plus(Set(charset.Range('a', 'z')))
 	p := Grammar("S", map[string]Pattern{
 		"S":        Or(NonTerm("List"), Concat(Any(1), Error("expecting a list of identifiers", NonTerm("ErrList")))),
-		"List":     Concat(NonTerm("Id"), Star(Concat(And(Any(1)), NonTerm("Comma"), Or(NonTerm("Id"), Error("expecting an identifier", NonTerm("ErrId")))))),
+		"List":     Concat(
+			NonTerm("Id"),
+			Star(Concat(And(Any(1)),
+				NonTerm("Comma"),
+				Or(NonTerm("Id"),
+				Error("expecting an identifier", NonTerm("ErrId")))),
+			),
+		),
 		"Id":       Concat(NonTerm("Sp"), Cap(id)),
 		"Comma":    Or(Concat(NonTerm("Sp"), Literal(",")), Error("expecting ','", NonTerm("ErrComma"))),
 		"Sp":       Star(Set(charset.New([]byte{' ', '\n', '\t'}))),
