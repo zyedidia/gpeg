@@ -21,7 +21,8 @@ type PatternTest struct {
 func check(p Pattern, tests []PatternTest, t *testing.T) {
 	code := vm.Encode(MustCompile(p))
 	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
+		name := tt.in[:min(10, len(tt.in))]
+		t.Run(name, func(t *testing.T) {
 			var bytes input.ByteReader = []byte(tt.in)
 			machine := vm.NewVM(bytes, code)
 			match, off, _, _ := machine.Exec(memo.NoneTable{})
@@ -328,4 +329,11 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 		machine.Reset()
 		machine.SeekTo(start)
 	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
