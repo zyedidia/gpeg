@@ -5,6 +5,7 @@ package memo
 import (
 	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/input"
+	"github.com/zyedidia/gpeg/memo/shifti"
 )
 
 // A Key is used to look up memo.Entry values. It stores an Id representing
@@ -21,6 +22,7 @@ type Key struct {
 // stores the number of characters examined to parse the pattern being
 // memoized, and the length of the match.
 type Entry struct {
+	id       int16
 	start    input.Pos
 	examined int
 	length   int
@@ -28,8 +30,9 @@ type Entry struct {
 }
 
 // NewEntry returns a new entry with the given information.
-func NewEntry(start input.Pos, matchlen, examlen int, val []*capture.Node) *Entry {
+func NewEntry(id int16, start input.Pos, matchlen, examlen int, val []*capture.Node) *Entry {
 	e := &Entry{
+		id:       id,
 		start:    start,
 		examined: examlen,
 		length:   matchlen,
@@ -65,4 +68,30 @@ func (e *Entry) Start() input.Pos {
 // End returns the end position of this memo entry.
 func (e *Entry) End() input.Pos {
 	return e.start.Move(e.length)
+}
+
+func (e *Entry) Low(uint64) int64 {
+	return int64(e.start.Off)
+}
+
+func (e *Entry) ShiftLow(dim uint64, count int64) {
+	e.start.Move(int(count))
+}
+
+func (e *Entry) High(uint64) int64 {
+	return int64(e.start.Off + e.examined)
+}
+
+func (e *Entry) ShiftHigh(dim uint64, count int64) {
+	// t.end += count
+}
+
+func (e *Entry) Id() uint64 {
+	return uint64(e.id) ^ uint64(e.start.Off)
+}
+
+func (e *Entry) Overlaps(i shifti.Interval, d uint64) bool {
+	x1, x2 := e.Low(0), e.High(0)
+	y1, y2 := i.Low(0), i.High(0)
+	return x1 <= y2 && y1 <= x2
 }

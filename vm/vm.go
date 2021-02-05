@@ -288,7 +288,7 @@ loop:
 					memtbl.Put(memo.Key{
 						Id:  ent.memo.id,
 						Pos: ent.memo.pos,
-					}, memo.NewEntry(ent.memo.pos, mlen, vm.input.Furthest().Cmp(ent.memo.pos)+1, ent.capt)) // TODO: +1?
+					}, memo.NewEntry(ent.memo.id, ent.memo.pos, mlen, vm.input.Furthest().Cmp(ent.memo.pos)+1, ent.capt)) // TODO: +1?
 				}
 				vm.ip += szMemoClose
 			} else {
@@ -331,7 +331,7 @@ fail:
 			memtbl.Put(memo.Key{
 				Id:  ent.memo.id,
 				Pos: ent.memo.pos,
-			}, memo.NewEntry(ent.memo.pos, -1, -1, nil))
+			}, memo.NewEntry(ent.memo.id, ent.memo.pos, -1, -1, nil))
 		}
 		ent.capt = nil
 		goto fail
