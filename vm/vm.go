@@ -328,10 +328,11 @@ fail:
 		// Mark this position in the memoTable as a failed match
 		mlen := vm.input.Pos().Cmp(ent.memo.pos)
 		if mlen >= memoCutoff {
-			memtbl.Put(memo.Key{
-				Id:  ent.memo.id,
-				Pos: ent.memo.pos,
-			}, memo.NewEntry(ent.memo.id, ent.memo.pos, -1, -1, nil))
+			// TODO: support marking invalid intervals
+			// memtbl.Put(memo.Key{
+			// 	Id:  ent.memo.id,
+			// 	Pos: ent.memo.pos,
+			// }, memo.NewEntry(ent.memo.id, ent.memo.pos, -1, -1, nil))
 		}
 		ent.capt = nil
 		goto fail

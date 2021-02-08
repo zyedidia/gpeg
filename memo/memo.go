@@ -3,6 +3,8 @@
 package memo
 
 import (
+	"fmt"
+
 	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo/avlint"
@@ -88,4 +90,8 @@ func (e *Entry) ShiftHigh(count int) {
 
 func (e *Entry) Overlaps(i avlint.Interval) bool {
 	return e.Low() < i.High() && e.High() > i.Low()
+}
+
+func (e *Entry) String() string {
+	return fmt.Sprintf("[%d, %d)", e.Low(), e.High())
 }

@@ -1,6 +1,8 @@
 package memo
 
-import "github.com/zyedidia/gpeg/memo/avlint"
+import (
+	"github.com/zyedidia/gpeg/memo/avlint"
+)
 
 // ITreeTable implements a memoization table using an interval tree (augmented
 // to support efficient shifting).
@@ -53,9 +55,9 @@ func (t *ITreeTable) ApplyEdit(e Edit) {
 		}
 	}
 
-	t.Tree.Shift(e.Start.Off, (e.End.Off-e.Start.Off)+e.Len)
+	t.Tree.Shift(e.Start.Off, (e.Start.Off-e.End.Off)+e.Len)
 }
 
 func (t *ITreeTable) Size() int {
-	return t.Tree.Height()
+	return t.Tree.Size()
 }

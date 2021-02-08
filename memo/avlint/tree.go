@@ -56,7 +56,11 @@ func (t *Tree) Remove(key Key) {
 }
 
 func (t *Tree) Search(key Key) Interval {
-	return t.root.search(key).interval
+	i := t.root.search(key)
+	if i != nil {
+		return i.interval
+	}
+	return nil
 }
 
 func (t *Tree) Overlap(i Interval) []Interval {
@@ -66,6 +70,10 @@ func (t *Tree) Overlap(i Interval) []Interval {
 
 func (t *Tree) Height() int {
 	return t.root.getHeight()
+}
+
+func (t *Tree) Size() int {
+	return t.root.getSize()
 }
 
 func (t *Tree) Shift(idx, amt int) {
@@ -213,6 +221,13 @@ func (n *node) getHeight() int {
 		return 0
 	}
 	return n.height
+}
+
+func (n *node) getSize() int {
+	if n == nil {
+		return 0
+	}
+	return n.left.getSize() + n.right.getSize() + 1
 }
 
 func (n *node) recalculateHeight() {
