@@ -5,7 +5,7 @@ package memo
 import (
 	"github.com/zyedidia/gpeg/capture"
 	"github.com/zyedidia/gpeg/input"
-	"github.com/zyedidia/gpeg/memo/shifti"
+	"github.com/zyedidia/gpeg/memo/avlint"
 )
 
 // A Key is used to look up memo.Entry values. It stores an Id representing
@@ -70,28 +70,22 @@ func (e *Entry) End() input.Pos {
 	return e.start.Move(e.length)
 }
 
-func (e *Entry) Low(uint64) int64 {
-	return int64(e.start.Off)
+func (e *Entry) Low() int {
+	return e.start.Off
 }
 
-func (e *Entry) ShiftLow(dim uint64, count int64) {
-	e.start.Move(int(count))
+func (e *Entry) ShiftLow(count int) {
+	e.start.Move(count)
 }
 
-func (e *Entry) High(uint64) int64 {
-	return int64(e.start.Off + e.examined)
+func (e *Entry) High() int {
+	return e.start.Off + e.examined
 }
 
-func (e *Entry) ShiftHigh(dim uint64, count int64) {
+func (e *Entry) ShiftHigh(count int) {
 	// t.end += count
 }
 
-func (e *Entry) Id() uint64 {
-	return uint64(e.id) ^ uint64(e.start.Off)
-}
-
-func (e *Entry) Overlaps(i shifti.Interval, d uint64) bool {
-	x1, x2 := e.Low(0), e.High(0)
-	y1, y2 := i.Low(0), i.High(0)
-	return x1 <= y2 && y1 <= x2
+func (e *Entry) Overlaps(i avlint.Interval) bool {
+	return e.Low() < i.High() && e.High() > i.Low()
 }
