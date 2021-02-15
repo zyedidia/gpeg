@@ -1,13 +1,14 @@
 package gpeg
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/zyedidia/gpeg/charset"
-	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
@@ -23,10 +24,8 @@ func check(p Pattern, tests []PatternTest, t *testing.T) {
 	for _, tt := range tests {
 		name := tt.in[:min(10, len(tt.in))]
 		t.Run(name, func(t *testing.T) {
-			var bytes input.ByteReader = []byte(tt.in)
-			machine := vm.NewVM(bytes, code)
-			match, off, _, _ := machine.Exec(memo.NoneTable{})
-			if tt.match == -1 && match || tt.match != -1 && !match || tt.match != -1 && tt.match != off.Off {
+			match, off, _, _ := code.Exec(strings.NewReader(tt.in), memo.NoneTable{})
+			if tt.match == -1 && match || tt.match != -1 && !match || tt.match != -1 && tt.match != off {
 				t.Errorf("%s: got: (%t, %d), but expected (%d)\n", tt.in, match, off, tt.match)
 			}
 		})
@@ -233,84 +232,63 @@ func TestArithmeticGrammar(t *testing.T) {
 // These require `bible.txt` in the testdata directory.
 
 var match bool
-var bible input.ByteReader
-var machine *vm.VM
-var start input.Pos
+var bible *bytes.Reader
+var start int
 
 func TestMain(m *testing.M) {
-	var err error
-	bible, err = ioutil.ReadFile("testdata/bible.txt")
+	data, err := ioutil.ReadFile("testdata/bible.txt")
 	if err != nil {
 		fmt.Println("Warning:", err)
 	}
+	bible = bytes.NewReader(data)
 	os.Exit(m.Run())
 }
 
 func BenchmarkBibleSearchFirstEartt(b *testing.B) {
 	code := vm.Encode(MustCompile(Search(Literal("eartt"))))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 
 func BenchmarkBibleSearchFirstAbram(b *testing.B) {
 	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
 	code := vm.Encode(MustCompile(Search(abram)))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 
 func BenchmarkBibleSearchLastAbram(b *testing.B) {
 	abram := Concat(Plus(Set(charset.Range('a', 'z').Add(charset.Range('A', 'Z')))), Literal(" Abram"))
 	code := vm.Encode(MustCompile(Star(Search(abram))))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 
 func BenchmarkBibleSearchLastTubalcain(b *testing.B) {
 	code := vm.Encode(MustCompile(Star(Search(Literal("Tubalcain")))))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 
 func BenchmarkBibleOmegaPattern(b *testing.B) {
 	omega := Concat(Star(Concat(Not(Literal("Omega")), Any(1))), Literal("Omega"))
 	code := vm.Encode(MustCompile(omega))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 
@@ -320,14 +298,10 @@ func BenchmarkBibleOmegaGrammar(b *testing.B) {
 		"P": Literal("Omega"),
 	})
 	code := vm.Encode(MustCompile(omega))
-	machine := vm.NewVM(bible, code)
-	machine.Reset()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		match, _, _, _ = machine.Exec(memo.NoneTable{})
-		machine.Reset()
-		machine.SeekTo(start)
+		match, _, _, _ = code.Exec(bible, memo.NoneTable{})
 	}
 }
 

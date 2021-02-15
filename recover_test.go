@@ -1,10 +1,10 @@
 package gpeg
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/zyedidia/gpeg/charset"
-	"github.com/zyedidia/gpeg/input"
 	"github.com/zyedidia/gpeg/memo"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
@@ -17,13 +17,13 @@ func sync(p Pattern) Pattern {
 func TestRecover(t *testing.T) {
 	id := Plus(Set(charset.Range('a', 'z')))
 	p := Grammar("S", map[string]Pattern{
-		"S":        Or(NonTerm("List"), Concat(Any(1), Error("expecting a list of identifiers", NonTerm("ErrList")))),
-		"List":     Concat(
+		"S": Or(NonTerm("List"), Concat(Any(1), Error("expecting a list of identifiers", NonTerm("ErrList")))),
+		"List": Concat(
 			NonTerm("Id"),
 			Star(Concat(And(Any(1)),
 				NonTerm("Comma"),
 				Or(NonTerm("Id"),
-				Error("expecting an identifier", NonTerm("ErrId")))),
+					Error("expecting an identifier", NonTerm("ErrId")))),
 			),
 		),
 		"Id":       Concat(NonTerm("Sp"), Cap(id)),
@@ -36,9 +36,8 @@ func TestRecover(t *testing.T) {
 
 	peg := MustCompile(p)
 	code := vm.Encode(peg)
-	in := input.StringReader("one two three,")
-	machine := vm.NewVM(in, code)
-	_, _, _, errs := machine.Exec(memo.NoneTable{})
+	in := strings.NewReader("one two three,")
+	_, _, _, errs := code.Exec(in, memo.NoneTable{})
 
 	if len(errs) != 3 {
 		t.Error("Incorrect list of errors:", errs)

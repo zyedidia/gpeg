@@ -1,16 +1,15 @@
 package vm
 
 import (
-	"github.com/zyedidia/gpeg/capture"
-	"github.com/zyedidia/gpeg/input"
+	"github.com/zyedidia/gpeg/memo"
 )
 
 type stack struct {
 	entries []stackEntry
-	capt    []*capture.Node
+	capt    []*memo.Capture
 }
 
-func (s *stack) addCapt(capt ...*capture.Node) {
+func (s *stack) addCapt(capt ...*memo.Capture) {
 	if len(s.entries) == 0 {
 		s.capt = append(s.capt, capt...)
 	} else {
@@ -49,10 +48,10 @@ type stackEntry struct {
 	btrack stackBacktrack
 	memo   stackMemo // stackMemo is reused for stCapt
 
-	capt []*capture.Node
+	capt []*memo.Capture
 }
 
-func (se *stackEntry) addCapt(capt []*capture.Node) {
+func (se *stackEntry) addCapt(capt []*memo.Capture) {
 	if se.capt == nil {
 		se.capt = capt
 	} else {
@@ -64,18 +63,19 @@ type stackRet int
 
 type stackBacktrack struct {
 	ip  int
-	off input.Pos
+	off int
 }
 
 type stackMemo struct {
-	id  int16
-	pos input.Pos
+	id    int16
+	pos   int
+	count int
 }
 
 func newStack() *stack {
 	return &stack{
 		entries: make([]stackEntry, 0, 4),
-		capt:    make([]*capture.Node, 0),
+		capt:    make([]*memo.Capture, 0),
 	}
 }
 
@@ -109,10 +109,14 @@ func (s *stack) pop(propagate bool) *stackEntry {
 }
 
 func (s *stack) peek() *stackEntry {
-	if len(s.entries) == 0 {
+	return s.peekn(0)
+}
+
+func (s *stack) peekn(n int) *stackEntry {
+	if len(s.entries) <= n {
 		return nil
 	}
-	return &s.entries[len(s.entries)-1]
+	return &s.entries[len(s.entries)-n-1]
 }
 
 func (s *stack) pushRet(r stackRet) {

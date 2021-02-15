@@ -4,11 +4,10 @@ package memo
 type NoneTable struct{}
 
 // Get always returns 'not found'
-func (t NoneTable) Get(k Key) (*Entry, bool) {
+func (t NoneTable) Get(id, pos int) (*Entry, bool) {
 	return nil, false
 }
 
-func (t NoneTable) Put(k Key, e *Entry) {}
-func (t NoneTable) Delete(k Key)        {}
-func (t NoneTable) ApplyEdit(e Edit)    {}
-func (t NoneTable) Size() int           { return 0 }
+func (t NoneTable) Put(id, start, length, examined int, captures []*Capture) {}
+func (t NoneTable) ApplyEdit(e Edit)                                         {}
+func (t NoneTable) Size() int                                                { return 0 }

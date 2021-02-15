@@ -8,3 +8,5 @@ bench/bench
 gpeg
 !cmd/gpeg
 *.pdf
+*.java
+/flare/flare

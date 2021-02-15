@@ -207,6 +207,14 @@ type MemoClose struct {
 	basic
 }
 
+type MemoTree struct {
+	basic
+}
+
+type MemoTreeClose struct {
+	basic
+}
+
 // CaptureBegin begins capturing the given ID.
 type CaptureBegin struct {
 	Id int16
@@ -370,6 +378,16 @@ func (i MemoOpen) String() string {
 // String returns the string representation of this instruction.
 func (i MemoClose) String() string {
 	return "MemoClose"
+}
+
+// String returns the string representation of this instruction.
+func (i MemoTree) String() string {
+	return "MemoTree"
+}
+
+// String returns the string representation of this instruction.
+func (i MemoTreeClose) String() string {
+	return "MemoTreeClose"
 }
 
 // String returns the string representation of this instruction.

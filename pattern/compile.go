@@ -128,12 +128,35 @@ func (p *SeqNode) Compile() (isa.Program, error) {
 
 // Compile this node.
 func (p *StarNode) Compile() (isa.Program, error) {
-	// optimization: repeating a charset uses the dedicated instruction 'span'
 	switch t := Get(p.Patt).(type) {
 	case *ClassNode:
+		// optimization: repeating a charset uses the dedicated instruction 'span'
 		return isa.Program{
 			isa.Span{Chars: t.Chars},
 		}, nil
+	case *MemoNode:
+		// optimization: if the pattern we are repeating is a memoization
+		// entry, we should use special instructions to memoize it as a tree to
+		// get logarithmic saving when reparsing.
+		sub, err := Get(t.Patt).Compile()
+		code := make(isa.Program, 0, len(sub)+7)
+		L1 := isa.NewLabel()
+		L2 := isa.NewLabel()
+		L3 := isa.NewLabel()
+		NoJump := isa.NewLabel()
+
+		code = append(code, L1)
+		code = append(code, isa.MemoOpen{Id: t.Id, Lbl: L3})
+		code = append(code, isa.Choice{Lbl: L2})
+		code = append(code, sub...)
+		code = append(code, isa.Commit{Lbl: NoJump})
+		code = append(code, NoJump)
+		code = append(code, isa.MemoTree{})
+		code = append(code, L3)
+		code = append(code, isa.Jump{Lbl: L1})
+		code = append(code, L2)
+		code = append(code, isa.MemoTreeClose{})
+		return code, err
 	}
 
 	sub, err := Get(p.Patt).Compile()

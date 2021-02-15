@@ -1,30 +1,34 @@
 // Package input defines data types and functions for managing input data.
 package input
 
-import "bytes"
+import (
+	"io"
+)
 
-var dummy = []byte{0}
+const bufsz = 4096
 
-// Input represents the input data and is an efficient wrapper of ReaderAtPos
-// which provides a nicer interface, avoids repeated interface function calls,
-// and uses a cache for buffered reading.
+// Input represents the input data and is an efficient wrapper of io.ReaderAt
+// which provides a nicer API, avoids repeated interface function calls, and
+// uses a cache for buffered reading.
+// An Input also tracks the index of the furthest byte that has been read.
 type Input struct {
-	r ReaderAtPos
+	r io.ReaderAt
 
-	// the cached data
-	chunk []byte
-	// the position within 'r' that the chunk corresponds to.
-	base Pos
+	// cached data.
+	chunk [bufsz]byte
+	// size of the cache.
+	nchunk int
+
+	// the position within the reader that the chunk starts at.
+	base int
 	// the offset within the chunk we are reading at.
-	off int
+	coff int
 	// the furthest position we have read.
-	furthest Pos
-	// true if the offset has reached the end of the reader
-	finished bool
+	furthest int
 }
 
-// NewInput creates a new Input wrapper for the ReaderAtPos.
-func NewInput(r ReaderAtPos) *Input {
+// NewInput creates a new Input wrapper for the io.ReaderAt.
+func NewInput(r io.ReaderAt) *Input {
 	i := &Input{
 		r: r,
 	}
@@ -32,99 +36,79 @@ func NewInput(r ReaderAtPos) *Input {
 	return i
 }
 
-func (i *Input) refill(pos Pos) {
-	var err error
-
+func (i *Input) refill(pos int) {
 	i.base = pos
-	i.off = 0
-	i.chunk, err = i.r.ReadAtPos(i.base)
-	// reached the end of the reader
-	i.finished = err != nil || len(i.chunk) == 0
-	if i.finished {
-		// set the chunk to a dummy for peeks to read from
-		i.chunk = dummy
-	}
+	i.coff = 0
+	i.nchunk, _ = i.r.ReadAt(i.chunk[:], int64(i.base))
 }
 
 // Peek returns the next byte in the stream or 'false' if there are no more
 // bytes. Successive calls to Peek will return the same value unless there is a
 // call to SeekTo or Advance in between.
 func (i *Input) Peek() (byte, bool) {
-	pos := i.base.Move(i.off)
-	if pos.Cmp(i.furthest) > 0 {
+	pos := i.base + i.coff
+	if pos > i.furthest {
 		i.furthest = pos
 	}
 
-	return i.chunk[i.off], !i.finished
+	return i.chunk[i.coff], i.nchunk != 0
 }
 
 // SeekTo moves the current read position to the desired read position. Returns
 // true if the seek went to a valid location within the reader, and false
-// otherwise.
-func (i *Input) SeekTo(pos Pos) bool {
-	// check if the seek position is within the current chunk and if so just
+// otherwise. In other words, if seek returns true the next call to Peek will
+// return a valid byte.
+func (i *Input) SeekTo(pos int) bool {
+	// check if the seek position in within the current chunk and if so just
 	// update the internal offset.
-	chunkEnd := i.base.Move(len(i.chunk))
-	off := pos.Cmp(i.base)
-	if pos.Cmp(chunkEnd) < 0 && pos.Cmp(i.base) >= 0 {
-		i.off = off
+	chunkEnd := i.base + i.nchunk
+	if pos < chunkEnd && pos >= i.base {
+		i.coff = pos - i.base
 		return true
 	}
 
 	// refill the cache (moves the base)
 	i.refill(pos)
-	return !i.finished
+	return i.nchunk != 0
 }
 
 // Advance moves the offset forward by 'n' bytes. Returns true if the advance
-// was successful (n chars were successfully skipped), and false otherwise.
+// was successful (n chars were successfully skipped) and false otherwise. Note
+// that even if Advance returns true the next call to Peek may return false if
+// the advance went to the exact end of the data.
 func (i *Input) Advance(n int) bool {
-	if i.finished {
+	if i.nchunk == 0 {
 		return false
 	}
 
-	i.off += n
-	if i.off > len(i.chunk) {
-		// moved past the end
-		i.refill(i.base.Move(i.off))
+	i.coff += n
+	if i.coff > i.nchunk {
+		i.refill(i.base + i.coff)
 		return false
-	} else if i.off == len(i.chunk) {
-		// moved exactly to the end
-		i.refill(i.base.Move(i.off))
+	} else if i.coff == i.nchunk {
+		i.refill(i.base + i.coff)
 	}
 	return true
 }
 
 // Slice returns a slice of the reader corresponding to the range [low:high).
-func (i *Input) Slice(low, high Pos) []byte {
-	buf := &bytes.Buffer{}
-	off := low
-	for nleft := high.Cmp(off); nleft > 0; nleft = high.Cmp(off) {
-		b, err := i.r.ReadAtPos(off)
-		if err != nil {
-			break
-		}
-		sz := min(len(b), nleft)
-		n, _ := buf.Write(b[:sz])
-		off = off.Move(n)
-	}
-	return buf.Bytes()
+func (i *Input) Slice(low, high int) []byte {
+	return Slice(i.r, low, high)
 }
 
 // Pos returns the current read position.
-func (i *Input) Pos() Pos {
-	return i.base.Move(i.off)
+func (i *Input) Pos() int {
+	return i.base + i.coff
 }
 
 // Furthest returns the furthest read position.
-func (i *Input) Furthest() Pos {
+func (i *Input) Furthest() int {
 	return i.furthest
 }
 
-// ResetFurthest resets the furthest read position to its zero value.
+// ResetFurthest resets the furthest read tracker to zero.
 func (i *Input) ResetFurthest() {
-	var p Pos
-	i.furthest = p
+	i.furthest = 0
 }
 
 func min(a, b int) int {

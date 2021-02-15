@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
@@ -167,6 +168,10 @@ func Encode(insns isa.Program) VMCode {
 			args = append(encodeLabel(labels[t.Lbl]), encodeI16(int(t.Id))...)
 		case isa.MemoClose:
 			op = opMemoClose
+		case isa.MemoTree:
+			op = opMemoTree
+		case isa.MemoTreeClose:
+			op = opMemoTreeClose
 		case isa.Error:
 			op = opError
 			args = encodeU24(addError(&code, t.Message))
@@ -174,7 +179,7 @@ func Encode(insns isa.Program) VMCode {
 			op = opEnd
 			args = encodeBool(t.Fail)
 		default:
-			continue
+			panic(fmt.Sprintf("invalid instruction during encoding: %v", t))
 		}
 
 		code.data.Insns = append(code.data.Insns, op)

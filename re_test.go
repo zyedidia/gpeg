@@ -18,6 +18,16 @@ func TestRe(t *testing.T) {
 	check(p, tests, t)
 }
 
+func TestReExtra(t *testing.T) {
+	p := re.MustCompilePatt("[^a-zA-Z]*")
+	tests := []PatternTest{
+		{"hello", 0},
+		{"123", 3},
+		{"_*&##@0abc", 7},
+	}
+	check(p, tests, t)
+}
+
 func TestJson(t *testing.T) {
 	peg, err := ioutil.ReadFile("grammars/json.peg")
 	if err != nil {

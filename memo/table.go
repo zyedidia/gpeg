@@ -1,30 +1,27 @@
 package memo
 
-import "github.com/zyedidia/gpeg/input"
-
-// An Edit represents a modification to the subject string where the interval
-// [Start, End) is modified to be Len bytes. If Len = 0, this is equivalent
-// to deleting the interval, and if Start = End this is an insertion.
-type Edit struct {
-	Start, End input.Pos
-	Len        int
-}
-
+// A Table is an interface for a memoization table data structure. The
+// memoization table tracks memoized parse results corresponding to a
+// non-terminal parsed at a certain location. The table interface defines the
+// ApplyEdit function which is crucial for incremental parsing.
 type Table interface {
-	// Get returns the entry associated with a given key, and a boolean indicating
-	// whether the key exists in the table.
-	Get(Key) (*Entry, bool)
+	// Get returns the entry associated with the given position and ID. If
+	// there are multiple entries with the same ID at that position, the
+	// largest entry is returned (determined by matched length).
+	Get(id, pos int) (*Entry, bool)
 
-	// Put adds a new key-entry pair to the table.
-	Put(Key, *Entry)
+	// Put adds a new entry to the table.
+	Put(id, start, length, examined int, captures []*Capture)
 
-	// Delete causes the entry associated with the given key to be immediately
-	// evicted from the table.
-	Delete(Key)
-
-	// ApplyEdit applies the given edit to the memo table by shifting entry
-	// locations properly and invaliding any entries in the modified interval.
+	// ApplyEdit updates the table as necessary when an edit occurs. This
+	// operation invalidates all entries within the range of the edit and
+	// shifts entries that are to the right of the edit as necessary.
 	ApplyEdit(Edit)
+
+	// Overlaps returns all entries that overlap with the given interval
+	// [low:high) where the interval of an entry is defined as
+	// [start:start+examined).
+	// Overlaps(low, high int) []*Entry
 
 	// Size returns the number of entries in the table.
 	Size() int

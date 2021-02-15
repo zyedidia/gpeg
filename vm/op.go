@@ -32,27 +32,31 @@ const (
 	opCaptureFull
 	opMemoOpen
 	opMemoClose
+	opMemoTree
+	opMemoTreeClose
 	opError
 )
 
 // instruction sizes
 const (
 	// base instruction set
-	szChar         = 2
-	szReturn       = 2
-	szFail         = 2
-	szSet          = 2
-	szAny          = 2
-	szSpan         = 2
-	szFailTwice    = 2
-	szEnd          = 2
-	szNop          = 0
-	szCaptureBegin = 4
-	szCaptureLate  = 4
-	szCaptureEnd   = 2
-	szCaptureFull  = 4
-	szMemoClose    = 2
-	szError        = 4
+	szChar          = 2
+	szReturn        = 2
+	szFail          = 2
+	szSet           = 2
+	szAny           = 2
+	szSpan          = 2
+	szFailTwice     = 2
+	szEnd           = 2
+	szNop           = 0
+	szCaptureBegin  = 4
+	szCaptureLate   = 4
+	szCaptureEnd    = 2
+	szCaptureFull   = 4
+	szMemoClose     = 2
+	szMemoTree      = 2
+	szMemoTreeClose = 2
+	szError         = 4
 
 	// jumps
 	szJump             = 4
