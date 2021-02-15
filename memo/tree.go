@@ -1,6 +1,7 @@
 package memo
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/zyedidia/gpeg/memo/avlint"
@@ -46,4 +47,19 @@ func (t *TreeTable) ApplyEdit(e Edit) {
 	}
 
 	t.Tree.Shift(e.Start, (e.Start-e.End)+e.Len)
+}
+
+func (t *TreeTable) Overlaps(low, high int) []*Entry {
+	result := make([]*Entry, 0)
+	entries := t.Tree.Overlap(low, high)
+	for _, e := range entries {
+		result = append(result, e.(*Entry))
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Start() == result[j].Start() {
+			return result[i].Examined() > result[j].Examined()
+		}
+		return result[i].Start() < result[j].Start()
+	})
+	return result
 }

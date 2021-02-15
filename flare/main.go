@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/zyedidia/gpeg/memo"
 	p "github.com/zyedidia/gpeg/pattern"
+	"github.com/zyedidia/gpeg/viz"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -68,7 +69,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tbl := memo.NewMapTable()
+	tbl := memo.NewTreeTable()
 	// tbl := memo.NoneTable{}
 	r := bytes.NewReader(data)
 	istart := time.Now()
@@ -106,6 +107,13 @@ func main() {
 
 	fmt.Println(match, n, len(ast))
 	fmt.Println(tbl.Size())
+
+	f, err := os.Create("out.svg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	viz.DrawMemo(tbl, len(data), f, 1000, 250)
 
 	PrintMemUsage()
 }

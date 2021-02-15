@@ -118,6 +118,9 @@ func (t MapTable) Overlaps(low, high int) []*Entry {
 		}
 	}
 	sort.Slice(result, func(i, j int) bool {
+		if result[i].Start() == result[j].Start() {
+			return result[i].Examined()-result[i].Start() > result[j].Examined()-result[j].Start()
+		}
 		return result[i].Start() < result[j].Start()
 	})
 	return result

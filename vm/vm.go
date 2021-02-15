@@ -12,7 +12,7 @@ import (
 )
 
 // do not memoize results that are smaller than this threshold.
-const memoThreshold = 512
+const memoThreshold = 1
 
 type ParseError struct {
 	Message string

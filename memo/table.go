@@ -21,7 +21,7 @@ type Table interface {
 	// Overlaps returns all entries that overlap with the given interval
 	// [low:high) where the interval of an entry is defined as
 	// [start:start+examined).
-	// Overlaps(low, high int) []*Entry
+	Overlaps(low, high int) []*Entry
 
 	// Size returns the number of entries in the table.
 	Size() int
