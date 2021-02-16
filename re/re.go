@@ -17,7 +17,8 @@ import (
 var parser vm.VMCode
 
 func init() {
-	parser = vm.Encode(pattern.MustCompile(pattern.Grammar("Pattern", grammar)))
+	prog := pattern.MustCompile(pattern.Grammar("Pattern", grammar))
+	parser = vm.Encode(prog)
 }
 
 func compile(root *memo.Capture, s string) pattern.Pattern {

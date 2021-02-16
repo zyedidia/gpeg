@@ -132,18 +132,18 @@ var grammar = map[string]Pattern{
 			NonTerm("Expression"),
 			NonTerm("CLOSE"),
 		),
-		NonTerm("Literal"),
-		NonTerm("Class"),
-		Concat(
-			NonTerm("BRACEO"),
-			NonTerm("Expression"),
-			NonTerm("BRACEC"),
-		),
 		Concat(
 			NonTerm("BRACEPO"),
 			NonTerm("Expression"),
 			NonTerm("BRACEPC"),
 		),
+		Concat(
+			NonTerm("BRACEO"),
+			NonTerm("Expression"),
+			NonTerm("BRACEC"),
+		),
+		NonTerm("Literal"),
+		NonTerm("Class"),
 		NonTerm("DOT"),
 	), idPrimary),
 
@@ -267,11 +267,11 @@ var grammar = map[string]Pattern{
 		NonTerm("Spacing"),
 	),
 	"BRACEPO": CapId(Concat(
-		Literal("{+"),
+		Literal("{{"),
 		NonTerm("Spacing"),
 	), idBRACEPO),
 	"BRACEPC": Concat(
-		Literal("+}"),
+		Literal("}}"),
 		NonTerm("Spacing"),
 	),
 	"SLASH": Concat(

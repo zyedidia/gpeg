@@ -12,7 +12,7 @@ import (
 )
 
 // do not memoize results that are smaller than this threshold.
-const memoThreshold = 1
+const memoThreshold = 4096 * 4
 
 type ParseError struct {
 	Message string
@@ -297,7 +297,7 @@ loop:
 					break
 				}
 				ent = st.pop(false) // next is now top of stack
-				capt := memo.NewCapture(1000, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
+				capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 				st.addCapt(capt)
 				next.memo.count *= 2
 				mlen := src.Pos() - next.memo.pos

@@ -1,7 +1,7 @@
 doc           <- JSON !.
 JSON          <- S_ (Number / Object / Array / String / True / False / Null) S_
 Object        <- '{' (String ':' JSON (',' String ':' JSON)* / S_) '}'
-Array         <- '[' (JSON (',' JSON)* / S_) ']'
+Array         <- '[' (JSON ({{ ',' JSON }})* / S_) ']'
 StringBody    <- Escape? ((!["\\\00-\37] .)+ Escape*)*
 String        <- S_ '"' StringBody '"' S_
 Escape        <- '\\' (["{|\\bfnrt] / UnicodeEscape)

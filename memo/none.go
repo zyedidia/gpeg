@@ -10,4 +10,5 @@ func (t NoneTable) Get(id, pos int) (*Entry, bool) {
 
 func (t NoneTable) Put(id, start, length, examined int, captures []*Capture) {}
 func (t NoneTable) ApplyEdit(e Edit)                                         {}
+func (t NoneTable) Overlaps(low, high int) []*Entry                          { return nil }
 func (t NoneTable) Size() int                                                { return 0 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const Dummy = -1
+
 // A Capture represents an AST capture node. It stores the ID of the capture, the
 // start position and length, and any children.
 type Capture struct {
