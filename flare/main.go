@@ -64,6 +64,17 @@ func main() {
 	prog := p.MustCompile(java)
 	code := vm.Encode(prog)
 
+	fmt.Println("Size of instructions:", code.Size())
+	codebytes, err := code.ToBytes()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Serialization size:", len(codebytes))
+	code, err = vm.FromBytes(codebytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	data, err := ioutil.ReadFile(flag.Args()[0])
 	if err != nil {
 		log.Fatal(err)

@@ -244,6 +244,15 @@ type CaptureFull struct {
 	basic
 }
 
+type CheckBegin struct {
+	basic
+}
+
+type CheckEnd struct {
+	Checker Checker
+	basic
+}
+
 type Error struct {
 	basic
 	Message string
@@ -368,6 +377,16 @@ func (i End) String() string {
 // String returns the string representation of this instruction.
 func (i Nop) String() string {
 	return "Nop"
+}
+
+// String returns the string representation of this instruction.
+func (i CheckBegin) String() string {
+	return "CheckBegin"
+}
+
+// String returns the string representation of this instruction.
+func (i CheckEnd) String() string {
+	return fmt.Sprintf("CheckEnd %v", i.Checker)
 }
 
 // String returns the string representation of this instruction.

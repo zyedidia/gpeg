@@ -6,11 +6,19 @@ import (
 	"strings"
 
 	"github.com/zyedidia/gpeg/charset"
+	"github.com/zyedidia/gpeg/isa"
 )
 
 // Cap marks a pattern to be captured.
 func Cap(p Pattern) Pattern {
 	return CapId(p, 0)
+}
+
+func Check(p Pattern, c isa.Checker) Pattern {
+	return &CheckNode{
+		Patt:    p,
+		Checker: c,
+	}
 }
 
 // CapId marks a pattern with an ID to be captured.

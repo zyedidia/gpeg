@@ -305,6 +305,22 @@ loop:
 			}
 
 			ip += szMemoTree
+		case opCheckBegin:
+			st.pushCheck(stackRet(src.Pos()))
+			ip += szCheckBegin
+		case opCheckEnd:
+			ent := st.pop(true)
+			if ent == nil || ent.stype != stCheck {
+				panic("check end needs check stack entry")
+			}
+			checkid := decodeU24(idata[ip+1:])
+			checker := vm.data.Checkers[checkid]
+
+			if !checker.Check(src.Slice(int(ent.ret), src.Pos())) {
+				goto fail
+			}
+
+			ip += szCheckEnd
 		case opError:
 			errid := decodeU24(idata[ip+1:])
 			msg := vm.data.Errors[errid]
@@ -337,10 +353,7 @@ fail:
 		memoize(int(ent.memo.id), ent.memo.pos, -1, nil)
 		ent.capt = nil
 		goto fail
-	case stRet:
-		ent.capt = nil
-		goto fail
-	case stCapt:
+	case stRet, stCapt, stCheck:
 		ent.capt = nil
 		goto fail
 	}

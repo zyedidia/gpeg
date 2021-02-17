@@ -37,6 +37,7 @@ const (
 	stBtrack
 	stMemo
 	stCapt
+	stCheck
 )
 
 type stackEntry struct {
@@ -44,7 +45,7 @@ type stackEntry struct {
 	// we could use a union to avoid the space cost but I have found this
 	// doesn't impact performance and the space cost itself is quite small
 	// because the stack is usually small.
-	ret    stackRet
+	ret    stackRet // stackRet is reused for stCheck
 	btrack stackBacktrack
 	memo   stackMemo // stackMemo is reused for stCapt
 
@@ -144,5 +145,12 @@ func (s *stack) pushCapt(m stackMemo) {
 	s.push(stackEntry{
 		stype: stCapt,
 		memo:  m,
+	})
+}
+
+func (s *stack) pushCheck(r stackRet) {
+	s.push(stackEntry{
+		stype: stCheck,
+		ret:   r,
 	})
 }

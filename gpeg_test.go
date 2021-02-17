@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -40,6 +41,30 @@ func TestConcat(t *testing.T) {
 		{"hi", -1},
 		{"anahi", 5},
 		{"anah", -1},
+	}
+
+	check(p, tests, t)
+}
+
+type uint8Checker struct{}
+
+// only allows integers between 0 and 256
+func (uint8Checker) Check(b []byte) bool {
+	i, err := strconv.Atoi(string(b))
+	if err != nil {
+		return false
+	}
+	return i >= 0 && i < 256
+}
+
+func TestChecker(t *testing.T) {
+	p := Check(Plus(Set(charset.Range('0', '9'))), uint8Checker{})
+
+	tests := []PatternTest{
+		{"123", 3},
+		{"256", -1},
+		{"foo", -1},
+		{"0", 1},
 	}
 
 	check(p, tests, t)

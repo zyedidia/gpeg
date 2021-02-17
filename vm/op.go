@@ -30,6 +30,8 @@ const (
 	opCaptureLate
 	opCaptureEnd
 	opCaptureFull
+	opCheckBegin
+	opCheckEnd
 	opMemoOpen
 	opMemoClose
 	opMemoTree
@@ -56,6 +58,8 @@ const (
 	szMemoClose     = 2
 	szMemoTree      = 2
 	szMemoTreeClose = 2
+	szCheckBegin    = 2
+	szCheckEnd      = 4
 	szError         = 4
 
 	// jumps
@@ -89,7 +93,7 @@ func size(insn isa.Insn) uint {
 	switch insn.(type) {
 	case isa.MemoOpen, isa.CaptureBegin, isa.CaptureLate, isa.CaptureFull,
 		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestSetNoChoice,
-		isa.TestAny, isa.Error:
+		isa.TestAny, isa.Error, isa.CheckEnd:
 		sz += 2
 	}
 

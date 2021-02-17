@@ -299,6 +299,18 @@ func (p *MemoNode) Compile() (isa.Program, error) {
 }
 
 // Compile this node.
+func (p *CheckNode) Compile() (isa.Program, error) {
+	L1 := isa.NewLabel()
+	sub, err := Get(p.Patt).Compile()
+	code := make(isa.Program, 0, len(sub)+3)
+	code = append(code, isa.CheckBegin{})
+	code = append(code, sub...)
+	code = append(code, isa.CheckEnd{Checker: p.Checker})
+	code = append(code, L1)
+	return code, err
+}
+
+// Compile this node.
 func (p *SearchNode) Compile() (isa.Program, error) {
 	var rsearch Pattern
 	var set charset.Set

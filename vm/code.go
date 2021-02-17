@@ -22,6 +22,8 @@ type code struct {
 	Sets []charset.Set
 	// list of error messages
 	Errors []string
+	// list of checker functions
+	Checkers []isa.Checker
 
 	// the encoded instructions
 	Insns []byte
@@ -30,6 +32,10 @@ type code struct {
 // Size returns the size of the encoded instructions.
 func (c *VMCode) Size() int {
 	return len(c.data.Insns)
+}
+
+func init() {
+	gob.Register(isa.MapChecker{})
 }
 
 // ToBytes serializes and compresses this VMCode.
@@ -172,6 +178,11 @@ func Encode(insns isa.Program) VMCode {
 			op = opMemoTree
 		case isa.MemoTreeClose:
 			op = opMemoTreeClose
+		case isa.CheckBegin:
+			op = opCheckBegin
+		case isa.CheckEnd:
+			op = opCheckEnd
+			args = append(encodeU24(addChecker(&code, t.Checker)))
 		case isa.Error:
 			op = opError
 			args = encodeU24(addError(&code, t.Message))
@@ -280,4 +291,9 @@ func addError(code *VMCode, msg string) uint {
 
 	code.data.Errors = append(code.data.Errors, msg)
 	return uint(len(code.data.Errors) - 1)
+}
+
+func addChecker(code *VMCode, checker isa.Checker) uint {
+	code.data.Checkers = append(code.data.Checkers, checker)
+	return uint(len(code.data.Checkers) - 1)
 }

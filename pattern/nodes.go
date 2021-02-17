@@ -57,6 +57,11 @@ type MemoNode struct {
 	Id   int16
 }
 
+type CheckNode struct {
+	Patt    Pattern
+	Checker isa.Checker
+}
+
 // GrammarNode represents a grammar of non-terminals and their associated
 // patterns. The Grammar must also have an entry non-terminal.
 type GrammarNode struct {

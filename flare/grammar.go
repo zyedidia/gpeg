@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/zyedidia/gpeg/charset"
+	"github.com/zyedidia/gpeg/isa"
 	p "github.com/zyedidia/gpeg/pattern"
 )
 
@@ -117,17 +118,18 @@ var (
 )
 
 func wordMatch(words ...string) p.Pattern {
-	patt := p.Concat(
-		p.Literal(words[0]),
-		p.Not(alnum),
-	)
-	for _, w := range words[1:] {
-		patt = p.Or(patt, p.Concat(
-			p.Literal(w),
-			p.Not(alnum),
-		))
+	m := make(map[string]struct{})
+	var chars []byte
+
+	for _, w := range words {
+		for _, c := range []byte(w) {
+			chars = append(chars, c)
+		}
+
+		m[w] = struct{}{}
 	}
-	return patt
+
+	return p.Check(p.Plus(p.Set(charset.New(chars))), isa.MapChecker(m))
 }
 
 func CreateHighlighter(grammar map[string]p.Pattern, names []string) p.Pattern {
