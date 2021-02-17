@@ -24,18 +24,21 @@ heavily inspired by LPeg.
 * [x] Pattern compiler with optimizations.
 * [x] Support for original PEG syntax.
 * [x] AST generation/captures.
-* [x] Parse non-string data structures (reader interface).
-    * [ ] Support for custom offset types (e.g. line/col instead of index).
+* [x] Parse non-string data structures (via interface).
 * [x] Incremental matching.
 * [x] Incremental AST/captures.
-* [ ] Support for an extended PEG syntax (TBD).
-* [ ] Compilation of VM code to native code (JIT or static compilation TBD).
-* [ ] Documentation and examples.
+    * [x] Better incremental parsing algorithm.
+* [x] Support for an extended PEG syntax.
+* [x] Syntax highlighting example.
+* [ ] Polish, documentation, and examples.
+* [ ] Parallel parsing.
 * [ ] Creation of a large bundle of PEGs for common programming languages.
+* [ ] Compilation of VM code to native code (JIT or static compilation TBD).
 * [ ] Additional niceties (TBD).
+    * [x] Error recovery.
     * [x] Grammar tree visualizer.
     * [x] AST visualizer.
-    * [x] Error recovery.
+    * [x] Memoization table visualizer.
     * [ ] Support for left recursion.
 
 # Related work
