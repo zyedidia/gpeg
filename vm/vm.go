@@ -11,9 +11,6 @@ import (
 	"github.com/zyedidia/gpeg/memo"
 )
 
-// do not memoize results that are smaller than this threshold.
-const memoThreshold = 4096 * 4
-
 type ParseError struct {
 	Message string
 	Pos     int
@@ -46,9 +43,7 @@ func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table) (
 
 	memoize := func(id, pos, mlen int, capt []*memo.Capture) {
 		mexam := src.Furthest() - pos + 1
-		if mexam >= memoThreshold {
-			memtbl.Put(id, pos, mlen, mexam, capt)
-		}
+		memtbl.Put(id, pos, mlen, mexam, capt)
 	}
 
 	success := true
@@ -265,16 +260,7 @@ loop:
 				ent := st.pop(true)
 				if ent != nil && ent.stype == stMemo {
 					mlen := src.Pos() - ent.memo.pos
-					mexam := src.Furthest() - ent.memo.pos + 1
-					if mlen >= memoThreshold {
-						memtbl.Put(
-							int(ent.memo.id),
-							ent.memo.pos,
-							mlen,
-							mexam,
-							ent.capt,
-						)
-					}
+					memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.capt)
 				}
 			}
 			ip += szMemoTreeClose

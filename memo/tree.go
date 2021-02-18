@@ -11,12 +11,14 @@ import (
 // to support efficient shifting).
 type TreeTable struct {
 	*avlint.Tree
-	lock sync.Mutex
+	threshold int
+	lock      sync.Mutex
 }
 
-func NewTreeTable() *TreeTable {
+func NewTreeTable(threshold int) *TreeTable {
 	return &TreeTable{
-		Tree: &avlint.Tree{},
+		Tree:      &avlint.Tree{},
+		threshold: threshold,
 	}
 }
 
@@ -29,6 +31,10 @@ func (t *TreeTable) Get(id, pos int) (*Entry, bool) {
 }
 
 func (t *TreeTable) Put(id, start, length, examined int, captures []*Capture) {
+	if examined < t.threshold || length == 0 {
+		return
+	}
+
 	e := newEntry(id, start, length, examined, captures)
 	t.lock.Lock()
 	loc := t.Tree.Add(start, start+examined, e, id)

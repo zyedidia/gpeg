@@ -9,12 +9,12 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/zyedidia/gpeg/memo"
 	p "github.com/zyedidia/gpeg/pattern"
-	"github.com/zyedidia/gpeg/viz"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -80,7 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tbl := memo.NewTreeTable()
+	tbl := memo.NewTreeTable(512)
 	// tbl := memo.NoneTable{}
 	r := bytes.NewReader(data)
 	istart := time.Now()
@@ -89,42 +89,45 @@ func main() {
 	fmt.Println("initial", ielapsed)
 
 	if !*oneparse {
-		text := "h"
-		loc := 5
-		edit := memo.Edit{
-			Start: loc,
-			End:   loc + 1,
-			Len:   len(text) + 1,
-		}
-
-		data = append(data[:loc], append([]byte(text), data[loc:]...)...)
-
-		astart := time.Now()
-		tbl.ApplyEdit(edit)
-		aelapsed := time.Since(astart)
-		r.Reset(data)
-		rstart := time.Now()
-		match, n, ast, _ = code.Exec(r, tbl)
-		relapsed := time.Since(rstart)
-
-		if *display {
-			for _, c := range ast {
-				fmt.Print(colorize(c, theme, data))
+		for i := 0; i < 2000; i++ {
+			text := strconv.Itoa(i)
+			loc := 5
+			edit := memo.Edit{
+				Start: loc,
+				End:   loc + 1,
+				Len:   len(text) + 1,
 			}
-		}
 
-		fmt.Printf("initial: %v, apply-edit: %v, reparse: %v\n", ielapsed, aelapsed, relapsed)
+			data = append(data[:loc], append([]byte(text), data[loc:]...)...)
+
+			astart := time.Now()
+			tbl.ApplyEdit(edit)
+			aelapsed := time.Since(astart)
+			r.Reset(data)
+			fmt.Println("Starting reparse")
+			rstart := time.Now()
+			match, n, ast, _ = code.Exec(r, tbl)
+			relapsed := time.Since(rstart)
+
+			fmt.Printf("initial: %v, apply-edit: %v, reparse: %v\n", ielapsed, aelapsed, relapsed)
+		}
+	}
+
+	if *display {
+		for _, c := range ast {
+			fmt.Print(colorize(c, theme, data))
+		}
 	}
 
 	fmt.Println(match, n, len(ast))
 	fmt.Println(tbl.Size())
 
-	f, err := os.Create("out.svg")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	viz.DrawMemo(tbl, len(data), f, 1000, 250)
+	// f, err := os.Create("out.svg")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer f.Close()
+	// viz.DrawMemo(tbl, len(data), f, 1000, 250)
 
 	PrintMemUsage()
 }
