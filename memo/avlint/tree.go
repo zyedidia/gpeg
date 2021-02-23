@@ -3,8 +3,6 @@
 // using lazy shifts.
 package avlint
 
-import "fmt"
-
 // ShiftThreshold is the number of shifts to accumulate before applying all
 // shifts.
 const ShiftThreshold = 1024
@@ -105,7 +103,6 @@ func (t *Tree) Overlap(low, high int) []interface{} {
 // currently. If a negative shift is performed, ensure that there is space for
 // all intervals to be shifted left without overlapping with another interval.
 func (t *Tree) Shift(idx, amt int) {
-	fmt.Println("shift of", amt)
 	if amt == 0 {
 		return
 	}

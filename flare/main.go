@@ -80,7 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tbl := memo.NewTreeTable(512)
+	tbl := memo.NewTreeTable(4096)
 	// tbl := memo.NoneTable{}
 	r := bytes.NewReader(data)
 	istart := time.Now()
@@ -88,8 +88,12 @@ func main() {
 	ielapsed := time.Since(istart)
 	fmt.Println("initial", ielapsed)
 
+	var total int64
+	var applyedit int64
+	const nedits = 1000
+
 	if !*oneparse {
-		for i := 0; i < 2000; i++ {
+		for i := 0; i < nedits; i++ {
 			text := strconv.Itoa(i)
 			loc := 5
 			edit := memo.Edit{
@@ -104,14 +108,17 @@ func main() {
 			tbl.ApplyEdit(edit)
 			aelapsed := time.Since(astart)
 			r.Reset(data)
-			fmt.Println("Starting reparse")
-			rstart := time.Now()
 			match, n, ast, _ = code.Exec(r, tbl)
-			relapsed := time.Since(rstart)
+			telapsed := time.Since(astart)
 
-			fmt.Printf("initial: %v, apply-edit: %v, reparse: %v\n", ielapsed, aelapsed, relapsed)
+			fmt.Printf("%d %d\n", telapsed.Nanoseconds(), aelapsed.Nanoseconds())
+
+			total += telapsed.Nanoseconds()
+			applyedit += aelapsed.Nanoseconds()
 		}
 	}
+
+	fmt.Printf("%.3fus %.3fus\n", float64(total)/1000.0/1000.0, float64(applyedit)/1000.0/1000.0)
 
 	if *display {
 		for _, c := range ast {
