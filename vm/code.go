@@ -51,7 +51,7 @@ func (c *VMCode) ToBytes() ([]byte, error) {
 // FromBytes loads a VMCode from a compressed and serialized object.
 func FromBytes(b []byte) (VMCode, error) {
 	var c code
-	fz, err := gzip.NewReader(bytes.NewBuffer(b))
+	fz, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {
 		return VMCode{}, err
 	}

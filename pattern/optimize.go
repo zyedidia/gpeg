@@ -6,7 +6,7 @@ import (
 )
 
 // Nodes with trees larger than this size will not be inlined.
-const inlineThreshold = 100
+var InlineThreshold = 100
 
 // Inline performs inlining passes until the inliner reaches a steady-state.
 func (p *GrammarNode) Inline() {
@@ -111,7 +111,7 @@ func (p *GrammarNode) inline() bool {
 			if sz, ok := sizes[t.Name]; ok && t.Inlined == nil {
 				// We only inline nodes if they are small enough and don't use
 				// any non-terminals themselves.
-				if sz < inlineThreshold && leaves[t.Name] {
+				if sz < InlineThreshold && leaves[t.Name] {
 					didInline = true
 					t.Inlined = p.Defs[t.Name]
 				}
