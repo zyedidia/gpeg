@@ -182,7 +182,7 @@ func Encode(insns isa.Program) VMCode {
 			op = opCheckBegin
 		case isa.CheckEnd:
 			op = opCheckEnd
-			args = append(encodeU24(addChecker(&code, t.Checker)))
+			args = encodeU24(addChecker(&code, t.Checker))
 		case isa.Error:
 			op = opError
 			args = encodeU24(addError(&code, t.Message))

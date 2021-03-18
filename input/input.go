@@ -110,10 +110,3 @@ func (i *Input) Furthest() int {
 func (i *Input) ResetFurthest() {
 	i.furthest = 0
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

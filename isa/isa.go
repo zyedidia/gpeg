@@ -421,7 +421,7 @@ func (i CaptureLate) String() string {
 
 // String returns the string representation of this instruction.
 func (i CaptureEnd) String() string {
-	return fmt.Sprintf("Capture end")
+	return "Capture end"
 }
 
 // String returns the string representation of this instruction.

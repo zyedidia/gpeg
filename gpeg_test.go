@@ -258,7 +258,6 @@ func TestArithmeticGrammar(t *testing.T) {
 
 var match bool
 var bible *bytes.Reader
-var start int
 
 func TestMain(m *testing.M) {
 	data, err := ioutil.ReadFile("testdata/bible.txt")
