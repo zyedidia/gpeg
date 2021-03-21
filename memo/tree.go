@@ -30,12 +30,12 @@ func (t *TreeTable) Get(id, pos int) (*Entry, bool) {
 	return e, ok
 }
 
-func (t *TreeTable) Put(id, start, length, examined int, captures []*Capture) {
+func (t *TreeTable) Put(id, start, length, examined, count int, captures []*Capture) {
 	if examined < t.threshold || length == 0 {
 		return
 	}
 
-	e := newEntry(id, start, length, examined, captures)
+	e := newEntry(id, start, length, examined, count, captures)
 	t.lock.Lock()
 	loc := t.Tree.Add(start, start+examined, e, id)
 	e.loc = loc

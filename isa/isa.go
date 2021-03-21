@@ -207,6 +207,16 @@ type MemoClose struct {
 	basic
 }
 
+type MemoTreeOpen struct {
+	Lbl Label
+	Id  int16
+	jump
+}
+
+type MemoTreeInsert struct {
+	basic
+}
+
 type MemoTree struct {
 	basic
 }
@@ -397,6 +407,16 @@ func (i MemoOpen) String() string {
 // String returns the string representation of this instruction.
 func (i MemoClose) String() string {
 	return "MemoClose"
+}
+
+// String returns the string representation of this instruction.
+func (i MemoTreeOpen) String() string {
+	return fmt.Sprintf("MemoTreeOpen %v %v", i.Lbl, i.Id)
+}
+
+// String returns the string representation of this instruction.
+func (i MemoTreeInsert) String() string {
+	return "MemoTreeInsert"
 }
 
 // String returns the string representation of this instruction.

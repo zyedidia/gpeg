@@ -41,9 +41,9 @@ func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, []*memo.Cap
 func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table) (bool, int, []*memo.Capture, []ParseError) {
 	idata := vm.data.Insns
 
-	memoize := func(id, pos, mlen int, capt []*memo.Capture) {
+	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
 		mexam := src.Furthest() - pos + 1
-		memtbl.Put(id, pos, mlen, mexam, capt)
+		memtbl.Put(id, pos, mlen, mexam, count, capt)
 	}
 
 	success := true
@@ -252,27 +252,56 @@ loop:
 			ent := st.pop(true)
 			if ent != nil && ent.stype == stMemo {
 				mlen := src.Pos() - ent.memo.pos
-				memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.capt)
+				memoize(int(ent.memo.id), ent.memo.pos, mlen, 1, ent.capt)
 			}
 			ip += szMemoClose
+		case opMemoTreeOpen:
+			lbl := decodeU24(idata[ip+1:])
+			id := decodeI16(idata[ip+4:])
+
+			ment, ok := memtbl.Get(int(id), src.Pos())
+			if ok {
+				if ment.Length() == -1 {
+					goto fail
+				}
+				st.pushMemo(stackMemo{
+					id:    id,
+					pos:   src.Pos(),
+					count: ment.Count(),
+				})
+				capt := ment.Captures()
+				if capt != nil {
+					st.addCapt(capt...)
+				}
+				src.Advance(ment.Length())
+				src.Peek()
+				ip = int(lbl)
+			} else {
+				st.pushMemo(stackMemo{
+					id:  id,
+					pos: src.Pos(),
+				})
+				ip += szMemoTreeOpen
+			}
 		case opMemoTreeClose:
 			for p := st.peek(); p != nil && p.stype == stMemo; p = st.peek() {
-				ent := st.pop(true)
-				if ent != nil && ent.stype == stMemo {
-					mlen := src.Pos() - ent.memo.pos
-					memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.capt)
-				}
+				st.pop(true)
+				// if ent != nil && ent.stype == stMemo {
+				// 	mlen := src.Pos() - ent.memo.pos
+				// 	memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.memo.count, ent.capt)
+				// }
 			}
 			ip += szMemoTreeClose
-		case opMemoTree:
+		case opMemoTreeInsert:
 			ent := st.peek()
 			if ent == nil || ent.stype != stMemo {
 				panic("no memo entry on stack")
 			}
 			mlen := src.Pos() - ent.memo.pos
-			memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.capt)
 			ent.memo.count++
-
+			memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.memo.count, ent.capt)
+			ip += szMemoTreeInsert
+		case opMemoTree:
 			for {
 				top := st.peekn(0)
 				next := st.peekn(1)
@@ -282,14 +311,14 @@ loop:
 					top.memo.count != next.memo.count {
 					break
 				}
-				ent = st.pop(false) // next is now top of stack
+				ent := st.pop(false) // next is now top of stack
 				if len(ent.capt) != 0 {
 					capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 					st.addCapt(capt)
 				}
 				next.memo.count *= 2
 				mlen := src.Pos() - next.memo.pos
-				memoize(int(next.memo.id), next.memo.pos, mlen, next.capt)
+				memoize(int(next.memo.id), next.memo.pos, mlen, next.memo.count, next.capt)
 			}
 
 			ip += szMemoTree
@@ -338,7 +367,7 @@ fail:
 		ent.capt = nil
 	case stMemo:
 		// Mark this position in the memoTable as a failed match
-		memoize(int(ent.memo.id), ent.memo.pos, -1, nil)
+		memoize(int(ent.memo.id), ent.memo.pos, -1, 0, nil)
 		ent.capt = nil
 		goto fail
 	case stRet, stCapt, stCheck:

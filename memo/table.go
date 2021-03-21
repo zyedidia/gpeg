@@ -11,7 +11,7 @@ type Table interface {
 	Get(id, pos int) (*Entry, bool)
 
 	// Put adds a new entry to the table.
-	Put(id, start, length, examined int, captures []*Capture)
+	Put(id, start, length, examined, count int, captures []*Capture)
 
 	// ApplyEdit updates the table as necessary when an edit occurs. This
 	// operation invalidates all entries within the range of the edit and

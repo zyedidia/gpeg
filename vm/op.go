@@ -34,6 +34,8 @@ const (
 	opCheckEnd
 	opMemoOpen
 	opMemoClose
+	opMemoTreeOpen
+	opMemoTreeInsert
 	opMemoTree
 	opMemoTreeClose
 	opError
@@ -42,25 +44,26 @@ const (
 // instruction sizes
 const (
 	// base instruction set
-	szChar          = 2
-	szReturn        = 2
-	szFail          = 2
-	szSet           = 2
-	szAny           = 2
-	szSpan          = 2
-	szFailTwice     = 2
-	szEnd           = 2
-	szNop           = 0
-	szCaptureBegin  = 4
-	szCaptureLate   = 4
-	szCaptureEnd    = 2
-	szCaptureFull   = 4
-	szMemoClose     = 2
-	szMemoTree      = 2
-	szMemoTreeClose = 2
-	szCheckBegin    = 2
-	szCheckEnd      = 4
-	szError         = 4
+	szChar           = 2
+	szReturn         = 2
+	szFail           = 2
+	szSet            = 2
+	szAny            = 2
+	szSpan           = 2
+	szFailTwice      = 2
+	szEnd            = 2
+	szNop            = 0
+	szCaptureBegin   = 4
+	szCaptureLate    = 4
+	szCaptureEnd     = 2
+	szCaptureFull    = 4
+	szMemoClose      = 2
+	szMemoTreeInsert = 2
+	szMemoTree       = 2
+	szMemoTreeClose  = 2
+	szCheckBegin     = 2
+	szCheckEnd       = 4
+	szError          = 4
 
 	// jumps
 	szJump             = 4
@@ -75,6 +78,7 @@ const (
 	szTestSetNoChoice  = 6
 	szTestAny          = 6
 	szMemoOpen         = 6
+	szMemoTreeOpen     = 6
 )
 
 // returns the size in bytes of the encoded version of this instruction
@@ -91,9 +95,9 @@ func size(insn isa.Insn) uint {
 
 	// handle instructions with extra args
 	switch insn.(type) {
-	case isa.MemoOpen, isa.CaptureBegin, isa.CaptureLate, isa.CaptureFull,
-		isa.TestChar, isa.TestCharNoChoice, isa.TestSet, isa.TestSetNoChoice,
-		isa.TestAny, isa.Error, isa.CheckEnd:
+	case isa.MemoOpen, isa.MemoTreeOpen, isa.CaptureBegin, isa.CaptureLate,
+		isa.CaptureFull, isa.TestChar, isa.TestCharNoChoice, isa.TestSet,
+		isa.TestSetNoChoice, isa.TestAny, isa.Error, isa.CheckEnd:
 		sz += 2
 	}
 

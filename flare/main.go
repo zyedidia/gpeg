@@ -9,12 +9,12 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"strconv"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/zyedidia/gpeg/memo"
 	p "github.com/zyedidia/gpeg/pattern"
+	"github.com/zyedidia/gpeg/viz"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -80,7 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tbl := memo.NewTreeTable(4096)
+	tbl := memo.NewTreeTable(1)
 	// tbl := memo.NoneTable{}
 	r := bytes.NewReader(data)
 	istart := time.Now()
@@ -90,12 +90,12 @@ func main() {
 
 	var total int64
 	var applyedit int64
-	const nedits = 1000
+	const nedits = 100
 
 	if !*oneparse {
 		for i := 0; i < nedits; i++ {
-			text := strconv.Itoa(i)
-			loc := 5
+			text := " hello "
+			loc := 50
 			edit := memo.Edit{
 				Start: loc,
 				End:   loc + 1,
@@ -129,12 +129,12 @@ func main() {
 	fmt.Println(match, n, len(ast))
 	fmt.Println(tbl.Size())
 
-	// f, err := os.Create("out.svg")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer f.Close()
-	// viz.DrawMemo(tbl, len(data), f, 1000, 250)
+	f, err := os.Create("out.svg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	viz.DrawMemo(tbl, len(data), f, 1000, 2000)
 
 	PrintMemUsage()
 }

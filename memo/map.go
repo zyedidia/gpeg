@@ -43,14 +43,14 @@ func (t MapTable) Get(id, pos int) (*Entry, bool) {
 }
 
 // Put places a new memoization entry at the given key.
-func (t MapTable) Put(id, start, length, examined int, captures []*Capture) {
+func (t MapTable) Put(id, start, length, examined, count int, captures []*Capture) {
 	k := key{
 		id:  id,
 		pos: start,
 	}
 	lock.Lock()
 	defer lock.Unlock()
-	t[k] = append(t[k], newEntry(id, start, length, examined, captures))
+	t[k] = append(t[k], newEntry(id, start, length, examined, count, captures))
 }
 
 // Delete deletes a memoization entry associated with a key.

@@ -18,18 +18,20 @@ type Entry struct {
 	start    int
 	length   int
 	examined int
+	count    int
 	captures []*Capture
 
 	loc locator
 }
 
-func newEntry(id, start, length, examined int, captures []*Capture) *Entry {
+func newEntry(id, start, length, examined, count int, captures []*Capture) *Entry {
 	e := &Entry{
 		id:       id,
 		start:    start,
 		length:   length,
 		examined: examined,
 		captures: captures,
+		count:    count,
 	}
 
 	for _, c := range captures {
@@ -68,6 +70,10 @@ func (e *Entry) Examined() int {
 // result.
 func (e *Entry) Captures() []*Capture {
 	return e.captures
+}
+
+func (e *Entry) Count() int {
+	return e.count
 }
 
 // String representation of the memo entry.

@@ -174,6 +174,11 @@ func Encode(insns isa.Program) VMCode {
 			args = append(encodeLabel(labels[t.Lbl]), encodeI16(int(t.Id))...)
 		case isa.MemoClose:
 			op = opMemoClose
+		case isa.MemoTreeOpen:
+			op = opMemoTreeOpen
+			args = append(encodeLabel(labels[t.Lbl]), encodeI16(int(t.Id))...)
+		case isa.MemoTreeInsert:
+			op = opMemoTreeInsert
 		case isa.MemoTree:
 			op = opMemoTree
 		case isa.MemoTreeClose:
