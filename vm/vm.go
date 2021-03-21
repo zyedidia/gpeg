@@ -283,8 +283,10 @@ loop:
 					break
 				}
 				ent = st.pop(false) // next is now top of stack
-				capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
-				st.addCapt(capt)
+				if len(ent.capt) != 0 {
+					capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
+					st.addCapt(capt)
+				}
 				next.memo.count *= 2
 				mlen := src.Pos() - next.memo.pos
 				memoize(int(next.memo.id), next.memo.pos, mlen, next.capt)

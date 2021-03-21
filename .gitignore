@@ -11,3 +11,4 @@ gpeg
 *.java
 /flare/flare
 *.svg
+*.dat

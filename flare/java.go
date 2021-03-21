@@ -26,25 +26,25 @@ var java = CreateHighlighter(map[string]p.Pattern{
 
 	"sq_str": p.Concat(
 		p.Literal("'"),
-		p.Star(p.Concat(
+		p.Star(p.Or(
+			p.NonTerm("escape"),
 			p.Concat(p.Not(p.Literal("'")), p.Any(1)),
-			p.Optional(p.NonTerm("escape")),
 		)),
 		// TODO: optional?
 		p.Literal("'"),
 	),
 	"dq_str": p.Concat(
 		p.Literal("\""),
-		p.Star(p.Concat(
+		p.Star(p.Or(
+			p.NonTerm("escape"),
 			p.Concat(p.Not(p.Literal("\"")), p.Any(1)),
-			p.Optional(p.NonTerm("escape")),
 		)),
 		// TODO: optional?
 		p.Literal("\""),
 	),
 	"escape": p.CapId(p.Concat(
 		p.Literal("\\"),
-		p.Set(charset.New([]byte{'\'', '"', 'n', 'b', 'f', 'r', '\\'})),
+		p.Set(charset.New([]byte{'\'', '"', 't', 'n', 'b', 'f', 'r', '\\'})),
 	), Special),
 	"string": p.CapId(p.Or(
 		p.NonTerm("sq_str"),

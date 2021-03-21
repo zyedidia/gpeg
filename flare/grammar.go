@@ -48,6 +48,8 @@ func (t TokenType) String() string {
 		return "Annotation"
 	case Operator:
 		return "Operator"
+	case Special:
+		return "Special"
 	}
 	return "Other"
 }
