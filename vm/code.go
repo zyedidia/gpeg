@@ -257,7 +257,7 @@ func encodeU24(x uint) []byte {
 	i1 := uint16((x >> 16) & 0xff)
 	i2 := uint16(x)
 
-	binary.LittleEndian.PutUint16(b[0:], i1)
+	binary.BigEndian.PutUint16(b[0:], i1)
 	binary.LittleEndian.PutUint16(b[2:], i2)
 	return b[1:4]
 }
