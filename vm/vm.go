@@ -315,9 +315,11 @@ loop:
 					break
 				}
 				ent := st.pop(false) // next is now top of stack
-				if len(ent.capt) != 0 {
+				if len(ent.capt) > 32 {
 					capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 					st.addCapt(capt)
+				} else if len(ent.capt) > 0 {
+					st.addCapt(ent.capt...)
 				}
 				next.memo.count *= 2
 				mlen := src.Pos() - next.memo.pos

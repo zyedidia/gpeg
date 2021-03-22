@@ -384,9 +384,20 @@ func (n *node) applyShifts() {
 	if len(n.tree.shifts) > 0 && n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
 		return
 	}
-	// TODO: binary search this list? or search backwards to find starting point?
-	for i := range n.tree.shifts {
-		n.applyShift(&n.tree.shifts[i])
+	if len(n.tree.shifts) == 0 {
+		return
+	}
+	// optimization: search backwards to find the starting point. Alternatively
+	// we could binary search? not sure which is faster.
+	var j int
+	for j = len(n.tree.shifts) - 1; j > 0; j-- {
+		if n.tstamp >= n.tree.shifts[j].tstamp {
+			j = j + 1
+			break
+		}
+	}
+	for i := range n.tree.shifts[j:] {
+		n.applyShift(&n.tree.shifts[j+i])
 	}
 }
 
