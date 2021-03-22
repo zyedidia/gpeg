@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -14,7 +15,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/zyedidia/gpeg/memo"
 	p "github.com/zyedidia/gpeg/pattern"
-	"github.com/zyedidia/gpeg/viz"
 	"github.com/zyedidia/gpeg/vm"
 )
 
@@ -64,7 +64,6 @@ func main() {
 	prog := p.MustCompile(java)
 	code := vm.Encode(prog)
 
-	fmt.Println("Size of instructions:", code.Size())
 	codebytes, err := code.ToBytes()
 	if err != nil {
 		log.Fatal(err)
@@ -80,45 +79,52 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tbl := memo.NewTreeTable(1)
+	tbl := memo.NewTreeTable(128)
 	// tbl := memo.NoneTable{}
 	r := bytes.NewReader(data)
 	istart := time.Now()
 	match, n, ast, _ := code.Exec(r, tbl)
 	ielapsed := time.Since(istart)
-	fmt.Println("initial", ielapsed)
+	fmt.Println("initial", ielapsed.Microseconds())
 
 	var total int64
 	var applyedit int64
-	const nedits = 100
+	const nedits = 1000
 
 	if !*oneparse {
 		for i := 0; i < nedits; i++ {
-			text := " hello "
-			loc := 50
-			edit := memo.Edit{
-				Start: loc,
-				End:   loc + 1,
-				Len:   len(text) + 1,
+			text := []byte(" bub")
+			loc := rand.Intn(len(data))
+			for j := 0; j < 1; j++ {
+				edit := memo.Edit{
+					Start: loc,
+					End:   loc + 1,
+					// Len:   1,
+					Len: len(text) + 1,
+				}
+
+				data = append(data[:loc], append(text, data[loc:]...)...)
+
+				astart := time.Now()
+				tbl.ApplyEdit(edit)
+				aelapsed := time.Since(astart)
+				r.Reset(data)
+				match, n, ast, _ = code.Exec(r, tbl)
+				telapsed := time.Since(astart)
+
+				// fmt.Printf("%d %d\n", telapsed.Nanoseconds(), aelapsed.Nanoseconds())
+				// fmt.Printf("%d\n", telapsed.Microseconds())
+				var m runtime.MemStats
+				runtime.ReadMemStats(&m)
+				fmt.Printf("%d\n", bToMb(m.Alloc))
+
+				total += telapsed.Nanoseconds()
+				applyedit += aelapsed.Nanoseconds()
 			}
-
-			data = append(data[:loc], append([]byte(text), data[loc:]...)...)
-
-			astart := time.Now()
-			tbl.ApplyEdit(edit)
-			aelapsed := time.Since(astart)
-			r.Reset(data)
-			match, n, ast, _ = code.Exec(r, tbl)
-			telapsed := time.Since(astart)
-
-			fmt.Printf("%d %d\n", telapsed.Nanoseconds(), aelapsed.Nanoseconds())
-
-			total += telapsed.Nanoseconds()
-			applyedit += aelapsed.Nanoseconds()
 		}
 	}
 
-	fmt.Printf("%.3fus %.3fus\n", float64(total)/1000.0/1000.0, float64(applyedit)/1000.0/1000.0)
+	fmt.Printf("%.3fus %.3fus\n", float64(total)/nedits/1000.0, float64(applyedit)/nedits/1000.0)
 
 	if *display {
 		for _, c := range ast {
@@ -129,12 +135,12 @@ func main() {
 	fmt.Println(match, n, len(ast))
 	fmt.Println(tbl.Size())
 
-	f, err := os.Create("out.svg")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	viz.DrawMemo(tbl, len(data), f, 1000, 2000)
+	// f, err := os.Create("out.svg")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer f.Close()
+	// viz.DrawMemo(tbl, len(data), f, 1000, 2000)
 
 	PrintMemUsage()
 }

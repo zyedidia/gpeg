@@ -39,7 +39,7 @@ func main() {
 		in := bytes.NewReader(data)
 
 		tbl := memo.NewTreeTable(512)
-		for i := 0; i < 1; i++ {
+		for i := 0; i < 100; i++ {
 			code.Exec(in, tbl)
 			loc := rand.Intn(len(data))
 			edit := memo.Edit{

@@ -25,7 +25,7 @@ func main() {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(info.Name(), *suffix) {
-			args := []string{"java.lua", path}
+			args := []string{"json.lua", path}
 			cmd := exec.Command("lua5.1", args...)
 			buf := &bytes.Buffer{}
 			cmd.Stdout = buf
