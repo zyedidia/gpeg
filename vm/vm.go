@@ -253,6 +253,8 @@ loop:
 			if ent != nil && ent.stype == stMemo {
 				mlen := src.Pos() - ent.memo.pos
 				memoize(int(ent.memo.id), ent.memo.pos, mlen, 1, ent.capt)
+			} else {
+				panic("memo close failed")
 			}
 			ip += szMemoClose
 		case opMemoTreeOpen:
@@ -284,7 +286,7 @@ loop:
 				ip += szMemoTreeOpen
 			}
 		case opMemoTreeClose:
-			id := decodeI16(idata[ip+1:])
+			id := decodeI16(idata[ip+2:])
 			for p := st.peek(); p != nil && p.stype == stMemo && p.memo.id == id; p = st.peek() {
 				st.pop(true)
 				// if ent != nil && ent.stype == stMemo {

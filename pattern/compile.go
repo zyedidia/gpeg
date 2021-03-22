@@ -156,7 +156,7 @@ func (p *StarNode) Compile() (isa.Program, error) {
 		code = append(code, isa.MemoTree{})
 		code = append(code, isa.Jump{Lbl: L1})
 		code = append(code, L2)
-		code = append(code, isa.MemoTreeClose{})
+		code = append(code, isa.MemoTreeClose{Id: t.Id})
 
 		// code = append(code, L1)
 		// code = append(code, isa.MemoOpen{Id: t.Id, Lbl: L3})
