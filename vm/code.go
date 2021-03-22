@@ -183,6 +183,7 @@ func Encode(insns isa.Program) VMCode {
 			op = opMemoTree
 		case isa.MemoTreeClose:
 			op = opMemoTreeClose
+			args = encodeI16(int(t.Id))
 		case isa.CheckBegin:
 			op = opCheckBegin
 		case isa.CheckEnd:

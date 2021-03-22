@@ -13,3 +13,7 @@ gpeg
 *.svg
 *.dat
 *.so
+/benchmarks/apply
+/benchmarks/apply_gpeg
+/benchmarks/fullparse
+/benchmarks/reparse

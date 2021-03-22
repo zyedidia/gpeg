@@ -222,6 +222,7 @@ type MemoTree struct {
 }
 
 type MemoTreeClose struct {
+	Id int16
 	basic
 }
 
@@ -426,7 +427,7 @@ func (i MemoTree) String() string {
 
 // String returns the string representation of this instruction.
 func (i MemoTreeClose) String() string {
-	return "MemoTreeClose"
+	return fmt.Sprintf("MemoTreeClose %v", i.Id)
 }
 
 // String returns the string representation of this instruction.

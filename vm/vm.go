@@ -284,7 +284,8 @@ loop:
 				ip += szMemoTreeOpen
 			}
 		case opMemoTreeClose:
-			for p := st.peek(); p != nil && p.stype == stMemo; p = st.peek() {
+			id := decodeI16(idata[ip+1:])
+			for p := st.peek(); p != nil && p.stype == stMemo && p.memo.id == id; p = st.peek() {
 				st.pop(true)
 				// if ent != nil && ent.stype == stMemo {
 				// 	mlen := src.Pos() - ent.memo.pos
