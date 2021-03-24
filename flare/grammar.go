@@ -131,7 +131,8 @@ func wordMatch(words ...string) p.Pattern {
 		m[w] = struct{}{}
 	}
 
-	return p.Check(p.Plus(p.Set(charset.New(chars))), isa.MapChecker(m))
+	// TODO: chars vs alnum
+	return p.Check(p.Plus(alnum), isa.MapChecker(m))
 }
 
 func CreateHighlighter(grammar map[string]p.Pattern, names []string) p.Pattern {

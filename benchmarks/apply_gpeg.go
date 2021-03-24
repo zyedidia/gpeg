@@ -14,7 +14,7 @@ import (
 var dir = flag.String("dir", "", "dir to apply command to")
 var suffix = flag.String("suffix", "", "file suffix")
 
-const cutoff = 100000
+const cutoff = 50000
 
 func main() {
 	flag.Parse()

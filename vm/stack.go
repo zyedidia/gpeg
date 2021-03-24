@@ -53,7 +53,10 @@ type stackEntry struct {
 }
 
 func (se *stackEntry) addCapt(capt []*memo.Capture) {
-	if se.capt == nil {
+	if len(capt) == 0 {
+		return
+	}
+	if len(se.capt) == 0 {
 		se.capt = capt
 	} else {
 		se.capt = append(se.capt, capt...)

@@ -14,7 +14,7 @@ import (
 	"github.com/zyedidia/gpeg/vm"
 )
 
-var grammar = flag.String("grammar", "../grammars/json_memo.peg", "grammar to use")
+var grammar = flag.String("grammar", "../grammars/java.peg", "grammar to use")
 
 func main() {
 	flag.Parse()

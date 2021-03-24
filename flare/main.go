@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +15,7 @@ import (
 	"github.com/zyedidia/gpeg/memo"
 	p "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
+	"github.com/zyedidia/linerope"
 )
 
 func colorize(c *memo.Capture, theme map[TokenType]*color.Color, text []byte) string {
@@ -44,7 +44,18 @@ var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 	display    = flag.Bool("display", false, "display highlighted output")
 	oneparse   = flag.Bool("oneparse", false, "only do initial parse")
+	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 )
+
+var letters = []byte("\n \tabcdefghijklmnopqrstuvwxyz")
+
+func randbytes(n int) []byte {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return b
+}
 
 func main() {
 	flag.Parse()
@@ -78,10 +89,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	r := linerope.New(data, &linerope.DefaultOptions)
 
-	tbl := memo.NewTreeTable(128)
+	tbl := memo.NewTreeTable(4096)
 	// tbl := memo.NoneTable{}
-	r := bytes.NewReader(data)
+	rand.Seed(42)
+	// r := bytes.NewReader(data)
 	istart := time.Now()
 	match, n, ast, _ := code.Exec(r, tbl)
 	ielapsed := time.Since(istart)
@@ -89,34 +102,40 @@ func main() {
 
 	var total int64
 	var applyedit int64
-	const nedits = 1000
+	const nedits = 1
 
 	if !*oneparse {
 		for i := 0; i < nedits; i++ {
-			text := []byte(" bub")
-			loc := rand.Intn(len(data))
+			text := randbytes(4)
+			// text := []byte("n")
+			// loc := rand.Intn(len(data))
+			loc := rand.Intn(r.Len())
 			for j := 0; j < 1; j++ {
 				edit := memo.Edit{
 					Start: loc,
-					End:   loc + 1,
+					End:   loc,
+					// End: loc + 1,
 					// Len:   1,
-					Len: len(text) + 1,
+					// Len:   1,
+					// Len: 1,
+					Len: len(text),
 				}
+				r.Insert(loc, text)
+				loc += len(text)
 
-				data = append(data[:loc], append(text, data[loc:]...)...)
+				// data = append(data[:loc], append(text, data[loc:]...)...)
 
 				astart := time.Now()
 				tbl.ApplyEdit(edit)
 				aelapsed := time.Since(astart)
-				r.Reset(data)
+				// r.Reset(data)
 				match, n, ast, _ = code.Exec(r, tbl)
 				telapsed := time.Since(astart)
 
 				// fmt.Printf("%d %d\n", telapsed.Nanoseconds(), aelapsed.Nanoseconds())
-				// fmt.Printf("%d\n", telapsed.Microseconds())
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
-				fmt.Printf("%d\n", bToMb(m.Alloc))
+				fmt.Printf("%d %d\n", bToMb(m.Alloc), telapsed.Microseconds())
 
 				total += telapsed.Nanoseconds()
 				applyedit += aelapsed.Nanoseconds()
@@ -124,11 +143,13 @@ func main() {
 		}
 	}
 
-	fmt.Printf("%.3fus %.3fus\n", float64(total)/nedits/1000.0, float64(applyedit)/nedits/1000.0)
+	// fmt.Printf("%.3fus %.3fus\n", float64(total)/nedits/1000.0, float64(applyedit)/nedits/1000.0)
 
 	if *display {
+		buf := make([]byte, r.Len())
+		n, _ := r.ReadAt(buf, int64(0))
 		for _, c := range ast {
-			fmt.Print(colorize(c, theme, data))
+			fmt.Print(colorize(c, theme, buf[:n]))
 		}
 	}
 
@@ -143,6 +164,18 @@ func main() {
 	// viz.DrawMemo(tbl, len(data), f, 1000, 2000)
 
 	PrintMemUsage()
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC()    // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 }
 
 func PrintMemUsage() {

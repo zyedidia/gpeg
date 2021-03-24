@@ -43,16 +43,17 @@ func (t *TreeTable) Put(id, start, length, examined, count int, captures []*Capt
 }
 
 func (t *TreeTable) ApplyEdit(e Edit) {
-	entries := t.Tree.Overlap(e.Start, e.End)
+	// TODO: do we need the +1? Depends on the tree implementation. Needs investigation.
+	entries := t.Tree.Overlap(e.Start, e.End+1)
 
-	for _, e := range entries {
-		switch e := e.(type) {
+	for _, ent := range entries {
+		switch ent := ent.(type) {
 		case *Entry:
-			t.Tree.Remove(e.start, int(e.id))
+			t.Tree.Remove(ent.Start(), int(ent.id))
 		}
 	}
 
-	t.Tree.Shift(e.Start, (e.Start-e.End)+e.Len)
+	t.Tree.Shift(e.Start, e.Len-(e.End-e.Start))
 }
 
 func (t *TreeTable) Overlaps(low, high int) []*Entry {

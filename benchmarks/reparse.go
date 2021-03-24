@@ -16,6 +16,7 @@ import (
 )
 
 var grammar = flag.String("grammar", "../grammars/json_memo.peg", "grammar to use")
+var memprofile = flag.String("memprofile", "", "write memory profile to this file")
 
 func main() {
 	flag.Parse()
@@ -39,8 +40,12 @@ func main() {
 		in := bytes.NewReader(data)
 
 		tbl := memo.NewTreeTable(512)
-		for i := 0; i < 100; i++ {
-			code.Exec(in, tbl)
+		// tstart := time.Now()
+		code.Exec(in, tbl)
+		// fmt.Println(time.Since(tstart).Microseconds())
+
+		// var total int64
+		for i := 0; i < 1000; i++ {
 			loc := rand.Intn(len(data))
 			edit := memo.Edit{
 				Start: loc,
@@ -52,8 +57,13 @@ func main() {
 			tstart := time.Now()
 			tbl.ApplyEdit(edit)
 			code.Exec(in, tbl)
-			fmt.Println(len(data), time.Since(tstart).Microseconds())
+			fmt.Println(time.Since(tstart).Microseconds())
+			// var m runtime.MemStats
+			// runtime.ReadMemStats(&m)
+			// fmt.Printf("%d\n", bToKb(m.Alloc-uint64(len(data))))
+			// total += time.Since(tstart).Microseconds()
 		}
+		// fmt.Println(len(data), int(float64(total)/10))
 		// f, err := os.Create("out.svg")
 		// if err != nil {
 		// 	log.Fatal(err)
@@ -61,7 +71,19 @@ func main() {
 		// defer f.Close()
 		// viz.DrawMemo(tbl, len(data), f, 1000, 2000)
 	}
+	// if *memprofile != "" {
+	// 	f, err := os.Create(*memprofile)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	pprof.WriteHeapProfile(f)
+	// 	f.Close()
+	// 	return
+	// }
 	// fmt.Println("elapsed:", time.Since(tstart))
 	// fmt.Printf("match: %t, n: %d, len(ast): %d\n", match, n, len(ast))
 	// fmt.Printf("table entries: %d\n", tbl.Size())
+}
+func bToKb(b uint64) uint64 {
+	return b / 1024
 }

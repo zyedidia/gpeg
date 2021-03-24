@@ -381,10 +381,7 @@ func (n *node) applyShift(s *shift) {
 func (n *node) applyShifts() {
 	// optimization: first check if we are completely up-to-date and if so
 	// there is nothing to do.
-	if len(n.tree.shifts) > 0 && n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
-		return
-	}
-	if len(n.tree.shifts) == 0 {
+	if len(n.tree.shifts) == 0 || n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
 		return
 	}
 	// optimization: search backwards to find the starting point. Alternatively
