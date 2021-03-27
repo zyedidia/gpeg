@@ -91,7 +91,7 @@ func main() {
 	}
 	r := linerope.New(data, &linerope.DefaultOptions)
 
-	tbl := memo.NewTreeTable(4096)
+	tbl := memo.NewTreeTable(128)
 	// tbl := memo.NoneTable{}
 	rand.Seed(42)
 	// r := bytes.NewReader(data)
@@ -102,7 +102,7 @@ func main() {
 
 	var total int64
 	var applyedit int64
-	const nedits = 1
+	const nedits = 1000
 
 	if !*oneparse {
 		for i := 0; i < nedits; i++ {
@@ -133,9 +133,10 @@ func main() {
 				telapsed := time.Since(astart)
 
 				// fmt.Printf("%d %d\n", telapsed.Nanoseconds(), aelapsed.Nanoseconds())
-				var m runtime.MemStats
-				runtime.ReadMemStats(&m)
-				fmt.Printf("%d %d\n", bToMb(m.Alloc), telapsed.Microseconds())
+				// var m runtime.MemStats
+				// runtime.ReadMemStats(&m)
+				// fmt.Printf("%d %d\n", bToMb(m.Alloc), telapsed.Microseconds())
+				fmt.Printf("%d\n", telapsed.Microseconds())
 
 				total += telapsed.Nanoseconds()
 				applyedit += aelapsed.Nanoseconds()

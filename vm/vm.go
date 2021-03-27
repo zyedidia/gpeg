@@ -179,7 +179,7 @@ loop:
 		case opTestAny:
 			n := decodeU8(idata[ip+2:])
 			lbl := decodeU24(idata[ip+3:])
-			ent := stackBacktrack{ip + int(lbl), src.Pos()}
+			ent := stackBacktrack{int(lbl), src.Pos()}
 			ok := src.Advance(int(n))
 			if ok {
 				st.pushBacktrack(ent)
