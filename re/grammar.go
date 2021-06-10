@@ -2,7 +2,7 @@ package re
 
 import (
 	"github.com/zyedidia/gpeg/charset"
-	p "github.com/zyedidia/gpeg/pattern"
+	. "github.com/zyedidia/gpeg/pattern"
 )
 
 // Pattern    <- Spacing_ (Grammar / Expression) EndOfFile_
@@ -83,226 +83,226 @@ const (
 	idBRACEPO
 )
 
-var grammar = map[string]p.Pattern{
-	"Pattern": p.Cap(p.Concat(
-		p.NonTerm("Spacing"),
-		p.Or(
-			p.NonTerm("Grammar"),
-			p.NonTerm("Expression"),
+var grammar = map[string]Pattern{
+	"Pattern": Cap(Concat(
+		NonTerm("Spacing"),
+		Or(
+			NonTerm("Grammar"),
+			NonTerm("Expression"),
 		),
-		p.NonTerm("EndOfFile"),
+		NonTerm("EndOfFile"),
 	), idPattern),
-	"Grammar": p.Cap(p.Plus(p.NonTerm("Definition")), idGrammar),
-	"Definition": p.Cap(p.Concat(
-		p.NonTerm("Identifier"),
-		p.NonTerm("LEFTARROW"),
-		p.NonTerm("Expression"),
+	"Grammar": Cap(Plus(NonTerm("Definition")), idGrammar),
+	"Definition": Cap(Concat(
+		NonTerm("Identifier"),
+		NonTerm("LEFTARROW"),
+		NonTerm("Expression"),
 	), idDefinition),
 
-	"Expression": p.Cap(p.Concat(
-		p.NonTerm("Sequence"),
-		p.Star(p.Concat(
-			p.NonTerm("SLASH"),
-			p.NonTerm("Sequence"),
+	"Expression": Cap(Concat(
+		NonTerm("Sequence"),
+		Star(Concat(
+			NonTerm("SLASH"),
+			NonTerm("Sequence"),
 		)),
 	), idExpression),
-	"Sequence": p.Cap(p.Star(p.NonTerm("Prefix")), idSequence),
-	"Prefix": p.Cap(p.Concat(
-		p.Optional(p.Or(
-			p.NonTerm("AND"),
-			p.NonTerm("NOT"),
+	"Sequence": Cap(Star(NonTerm("Prefix")), idSequence),
+	"Prefix": Cap(Concat(
+		Optional(Or(
+			NonTerm("AND"),
+			NonTerm("NOT"),
 		)),
-		p.NonTerm("Suffix"),
+		NonTerm("Suffix"),
 	), idPrefix),
-	"Suffix": p.Cap(p.Concat(
-		p.NonTerm("Primary"),
-		p.Optional(p.Or(
-			p.NonTerm("QUESTION"),
-			p.NonTerm("STAR"),
-			p.NonTerm("PLUS"),
+	"Suffix": Cap(Concat(
+		NonTerm("Primary"),
+		Optional(Or(
+			NonTerm("QUESTION"),
+			NonTerm("STAR"),
+			NonTerm("PLUS"),
 		)),
 	), idSuffix),
-	"Primary": p.Cap(p.Or(
-		p.Concat(
-			p.NonTerm("Identifier"),
-			p.Not(p.NonTerm("LEFTARROW")),
+	"Primary": Cap(Or(
+		Concat(
+			NonTerm("Identifier"),
+			Not(NonTerm("LEFTARROW")),
 		),
-		p.Concat(
-			p.NonTerm("OPEN"),
-			p.NonTerm("Expression"),
-			p.NonTerm("CLOSE"),
+		Concat(
+			NonTerm("OPEN"),
+			NonTerm("Expression"),
+			NonTerm("CLOSE"),
 		),
-		p.Concat(
-			p.NonTerm("BRACEPO"),
-			p.NonTerm("Expression"),
-			p.NonTerm("BRACEPC"),
+		Concat(
+			NonTerm("BRACEPO"),
+			NonTerm("Expression"),
+			NonTerm("BRACEPC"),
 		),
-		p.Concat(
-			p.NonTerm("BRACEO"),
-			p.NonTerm("Expression"),
-			p.NonTerm("BRACEC"),
+		Concat(
+			NonTerm("BRACEO"),
+			NonTerm("Expression"),
+			NonTerm("BRACEC"),
 		),
-		p.NonTerm("Literal"),
-		p.NonTerm("Class"),
-		p.NonTerm("DOT"),
+		NonTerm("Literal"),
+		NonTerm("Class"),
+		NonTerm("DOT"),
 	), idPrimary),
 
-	"Identifier": p.Cap(p.Concat(
-		p.NonTerm("IdentStart"),
-		p.Star(p.NonTerm("IdentCont")),
-		p.NonTerm("Spacing"),
+	"Identifier": Cap(Concat(
+		NonTerm("IdentStart"),
+		Star(NonTerm("IdentCont")),
+		NonTerm("Spacing"),
 	), idIdentifier),
-	"IdentStart": p.Cap(
-		p.Set(charset.Range('a', 'z').
+	"IdentStart": Cap(
+		Set(charset.Range('a', 'z').
 			Add(charset.Range('A', 'Z')).
 			Add(charset.New([]byte{'_'})),
 		), idIdentStart),
-	"IdentCont": p.Cap(p.Or(
-		p.NonTerm("IdentStart"),
-		p.Set(charset.Range('0', '9')),
+	"IdentCont": Cap(Or(
+		NonTerm("IdentStart"),
+		Set(charset.Range('0', '9')),
 	), idIdentCont),
 
-	"Literal": p.Cap(p.Or(
-		p.Concat(
-			p.Literal("'"),
-			p.Star(p.Concat(
-				p.Not(p.Literal("'")),
-				p.NonTerm("Char"),
+	"Literal": Cap(Or(
+		Concat(
+			Literal("'"),
+			Star(Concat(
+				Not(Literal("'")),
+				NonTerm("Char"),
 			)),
-			p.Literal("'"),
-			p.NonTerm("Spacing"),
+			Literal("'"),
+			NonTerm("Spacing"),
 		),
-		p.Concat(
-			p.Literal("\""),
-			p.Star(p.Concat(
-				p.Not(p.Literal("\"")),
-				p.NonTerm("Char"),
+		Concat(
+			Literal("\""),
+			Star(Concat(
+				Not(Literal("\"")),
+				NonTerm("Char"),
 			)),
-			p.Literal("\""),
-			p.NonTerm("Spacing"),
+			Literal("\""),
+			NonTerm("Spacing"),
 		),
 	), idLiteral),
-	"Class": p.Cap(p.Concat(
-		p.Literal("["),
-		p.Optional(p.NonTerm("CARAT")),
-		p.Star(p.Concat(
-			p.Not(p.Literal("]")),
-			p.NonTerm("Range"),
+	"Class": Cap(Concat(
+		Literal("["),
+		Optional(NonTerm("CARAT")),
+		Star(Concat(
+			Not(Literal("]")),
+			NonTerm("Range"),
 		)),
-		p.Literal("]"),
-		p.NonTerm("Spacing"),
+		Literal("]"),
+		NonTerm("Spacing"),
 	), idClass),
-	"Range": p.Cap(p.Or(
-		p.Concat(
-			p.NonTerm("Char"),
-			p.Literal("-"),
-			p.NonTerm("Char"),
+	"Range": Cap(Or(
+		Concat(
+			NonTerm("Char"),
+			Literal("-"),
+			NonTerm("Char"),
 		),
-		p.NonTerm("Char"),
+		NonTerm("Char"),
 	), idRange),
-	"Char": p.Cap(p.Or(
-		p.Concat(
-			p.Literal("\\"),
-			p.Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\', '-'})),
+	"Char": Cap(Or(
+		Concat(
+			Literal("\\"),
+			Set(charset.New([]byte{'n', 'r', 't', '\'', '"', '[', ']', '\\', '-'})),
 		),
-		p.Concat(
-			p.Literal("\\"),
-			p.Set(charset.Range('0', '2')),
-			p.Set(charset.Range('0', '7')),
-			p.Set(charset.Range('0', '7')),
+		Concat(
+			Literal("\\"),
+			Set(charset.Range('0', '2')),
+			Set(charset.Range('0', '7')),
+			Set(charset.Range('0', '7')),
 		),
-		p.Concat(
-			p.Literal("\\"),
-			p.Set(charset.Range('0', '7')),
-			p.Optional(p.Set(charset.Range('0', '7'))),
+		Concat(
+			Literal("\\"),
+			Set(charset.Range('0', '7')),
+			Optional(Set(charset.Range('0', '7'))),
 		),
-		p.Concat(
-			p.Not(p.Literal("\\")),
-			p.Any(1),
+		Concat(
+			Not(Literal("\\")),
+			Any(1),
 		),
 	), idChar),
 
-	"AND": p.Cap(p.Concat(
-		p.Literal("&"),
-		p.NonTerm("Spacing"),
+	"AND": Cap(Concat(
+		Literal("&"),
+		NonTerm("Spacing"),
 	), idAND),
-	"NOT": p.Cap(p.Concat(
-		p.Literal("!"),
-		p.NonTerm("Spacing"),
+	"NOT": Cap(Concat(
+		Literal("!"),
+		NonTerm("Spacing"),
 	), idNOT),
-	"QUESTION": p.Cap(p.Concat(
-		p.Literal("?"),
-		p.NonTerm("Spacing"),
+	"QUESTION": Cap(Concat(
+		Literal("?"),
+		NonTerm("Spacing"),
 	), idQUESTION),
-	"STAR": p.Cap(p.Concat(
-		p.Literal("*"),
-		p.NonTerm("Spacing"),
+	"STAR": Cap(Concat(
+		Literal("*"),
+		NonTerm("Spacing"),
 	), idSTAR),
-	"PLUS": p.Cap(p.Concat(
-		p.Literal("+"),
-		p.NonTerm("Spacing"),
+	"PLUS": Cap(Concat(
+		Literal("+"),
+		NonTerm("Spacing"),
 	), idPLUS),
-	"DOT": p.Cap(p.Concat(
-		p.Literal("."),
-		p.NonTerm("Spacing"),
+	"DOT": Cap(Concat(
+		Literal("."),
+		NonTerm("Spacing"),
 	), idDOT),
-	"CARAT": p.Cap(p.Concat(
-		p.Literal("^"),
-		p.NonTerm("Spacing"),
+	"CARAT": Cap(Concat(
+		Literal("^"),
+		NonTerm("Spacing"),
 	), idCARAT),
-	"OPEN": p.Cap(p.Concat(
-		p.Literal("("),
-		p.NonTerm("Spacing"),
+	"OPEN": Cap(Concat(
+		Literal("("),
+		NonTerm("Spacing"),
 	), idOPEN),
-	"CLOSE": p.Concat(
-		p.Literal(")"),
-		p.NonTerm("Spacing"),
+	"CLOSE": Concat(
+		Literal(")"),
+		NonTerm("Spacing"),
 	),
-	"BRACEO": p.Cap(p.Concat(
-		p.Literal("{"),
-		p.NonTerm("Spacing"),
+	"BRACEO": Cap(Concat(
+		Literal("{"),
+		NonTerm("Spacing"),
 	), idBRACEO),
-	"BRACEC": p.Concat(
-		p.Literal("}"),
-		p.NonTerm("Spacing"),
+	"BRACEC": Concat(
+		Literal("}"),
+		NonTerm("Spacing"),
 	),
-	"BRACEPO": p.Cap(p.Concat(
-		p.Literal("{{"),
-		p.NonTerm("Spacing"),
+	"BRACEPO": Cap(Concat(
+		Literal("{{"),
+		NonTerm("Spacing"),
 	), idBRACEPO),
-	"BRACEPC": p.Concat(
-		p.Literal("}}"),
-		p.NonTerm("Spacing"),
+	"BRACEPC": Concat(
+		Literal("}}"),
+		NonTerm("Spacing"),
 	),
-	"SLASH": p.Concat(
-		p.Literal("/"),
-		p.NonTerm("Spacing"),
+	"SLASH": Concat(
+		Literal("/"),
+		NonTerm("Spacing"),
 	),
-	"LEFTARROW": p.Concat(
-		p.Literal("<-"),
-		p.NonTerm("Spacing"),
+	"LEFTARROW": Concat(
+		Literal("<-"),
+		NonTerm("Spacing"),
 	),
 
-	"Spacing": p.Star(p.Or(
-		p.NonTerm("Space"),
-		p.NonTerm("Comment"),
+	"Spacing": Star(Or(
+		NonTerm("Space"),
+		NonTerm("Comment"),
 	)),
-	"Comment": p.Concat(
-		p.Literal("#"),
-		p.Star(p.Concat(
-			p.Not(p.NonTerm("EndOfLine")),
-			p.Any(1),
+	"Comment": Concat(
+		Literal("#"),
+		Star(Concat(
+			Not(NonTerm("EndOfLine")),
+			Any(1),
 		)),
-		p.NonTerm("EndOfLine"),
+		NonTerm("EndOfLine"),
 	),
-	"Space": p.Or(
-		p.Set(charset.New([]byte{' ', '\t'})),
-		p.NonTerm("EndOfLine"),
+	"Space": Or(
+		Set(charset.New([]byte{' ', '\t'})),
+		NonTerm("EndOfLine"),
 	),
-	"EndOfLine": p.Or(
-		p.Literal("\r\n"),
-		p.Literal("\n"),
-		p.Literal("\r"),
+	"EndOfLine": Or(
+		Literal("\r\n"),
+		Literal("\n"),
+		Literal("\r"),
 	),
-	"EndOfFile": p.Not(p.Any(1)),
+	"EndOfFile": Not(Any(1)),
 }
