@@ -48,15 +48,16 @@ type AndNode struct {
 // CapNode marks a pattern to be captured with a certain ID.
 type CapNode struct {
 	Patt Pattern
-	Id   int16
+	Id   int
 }
 
 // MemoNode marks a pattern to be memoized with a certain ID.
 type MemoNode struct {
 	Patt Pattern
-	Id   int16
+	Id   int
 }
 
+// CheckNode marks a pattern to be checker by a certain checker.
 type CheckNode struct {
 	Patt    Pattern
 	Checker isa.Checker
@@ -153,6 +154,8 @@ func WalkPattern(p Pattern, followInline bool, fn WalkFunc) {
 	case *MemoNode:
 		WalkPattern(t.Patt, followInline, fn)
 	case *SearchNode:
+		WalkPattern(t.Patt, followInline, fn)
+	case *CheckNode:
 		WalkPattern(t.Patt, followInline, fn)
 	case *ErrorNode:
 		WalkPattern(t.Recover, followInline, fn)

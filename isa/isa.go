@@ -197,7 +197,7 @@ type Nop struct {
 // jump to if the pattern is found in the memoization table.
 type MemoOpen struct {
 	Lbl Label
-	Id  int16
+	Id  int
 	jump
 }
 
@@ -207,28 +207,33 @@ type MemoClose struct {
 	basic
 }
 
+// MemoTreeOpen starts a memoization tree repetition routine.
 type MemoTreeOpen struct {
 	Lbl Label
-	Id  int16
+	Id  int
 	jump
 }
 
+// MemoTreeInsert performs insertion into the memoization table for the tree
+// memoization strategy.
 type MemoTreeInsert struct {
 	basic
 }
 
+// MemoTree "tree-ifies" the current memoization entries on the stack.
 type MemoTree struct {
 	basic
 }
 
+// MemoTreeClose completes the tree memoization routine.
 type MemoTreeClose struct {
-	Id int16
+	Id int
 	basic
 }
 
 // CaptureBegin begins capturing the given ID.
 type CaptureBegin struct {
-	Id int16
+	Id int
 	basic
 }
 
@@ -236,13 +241,13 @@ type CaptureBegin struct {
 // minus Back.
 type CaptureLate struct {
 	Back byte
-	Id   int16
+	Id   int
 	basic
 }
 
 // CaptureEnd completes an active capture.
 type CaptureEnd struct {
-	Id int16
+	Id int
 	basic
 }
 
@@ -251,19 +256,23 @@ type CaptureEnd struct {
 // equivalent to CaptureLate Back ID; CaptureEnd.
 type CaptureFull struct {
 	Back byte
-	Id   int16
+	Id   int
 	basic
 }
 
+// CheckBegin marks the beginning position for a checker.
 type CheckBegin struct {
 	basic
 }
 
+// CheckEnd records the end position of a checker and applies the checker to
+// determine if the match should fail.
 type CheckEnd struct {
 	Checker Checker
 	basic
 }
 
+// Error logs an error message at the current position.
 type Error struct {
 	basic
 	Message string

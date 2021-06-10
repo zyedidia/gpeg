@@ -26,7 +26,7 @@ func TestRecover(t *testing.T) {
 					Error("expecting an identifier", NonTerm("ErrId")))),
 			),
 		),
-		"Id":       Concat(NonTerm("Sp"), Cap(id)),
+		"Id":       Concat(NonTerm("Sp"), id),
 		"Comma":    Or(Concat(NonTerm("Sp"), Literal(",")), Error("expecting ','", NonTerm("ErrComma"))),
 		"Sp":       Star(Set(charset.New([]byte{' ', '\n', '\t'}))),
 		"ErrId":    sync(Literal(",")),

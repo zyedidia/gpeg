@@ -5,77 +5,138 @@ import (
 	"fmt"
 )
 
-const Dummy = -1
+const (
+	tNode = iota
+	tDummy
+)
 
-// A Capture represents an AST capture node. It stores the ID of the capture, the
-// start position and length, and any children.
 type Capture struct {
-	Id       int
-	Children []*Capture
+	id  int32
+	typ int32
 
-	// The memoization entry this capture is stored in. This may be nil if the
-	// capture is standalone. If the memoization is non-nil it will be used for
-	// calculating the start position of this capture. Since memoization
-	// entries are relocatable when an edit occurs, this makes the capture also
-	// relocatable.
-	ment *Entry
-	// the start position is an offset from the start of this capture's
-	// memoization entry if one exists. If not, the start position is an
-	// absolute offset.
-	start  int
-	length int
+	off      int
+	length   int
+	ment     *Entry
+	children []*Capture
 }
 
-// NewCapture constructs a new AST node.
-func NewCapture(id int, start int, length int, children []*Capture) *Capture {
-	return &Capture{
-		Id:       id,
-		Children: children,
-		start:    start,
+func NewCaptureNode(id int, start, length int, children []*Capture) *Capture {
+	c := &Capture{
+		id:       int32(id),
+		typ:      tNode,
+		off:      start,
 		length:   length,
+		children: children,
 	}
+	return c
 }
 
-// setMemo sets this node's locator so that the start position of this
-// capture will be relative to the locator.
-func (c *Capture) setMemo(e *Entry) {
-	c.ment = e
-	c.start = c.start - e.Start()
+func NewCaptureDummy(start, length int, children []*Capture) *Capture {
+	c := &Capture{
+		id:       0,
+		typ:      tDummy,
+		off:      start,
+		length:   length,
+		children: children,
+	}
+	return c
+}
 
-	for _, c := range c.Children {
-		if !c.memoized() {
-			c.setMemo(e)
+func (c *Capture) ChildIterator(start int) func() *Capture {
+	i := 0
+	var subit, ret func() *Capture
+	ret = func() *Capture {
+		if i >= len(c.children) {
+			return nil
+		}
+		ch := c.children[i]
+		if ch.Dummy() && subit == nil {
+			subit = ch.ChildIterator(ch.off)
+		}
+		if subit != nil {
+			ch = subit()
+		} else {
+			i++
+		}
+		if ch == nil {
+			subit = nil
+			i++
+			return ret()
+		}
+		return ch
+	}
+	return ret
+}
+
+func (c *Capture) Child(n int) *Capture {
+	it := c.ChildIterator(0)
+	i := 0
+	for ch := it(); ch != nil; ch = it() {
+		if i == n {
+			return ch
+		}
+		i++
+	}
+	return nil
+}
+
+func (c *Capture) NumChildren() int {
+	nchild := 0
+	for _, ch := range c.children {
+		if ch.Dummy() {
+			nchild += ch.NumChildren()
+		} else {
+			nchild++
 		}
 	}
+	return nchild
 }
 
-// memoized returns if this capture is stored within a memoization entry.
-func (c *Capture) memoized() bool {
-	return c.ment != nil
-}
-
-// Start returns the start index of this AST capture.
 func (c *Capture) Start() int {
 	if c.ment != nil {
-		return c.ment.Start() + c.start
+		return c.ment.pos.Pos() + c.off
 	}
-	return c.start
+	return c.off
 }
 
-// End returns the end index of this AST capture.
+func (c *Capture) Len() int {
+	return c.length
+}
+
 func (c *Capture) End() int {
 	return c.Start() + c.length
+}
+
+func (c *Capture) Dummy() bool {
+	return c.typ == tDummy
+}
+
+func (c *Capture) Id() int {
+	return int(c.id)
+}
+
+func (c *Capture) setMEnt(e *Entry) {
+	if c.ment != nil {
+		return
+	}
+
+	c.ment = e
+	c.off = c.off - e.pos.Pos()
+
+	for _, c := range c.children {
+		c.setMEnt(e)
+	}
 }
 
 // String returns a readable string representation of this node, showing the ID
 // of this node and its children.
 func (c *Capture) String() string {
 	buf := &bytes.Buffer{}
-	for i, c := range c.Children {
+	for i, c := range c.children {
 		buf.WriteString(c.String())
-		if i != len(c.Children)-1 {
+		if i != len(c.children)-1 {
 			buf.WriteString(", ")
 		}
 	}
-	return fmt.Sprintf("{%d, [%s]}", c.Id, buf.String())
+	return fmt.Sprintf("{%d, [%s]}", c.id, buf.String())
 }

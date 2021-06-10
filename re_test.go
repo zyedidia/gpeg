@@ -8,7 +8,7 @@ import (
 )
 
 func TestRe(t *testing.T) {
-	p := re.MustCompilePatt("ID <- [a-zA-Z][a-zA-Z0-9_]*")
+	p := re.MustCompile("ID <- [a-zA-Z][a-zA-Z0-9_]*")
 	tests := []PatternTest{
 		{"hello", 5},
 		{"test_1", 6},
@@ -19,7 +19,7 @@ func TestRe(t *testing.T) {
 }
 
 func TestReExtra(t *testing.T) {
-	p := re.MustCompilePatt("[^a-zA-Z]*")
+	p := re.MustCompile("[^a-zA-Z]*")
 	tests := []PatternTest{
 		{"hello", 0},
 		{"123", 3},
@@ -33,7 +33,7 @@ func TestJson(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p := re.MustCompilePatt(string(peg))
+	p := re.MustCompile(string(peg))
 
 	json, err := ioutil.ReadFile("testdata/test.json")
 	if err != nil {
@@ -52,7 +52,7 @@ func TestJava(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p := re.MustCompilePatt(string(peg))
+	p := re.MustCompile(string(peg))
 
 	java, err := ioutil.ReadFile("testdata/test.java")
 	if err != nil {

@@ -1,30 +1,29 @@
 package memo
 
 import (
-	"sort"
 	"sync"
 
-	"github.com/zyedidia/gpeg/memo/avlint"
+	"github.com/zyedidia/gpeg/memo/interval"
 )
 
 // TreeTable implements a memoization table using an interval tree (augmented
 // to support efficient shifting).
 type TreeTable struct {
-	*avlint.Tree
+	*interval.Tree
 	threshold int
 	lock      sync.Mutex
 }
 
 func NewTreeTable(threshold int) *TreeTable {
 	return &TreeTable{
-		Tree:      &avlint.Tree{},
+		Tree:      &interval.Tree{},
 		threshold: threshold,
 	}
 }
 
 func (t *TreeTable) Get(id, pos int) (*Entry, bool) {
 	t.lock.Lock()
-	entry := t.Tree.Search(pos, id)
+	entry := t.Tree.FindLargest(id, pos)
 	t.lock.Unlock()
 	e, ok := entry.(*Entry)
 	return e, ok
@@ -35,38 +34,21 @@ func (t *TreeTable) Put(id, start, length, examined, count int, captures []*Capt
 		return
 	}
 
-	e := newEntry(id, start, length, examined, count, captures)
+	e := &Entry{
+		length:   length,
+		count:    count,
+		captures: captures,
+	}
 	t.lock.Lock()
-	loc := t.Tree.Add(start, start+examined, e, id)
-	e.loc = loc
+	e.setPos(t.Tree.Add(id, start, start+examined, e))
 	t.lock.Unlock()
 }
 
 func (t *TreeTable) ApplyEdit(e Edit) {
-	// TODO: do we need the +1? Depends on the tree implementation. Needs investigation.
-	entries := t.Tree.Overlap(e.Start, e.End+1)
-
-	for _, ent := range entries {
-		switch ent := ent.(type) {
-		case *Entry:
-			t.Tree.Remove(ent.Start(), int(ent.id))
-		}
+	low, high := e.Start, e.End
+	if low == high {
+		high = low + 1
 	}
-
-	t.Tree.Shift(e.Start, e.Len-(e.End-e.Start))
-}
-
-func (t *TreeTable) Overlaps(low, high int) []*Entry {
-	result := make([]*Entry, 0)
-	entries := t.Tree.Overlap(low, high)
-	for _, e := range entries {
-		result = append(result, e.(*Entry))
-	}
-	sort.Slice(result, func(i, j int) bool {
-		if result[i].Start() == result[j].Start() {
-			return result[i].Examined() > result[j].Examined()
-		}
-		return result[i].Start() < result[j].Start()
-	})
-	return result
+	amt := e.Len - (e.End - e.Start)
+	t.Tree.RemoveAndShift(low, high, amt)
 }

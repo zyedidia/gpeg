@@ -1,12 +1,8 @@
 package memo
 
 import (
-	"fmt"
+	"github.com/zyedidia/gpeg/memo/interval"
 )
-
-type locator interface {
-	Start() int
-}
 
 // An Entry represents a memoized parse result. It stores the non-terminal
 // memoized, the start position of the parse result, the length, and the number
@@ -14,56 +10,22 @@ type locator interface {
 // the non-terminal failed to match at this location (but still may have
 // examined a non-zero number of characters).
 type Entry struct {
-	id       int
-	start    int
 	length   int
-	examined int
 	count    int
 	captures []*Capture
-
-	loc locator
+	pos      interval.Pos
 }
 
-func newEntry(id, start, length, examined, count int, captures []*Capture) *Entry {
-	e := &Entry{
-		id:       id,
-		start:    start,
-		length:   length,
-		examined: examined,
-		captures: captures,
-		count:    count,
+func (e *Entry) setPos(pos interval.Pos) {
+	e.pos = pos
+	for i := range e.captures {
+		e.captures[i].setMEnt(e)
 	}
-
-	for _, c := range captures {
-		if !c.memoized() {
-			c.setMemo(e)
-		}
-	}
-	return e
-}
-
-// Id returns the non-terminal ID of this entry.
-func (e *Entry) Id() int {
-	return e.id
-}
-
-// Start returns the starting offset of this memoized entry.
-func (e *Entry) Start() int {
-	if e.loc != nil {
-		return e.loc.Start()
-	}
-	return e.start
 }
 
 // Length returns the number of characters memoized by this entry.
 func (e *Entry) Length() int {
 	return e.length
-}
-
-// Examined returns the number of characters that were examined to create this
-// memo entry.
-func (e *Entry) Examined() int {
-	return e.examined
 }
 
 // Captures returns the captures that occurred within this memoized parse
@@ -74,10 +36,4 @@ func (e *Entry) Captures() []*Capture {
 
 func (e *Entry) Count() int {
 	return e.count
-}
-
-// String representation of the memo entry.
-func (e *Entry) String() string {
-	start := e.Start()
-	return fmt.Sprintf("(%d) len: [%d, %d), exam: [%d, %d)", e.id, start, start+e.Length(), start, start+e.Examined())
 }

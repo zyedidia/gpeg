@@ -3,17 +3,19 @@
 package pattern
 
 import (
-	"strings"
-
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
 )
 
 // Cap marks a pattern to be captured.
-func Cap(p Pattern) Pattern {
-	return CapId(p, 0)
+func Cap(p Pattern, id int) Pattern {
+	return &CapNode{
+		Patt: p,
+		Id:   id,
+	}
 }
 
+// Check marks a pattern to be checked with the given checker.
 func Check(p Pattern, c isa.Checker) Pattern {
 	return &CheckNode{
 		Patt:    p,
@@ -21,15 +23,7 @@ func Check(p Pattern, c isa.Checker) Pattern {
 	}
 }
 
-// CapId marks a pattern with an ID to be captured.
-func CapId(p Pattern, id int16) Pattern {
-	return &CapNode{
-		Patt: p,
-		Id:   id,
-	}
-}
-
-var memoId int16 = 0
+var memoId = 0
 
 // Memo marks a pattern as memoizable.
 func Memo(p Pattern) Pattern {
@@ -174,21 +168,6 @@ func NonTerm(name string) Pattern {
 	}
 }
 
-// CapGrammar is equivalent to grammar but it captures every non-terminal that
-// doesn't end with '_' and maps non-terminal names to their capture IDs in the
-// map 'nontermIds'.
-func CapGrammar(start string, nonterms map[string]Pattern, nontermIds map[string]int16) Pattern {
-	var id int16
-	for k, v := range nonterms {
-		if !strings.HasSuffix(k, "_") {
-			nonterms[k] = CapId(v, id)
-			nontermIds[k] = id
-			id++
-		}
-	}
-	return Grammar(start, nonterms)
-}
-
 // Grammar builds a grammar from a map of non-terminal patterns.
 // Any unresolved non-terminals are resolved with their definitions
 // in the map.
@@ -205,4 +184,11 @@ func Error(msg string, recovery Pattern) Pattern {
 		Message: msg,
 		Recover: recovery,
 	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

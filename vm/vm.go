@@ -23,7 +23,7 @@ func (e ParseError) Error() string {
 // Exec executes the parsing program this virtual machine was created with. It
 // returns whether the parse was a match, the last position in the subject
 // string that was matched, and any captures that were created.
-func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, []*memo.Capture, []ParseError) {
+func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, *memo.Capture, []ParseError) {
 	ip := 0
 	st := newStack()
 	src := input.NewInput(r)
@@ -38,7 +38,7 @@ func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, []*memo.Cap
 	return vm.exec(ip, st, src, memtbl)
 }
 
-func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table) (bool, int, []*memo.Capture, []ParseError) {
+func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table) (bool, int, *memo.Capture, []ParseError) {
 	idata := vm.data.Insns
 
 	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
@@ -207,7 +207,7 @@ loop:
 			id := decodeI16(idata[ip+2:])
 			pos := src.Pos()
 
-			capt := memo.NewCapture(int(id), pos-back, back, nil)
+			capt := memo.NewCaptureNode(int(id), pos-back, back, nil)
 			st.addCapt(capt)
 
 			ip += szCaptureFull
@@ -219,7 +219,7 @@ loop:
 			}
 
 			end := src.Pos()
-			capt := memo.NewCapture(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
+			capt := memo.NewCaptureNode(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
 			st.addCapt(capt)
 			ip += szCaptureEnd
 		case opEnd:
@@ -316,12 +316,12 @@ loop:
 				}
 				ent := st.pop(false) // next is now top of stack
 				if len(ent.capt) > 0 {
-					capt := memo.NewCapture(memo.Dummy, ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
+					capt := memo.NewCaptureDummy(ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 					st.addCapt(capt)
 				} else if len(ent.capt) > 0 {
 					st.addCapt(ent.capt...)
 				}
-				next.memo.count *= 2
+				next.memo.count = top.memo.count + next.memo.count
 				mlen := src.Pos() - next.memo.pos
 				memoize(int(next.memo.id), next.memo.pos, mlen, next.memo.count, next.capt)
 			}
@@ -356,13 +356,13 @@ loop:
 		}
 	}
 
-	return success, src.Pos(), st.capt, errs
+	return success, src.Pos(), memo.NewCaptureDummy(0, src.Pos(), st.capt), errs
 
 fail:
 	ent := st.pop(false)
 	if ent == nil {
 		// match failed
-		return false, src.Pos(), []*memo.Capture{}, errs
+		return false, src.Pos(), nil, errs
 	}
 
 	switch ent.stype {
