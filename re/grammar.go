@@ -16,8 +16,8 @@ import (
 // Primary    <- Identifier !LEFTARROW
 // 			/ '(' Expression ')'
 // 			/ Literal / Class
-// 			/ BRACEO Expression BRACEC
 // 			/ BRACEPO Expression BRACEPC
+// 			/ BRACEO Expression BRACEC
 // 			/ DOT
 //
 // Identifier <- IdentStart IdentCont* Spacing_
@@ -42,8 +42,8 @@ import (
 // CARAT      <- '^' Spacing_
 // BRACEO     <- '{' Spacing_
 // BRACEC     <- '}' Spacing_
-// BRACEPO    <- '{+' Spacing_
-// BRACEPC    <- '+}' Spacing_
+// BRACEPO    <- '{{' Spacing_
+// BRACEPC    <- '}}' Spacing_
 // LEFTARROW  <- '<-' Spacing_
 // OPEN       <- '(' Spacing_
 // CLOSE      <- ')' Spacing_
