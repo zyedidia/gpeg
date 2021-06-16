@@ -57,6 +57,17 @@ func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, i
 		return true, 0, memo.NewCaptureDummy(0, 0, nil), nil
 	}
 
+	if intrvl != nil {
+		// Apply an edit that clears all memoized entries in the interval
+		// we are capturing. This ensures that we find all captures in the
+		// requested interval.
+		memtbl.ApplyEdit(memo.Edit{
+			Start: intrvl.Low,
+			End:   intrvl.High,
+			Len:   intrvl.High - intrvl.Low,
+		})
+	}
+
 	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
 		mexam := src.Furthest() - pos + 1
 		memtbl.Put(id, pos, mlen, mexam, count, capt)
