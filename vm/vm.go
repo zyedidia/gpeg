@@ -69,6 +69,9 @@ func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, i
 	}
 
 	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
+		if intrvl != nil {
+			capt = nil
+		}
 		mexam := src.Furthest() - pos + 1
 		memtbl.Put(id, pos, mlen, mexam, count, capt)
 	}
