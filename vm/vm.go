@@ -16,6 +16,10 @@ type ParseError struct {
 	Pos     int
 }
 
+type Interval struct {
+	Low, High int
+}
+
 func (e ParseError) Error() string {
 	return fmt.Sprintf("%v: %s", e.Pos, e.Message)
 }
@@ -35,11 +39,23 @@ func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, *memo.Captu
 	// 	go vm.exec(0, newStack(), srccopy, memtbl)
 	// }
 
-	return vm.exec(ip, st, src, memtbl)
+	return vm.exec(ip, st, src, memtbl, nil)
 }
 
-func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table) (bool, int, *memo.Capture, []ParseError) {
+func (vm *VMCode) ExecInterval(r io.ReaderAt, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
+	ip := 0
+	st := newStack()
+	src := input.NewInput(r)
+
+	return vm.exec(ip, st, src, memtbl, intrvl)
+}
+
+func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
 	idata := vm.data.Insns
+
+	if ip < 0 || ip >= len(idata) {
+		return true, 0, memo.NewCaptureDummy(0, 0, nil), nil
+	}
 
 	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
 		mexam := src.Furthest() - pos + 1
@@ -207,8 +223,10 @@ loop:
 			id := decodeI16(idata[ip+2:])
 			pos := src.Pos()
 
-			capt := memo.NewCaptureNode(int(id), pos-back, back, nil)
-			st.addCapt(capt)
+			if overlaps(intrvl, pos-back, pos) {
+				capt := memo.NewCaptureNode(int(id), pos-back, back, nil)
+				st.addCapt(capt)
+			}
 
 			ip += szCaptureFull
 		case opCaptureEnd:
@@ -219,8 +237,10 @@ loop:
 			}
 
 			end := src.Pos()
-			capt := memo.NewCaptureNode(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
-			st.addCapt(capt)
+			if overlaps(intrvl, ent.memo.pos, end) {
+				capt := memo.NewCaptureNode(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
+				st.addCapt(capt)
+			}
 			ip += szCaptureEnd
 		case opEnd:
 			fail := decodeU8(idata[ip+1:])
@@ -289,10 +309,6 @@ loop:
 			id := decodeI16(idata[ip+2:])
 			for p := st.peek(); p != nil && p.stype == stMemo && p.memo.id == id; p = st.peek() {
 				st.pop(true)
-				// if ent != nil && ent.stype == stMemo {
-				// 	mlen := src.Pos() - ent.memo.pos
-				// 	memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.memo.count, ent.capt)
-				// }
 			}
 			ip += szMemoTreeClose
 		case opMemoTreeInsert:
@@ -409,4 +425,11 @@ func decodeU24(b []byte) uint32 {
 func decodeSet(b []byte, sets []charset.Set) charset.Set {
 	i := decodeU8(b)
 	return sets[i]
+}
+
+func overlaps(i *Interval, low2, high2 int) bool {
+	if i == nil {
+		return true
+	}
+	return i.Low < high2 && i.High > low2
 }
