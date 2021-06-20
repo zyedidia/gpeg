@@ -352,18 +352,17 @@ loop:
 					continue
 				}
 
-				capt := make([]*memo.Capture, 0)
 				start := st.peekn(0).memo.pos
 				for i := 0; i < seen-1; i++ {
-					ent := st.pop(false)
-					capt = append(capt, ent.capt...)
+					st.pop(true)
 				}
+				ent := st.pop(false)
 
-				if len(capt) > 4 {
-					dummy := memo.NewCaptureDummy(start, src.Pos()-start, capt)
+				if len(ent.capt) > 4 {
+					dummy := memo.NewCaptureDummy(start, src.Pos()-start, ent.capt)
 					st.addCapt(dummy)
-				} else {
-					st.addCapt(capt...)
+				} else if len(ent.capt) > 0 {
+					st.addCapt(ent.capt...)
 				}
 
 				next.memo.count = accum + next.memo.count
