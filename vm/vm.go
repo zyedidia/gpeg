@@ -335,23 +335,38 @@ loop:
 			memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.memo.count, ent.capt)
 			ip += szMemoTreeInsert
 		case opMemoTree:
+			seen := 0
+			accum := 0
 			for {
-				top := st.peekn(0)
-				next := st.peekn(1)
-				if top == nil || next == nil ||
-					top.stype != stMemo || next.stype != stMemo ||
-					top.memo.id != next.memo.id ||
-					top.memo.count != next.memo.count {
+				top := st.peekn(seen)
+				next := st.peekn(seen + 1)
+
+				if top == nil || next == nil || top.stype != stMemo || next.stype != stMemo {
 					break
 				}
-				ent := st.pop(false) // next is now top of stack
-				if len(ent.capt) > 4 {
-					capt := memo.NewCaptureDummy(ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
-					st.addCapt(capt)
-				} else if len(ent.capt) > 0 {
-					st.addCapt(ent.capt...)
+
+				seen++
+				accum += top.memo.count
+
+				if accum < next.memo.count {
+					continue
 				}
-				next.memo.count = top.memo.count + next.memo.count
+
+				capt := make([]*memo.Capture, 0)
+				start := st.peekn(0).memo.pos
+				for i := 0; i < seen-1; i++ {
+					ent := st.pop(false)
+					capt = append(capt, ent.capt...)
+				}
+
+				if len(capt) > 4 {
+					dummy := memo.NewCaptureDummy(start, src.Pos()-start, capt)
+					st.addCapt(dummy)
+				} else {
+					st.addCapt(capt...)
+				}
+
+				next.memo.count = accum + next.memo.count
 				mlen := src.Pos() - next.memo.pos
 				memoize(int(next.memo.id), next.memo.pos, mlen, next.memo.count, next.capt)
 			}
