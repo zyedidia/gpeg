@@ -337,21 +337,21 @@ func (n *node) rebalanceTree(parent *node) *node {
 	}
 	n.updateHeightAndMax()
 
-	// check balance factor and rotateLeft if right-heavy and rotateRight if left-heavy
-	balanceFactor := n.left.getHeight() - n.right.getHeight()
-	if balanceFactor == -2 {
-		// check if child is left-heavy and rotateRight first
-		if n.right.left.getHeight() > n.right.right.getHeight() {
-			n.right = n.right.rotateRight(n)
-		}
-		return n.rotateLeft(parent)
-	} else if balanceFactor == 2 {
-		// check if child is right-heavy and rotateLeft first
-		if n.left.right.getHeight() > n.left.left.getHeight() {
-			n.left = n.left.rotateLeft(n)
-		}
-		return n.rotateRight(parent)
-	}
+	// // check balance factor and rotateLeft if right-heavy and rotateRight if left-heavy
+	// balanceFactor := n.left.getHeight() - n.right.getHeight()
+	// if balanceFactor == -2 {
+	// 	// check if child is left-heavy and rotateRight first
+	// 	if n.right.left.getHeight() > n.right.right.getHeight() {
+	// 		n.right = n.right.rotateRight(n)
+	// 	}
+	// 	return n.rotateLeft(parent)
+	// } else if balanceFactor == 2 {
+	// 	// check if child is right-heavy and rotateLeft first
+	// 	if n.left.right.getHeight() > n.left.left.getHeight() {
+	// 		n.left = n.left.rotateLeft(n)
+	// 	}
+	// 	return n.rotateRight(parent)
+	// }
 	return n
 }
 
@@ -364,14 +364,11 @@ func (n *node) rotateLeft(newParent *node) *node {
 
 	newRoot := n.right
 	n.right = newRoot.left
-	newRoot.left = n
-
-	n.parent = newRoot
-
-	if n.right != nil {
-		n.right.parent = n
+	if newRoot.left != nil {
+		newRoot.left.parent = n
 	}
-
+	newRoot.left = n
+	n.parent = newRoot
 	newRoot.parent = newParent
 
 	n.updateHeightAndMax()
@@ -385,16 +382,14 @@ func (n *node) rotateRight(newParent *node) *node {
 	if n.left != nil {
 		n.left.applyShifts()
 	}
+
 	newRoot := n.left
 	n.left = newRoot.right
-	newRoot.right = n
-
-	n.parent = newRoot
-
-	if n.left != nil {
-		n.left.parent = n
+	if newRoot.right != nil {
+		newRoot.right.parent = n
 	}
-
+	newRoot.right = n
+	n.parent = newRoot
 	newRoot.parent = newParent
 
 	n.updateHeightAndMax()

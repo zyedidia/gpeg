@@ -42,7 +42,7 @@ func TestTree(t *testing.T) {
 		opRemoveAndShift
 		opPos
 
-		nops     = 3000
+		nops     = 300000
 		maxidx   = 100000
 		maxid    = 10
 		maxshamt = 50
