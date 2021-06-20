@@ -52,7 +52,7 @@ func (t *Tree) FindLargest(id, pos int) Value {
 // RemoveAndShift removes all entries that overlap with [low, high) and then shifts
 // all entries greater than low by amt.
 func (t *Tree) RemoveAndShift(low, high, amt int) {
-	t.root = t.root.removeOverlaps(low, high, t.root)
+	t.root = t.root.removeOverlaps(low, high, nil)
 	if amt != 0 {
 		t.root.addShift(shift{low, amt})
 	}
@@ -337,21 +337,21 @@ func (n *node) rebalanceTree(parent *node) *node {
 	}
 	n.updateHeightAndMax()
 
-	// // check balance factor and rotateLeft if right-heavy and rotateRight if left-heavy
-	// balanceFactor := n.left.getHeight() - n.right.getHeight()
-	// if balanceFactor == -2 {
-	// 	// check if child is left-heavy and rotateRight first
-	// 	if n.right.left.getHeight() > n.right.right.getHeight() {
-	// 		n.right = n.right.rotateRight(n)
-	// 	}
-	// 	return n.rotateLeft(parent)
-	// } else if balanceFactor == 2 {
-	// 	// check if child is right-heavy and rotateLeft first
-	// 	if n.left.right.getHeight() > n.left.left.getHeight() {
-	// 		n.left = n.left.rotateLeft(n)
-	// 	}
-	// 	return n.rotateRight(parent)
-	// }
+	// check balance factor and rotateLeft if right-heavy and rotateRight if left-heavy
+	balanceFactor := n.left.getHeight() - n.right.getHeight()
+	if balanceFactor == -2 {
+		// check if child is left-heavy and rotateRight first
+		if n.right.left.getHeight() > n.right.right.getHeight() {
+			n.right = n.right.rotateRight(n)
+		}
+		return n.rotateLeft(parent)
+	} else if balanceFactor == 2 {
+		// check if child is right-heavy and rotateLeft first
+		if n.left.right.getHeight() > n.left.left.getHeight() {
+			n.left = n.left.rotateLeft(n)
+		}
+		return n.rotateRight(parent)
+	}
 	return n
 }
 
