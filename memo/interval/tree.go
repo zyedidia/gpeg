@@ -206,8 +206,7 @@ func (n *node) remove(key key, parent *node) *node {
 			// replace values with smallest node of the right sub-tree
 			rightMinNode := n.right.findSmallest()
 			n.key = rightMinNode.key
-			// n.iv.node = nil
-			n.iv = rightMinNode.iv
+			*n.iv = *rightMinNode.iv
 			n.iv.node = n
 			n.shifts = rightMinNode.shifts
 			// delete smallest node that we replaced
@@ -222,6 +221,12 @@ func (n *node) remove(key key, parent *node) *node {
 			n = n.right
 		} else {
 			// node has no children
+			n.shifts = nil
+			if n.iv != nil {
+				n.iv.ivs = nil
+				n.iv.node = nil
+				n.iv = nil
+			}
 			n = nil
 			return n
 		}
