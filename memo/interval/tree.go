@@ -206,7 +206,7 @@ func (n *node) remove(key key, parent *node) *node {
 			// replace values with smallest node of the right sub-tree
 			rightMinNode := n.right.findSmallest()
 			n.key = rightMinNode.key
-			*n.iv = *rightMinNode.iv
+			n.iv = rightMinNode.iv
 			n.iv.node = n
 			n.shifts = rightMinNode.shifts
 			// delete smallest node that we replaced
@@ -221,12 +221,6 @@ func (n *node) remove(key key, parent *node) *node {
 			n = n.right
 		} else {
 			// node has no children
-			n.shifts = nil
-			if n.iv != nil {
-				n.iv.ivs = nil
-				n.iv.node = nil
-				n.iv = nil
-			}
 			n = nil
 			return n
 		}
@@ -293,6 +287,7 @@ func (n *node) removeOverlaps(low, high int, parent *node) *node {
 	for i := 0; i < len(n.iv.ivs); {
 		if Overlaps(n.iv.ivs[i].interval, Interval{low, high}) {
 			n.iv.ivs[i] = n.iv.ivs[len(n.iv.ivs)-1]
+			n.iv.ivs[len(n.iv.ivs)-1] = ivalue{}
 			n.iv.ivs = n.iv.ivs[:len(n.iv.ivs)-1]
 		} else {
 			i++
