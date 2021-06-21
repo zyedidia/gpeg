@@ -1,4 +1,6 @@
-package interval
+package lazy
+
+import "github.com/zyedidia/gpeg/memo/interval"
 
 // An Array is another implementation of the interval.Set backed by an array
 // rather than an AVL tree. This implementation is naive and ineffecient, but
@@ -16,7 +18,7 @@ func (iv *ivalue) Pos() int {
 	return iv.interval.Low
 }
 
-func (a *Array) FindLargest(id, pos int) Value {
+func (a *Array) FindLargest(id, pos int) interval.Value {
 	var max int
 	maxi := -1
 	for i, in := range a.slots {
@@ -32,7 +34,7 @@ func (a *Array) FindLargest(id, pos int) Value {
 	return a.slots[maxi].value
 }
 
-func (a *Array) Add(id, low, high int, val Value) Pos {
+func (a *Array) Add(id, low, high int, val interval.Value) interval.Pos {
 	iv := &ivalue{
 		interval: Interval{low, high},
 		value:    val,

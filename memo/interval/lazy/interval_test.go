@@ -1,12 +1,10 @@
-package interval_test
+package lazy
 
 import (
 	"math/rand"
 	"testing"
 
 	"github.com/zyedidia/gpeg/memo/interval"
-	"github.com/zyedidia/gpeg/memo/interval/lazy"
-	"github.com/zyedidia/gpeg/memo/interval/lazylog"
 )
 
 func randrange(max int) (int, int) {
@@ -22,9 +20,23 @@ func randint(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
+func checkParents(n *node, t *testing.T) {
+	if n == nil {
+		return
+	}
+	if n.left != nil && n.left.parent != n {
+		t.Fatalf("Incorrect parent n: %p, n.left.parent: %p", n, n.left.parent)
+	}
+	if n.right != nil && n.right.parent != n {
+		t.Fatalf("Incorrect parent n: %p, n.right.parent: %p", n, n.right.parent)
+	}
+	checkParents(n.left, t)
+	checkParents(n.right, t)
+}
+
 func TestTree(t *testing.T) {
-	it := &lazy.Tree{}
-	ia := &lazylog.Tree{}
+	it := &Tree{}
+	ia := &Array{}
 
 	const (
 		opAdd = iota
@@ -32,7 +44,7 @@ func TestTree(t *testing.T) {
 		opRemoveAndShift
 		opPos
 
-		nops     = 3000
+		nops     = 300000
 		maxidx   = 10
 		maxid    = 10
 		maxshamt = 50
@@ -76,10 +88,10 @@ func TestTree(t *testing.T) {
 
 			if haspt {
 				ptpos := pt.Pos()
-				if lazy.Overlaps(lazy.Interval{
+				if Overlaps(Interval{
 					Low:  low,
 					High: high,
-				}, lazy.Interval{
+				}, Interval{
 					Low:  ptpos,
 					High: ptpos + length,
 				}) {
@@ -94,5 +106,6 @@ func TestTree(t *testing.T) {
 				t.Fatalf("%d != %d", pt.Pos(), pa.Pos())
 			}
 		}
+		checkParents(it.root, t)
 	}
 }

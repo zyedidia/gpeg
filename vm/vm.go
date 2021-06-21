@@ -348,18 +348,17 @@ loop:
 				seen++
 				accum += top.memo.count
 
-				if accum < next.memo.count {
+				if accum <= next.memo.count {
 					continue
 				}
 
-				start := st.peekn(0).memo.pos
 				for i := 0; i < seen-1; i++ {
 					st.pop(true)
 				}
-				ent := st.pop(false)
+				ent := st.pop(false) // next is now top of stack
 
-				if len(ent.capt) > 4 {
-					dummy := memo.NewCaptureDummy(start, src.Pos()-start, ent.capt)
+				if len(ent.capt) > 0 {
+					dummy := memo.NewCaptureDummy(ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 					st.addCapt(dummy)
 				} else if len(ent.capt) > 0 {
 					st.addCapt(ent.capt...)
@@ -368,6 +367,9 @@ loop:
 				next.memo.count = accum + next.memo.count
 				mlen := src.Pos() - next.memo.pos
 				memoize(int(next.memo.id), next.memo.pos, mlen, next.memo.count, next.capt)
+
+				accum = 0
+				seen = 0
 			}
 
 			ip += szMemoTree

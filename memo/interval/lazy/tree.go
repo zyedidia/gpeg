@@ -1,6 +1,8 @@
-// Package interval provides an interval tree backed by an AVL tree. In addition,
+// Package lazy provides an interval tree backed by an AVL tree. In addition,
 // the interval tree supports a lazy shifting algorithm.
-package interval
+package lazy
+
+import "github.com/zyedidia/gpeg/memo/interval"
 
 type key struct {
 	id  int
@@ -27,13 +29,13 @@ type Tree struct {
 
 // Adds the given interval to the tree. An id can also be given to the interval
 // to separate different types of intervals.
-func (t *Tree) Add(id, low, high int, val Value) (pos Pos) {
+func (t *Tree) Add(id, low, high int, val interval.Value) (pos interval.Pos) {
 	t.root, pos = t.root.add(key{id, low}, high, val, nil)
 	return pos
 }
 
 // FindLargest returns the largest interval associated with (id, pos).
-func (t *Tree) FindLargest(id, pos int) Value {
+func (t *Tree) FindLargest(id, pos int) interval.Value {
 	n := t.root.search(key{id, pos})
 	if n == nil || len(n.iv.ivs) == 0 {
 		return nil
@@ -75,7 +77,7 @@ func (iv *ivalues) Pos() int {
 
 type ivalue struct {
 	interval Interval
-	value    Value
+	value    interval.Value
 }
 
 // A shift of intervals in the tree. The shift starts at idx and moves
@@ -129,7 +131,7 @@ func (n *node) applyShifts() {
 	n.shifts = nil
 }
 
-func (n *node) add(key key, high int, value Value, parent *node) (*node, *ivalues) {
+func (n *node) add(key key, high int, value interval.Value, parent *node) (*node, *ivalues) {
 	if n == nil {
 		n = new(node)
 		*n = node{
@@ -244,7 +246,7 @@ func (n *node) search(key key) *node {
 	}
 }
 
-func (n *node) overlaps(low, high int, result []Value) []Value {
+func (n *node) overlaps(low, high int, result []interval.Value) []interval.Value {
 	if n == nil {
 		return result
 	}

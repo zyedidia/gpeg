@@ -1,4 +1,4 @@
-package interval
+package lazy
 
 import "fmt"
 
