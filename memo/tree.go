@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/zyedidia/gpeg/memo/interval"
-	"github.com/zyedidia/gpeg/memo/interval/lazy"
+	"github.com/zyedidia/gpeg/memo/interval/lazylog"
 )
 
 // TreeTable implements a memoization table using an interval tree (augmented
@@ -17,7 +17,7 @@ type TreeTable struct {
 
 func NewTreeTable(threshold int) *TreeTable {
 	return &TreeTable{
-		Map:       &lazy.Tree{},
+		Map:       &lazylog.Tree{},
 		threshold: threshold,
 	}
 }

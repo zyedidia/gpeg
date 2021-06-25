@@ -57,7 +57,10 @@ func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, i
 		return true, 0, memo.NewCaptureDummy(0, 0, nil), nil
 	}
 
+	var caprange Interval
+
 	if intrvl != nil {
+		caprange = *intrvl
 		// Apply an edit that clears all memoized entries in the interval
 		// we are capturing. This ensures that we find all captures in the
 		// requested interval.
@@ -238,6 +241,8 @@ loop:
 			pos := src.Pos()
 
 			if overlaps(intrvl, pos-back, pos) {
+				caprange.Low = min(caprange.Low, pos-back)
+				caprange.High = max(caprange.High, pos)
 				capt := memo.NewCaptureNode(int(id), pos-back, back, nil)
 				st.addCapt(capt)
 			}
@@ -252,6 +257,8 @@ loop:
 
 			end := src.Pos()
 			if overlaps(intrvl, ent.memo.pos, end) {
+				caprange.Low = min(caprange.Low, ent.memo.pos)
+				caprange.High = max(caprange.High, end)
 				capt := memo.NewCaptureNode(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
 				st.addCapt(capt)
 			}
@@ -357,7 +364,7 @@ loop:
 				}
 				ent := st.pop(false) // next is now top of stack
 
-				if len(ent.capt) > 0 {
+				if len(ent.capt) > 0 && intrvl == nil {
 					dummy := memo.NewCaptureDummy(ent.memo.pos, src.Pos()-ent.memo.pos, ent.capt)
 					st.addCapt(dummy)
 				} else if len(ent.capt) > 0 {
@@ -402,6 +409,9 @@ loop:
 		}
 	}
 
+	if intrvl != nil {
+		return success, src.Pos(), memo.NewCaptureDummy(caprange.Low, caprange.High, st.capt), errs
+	}
 	return success, src.Pos(), memo.NewCaptureDummy(0, src.Pos(), st.capt), errs
 
 fail:
@@ -462,4 +472,17 @@ func overlaps(i *Interval, low2, high2 int) bool {
 		return true
 	}
 	return i.Low < high2 && i.High > low2
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

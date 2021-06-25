@@ -9,7 +9,7 @@ import (
 
 // ShiftThreshold is the number of shifts to accumulate before applying all
 // shifts.
-const ShiftThreshold = 1024
+const ShiftThreshold = -1
 
 // A key stores the start position of an interval, and a unique ID if you would
 // like to store multiple intervals starting from the same position. The key is
@@ -107,7 +107,7 @@ func (t *Tree) shift(idx, amt int) {
 		amt:    amt,
 		tstamp: t.tstamp,
 	})
-	if len(t.shifts) >= ShiftThreshold {
+	if ShiftThreshold != -1 && len(t.shifts) >= ShiftThreshold {
 		t.applyAllShifts()
 	}
 }
