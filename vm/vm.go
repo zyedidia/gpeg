@@ -27,7 +27,7 @@ func (e ParseError) Error() string {
 // Exec executes the parsing program this virtual machine was created with. It
 // returns whether the parse was a match, the last position in the subject
 // string that was matched, and any captures that were created.
-func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, *memo.Capture, []ParseError) {
+func (vm *Code) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, *memo.Capture, []ParseError) {
 	ip := 0
 	st := newStack()
 	src := input.NewInput(r)
@@ -42,7 +42,7 @@ func (vm *VMCode) Exec(r io.ReaderAt, memtbl memo.Table) (bool, int, *memo.Captu
 	return vm.exec(ip, st, src, memtbl, nil)
 }
 
-func (vm *VMCode) ExecInterval(r io.ReaderAt, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
+func (vm *Code) ExecInterval(r io.ReaderAt, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
 	ip := 0
 	st := newStack()
 	src := input.NewInput(r)
@@ -50,7 +50,7 @@ func (vm *VMCode) ExecInterval(r io.ReaderAt, memtbl memo.Table, intrvl *Interva
 	return vm.exec(ip, st, src, memtbl, intrvl)
 }
 
-func (vm *VMCode) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
+func (vm *Code) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
 	idata := vm.data.Insns
 
 	if ip < 0 || ip >= len(idata) {
