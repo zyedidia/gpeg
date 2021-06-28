@@ -410,7 +410,7 @@ loop:
 	}
 
 	if intrvl != nil {
-		return success, src.Pos(), memo.NewCaptureDummy(caprange.Low, caprange.High, st.capt), errs
+		return success, src.Pos(), memo.NewCaptureDummy(caprange.Low, caprange.High-caprange.Low, st.capt), errs
 	}
 	return success, src.Pos(), memo.NewCaptureDummy(0, src.Pos(), st.capt), errs
 
