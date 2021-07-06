@@ -1,9 +1,5 @@
 # GPeg
 
-**Warning:** this library is currently in alpha and the API is subject to
-change. Please wait for a stable release before using it in a project. Examples
-and documentation will be provided with the first release.
-
 GPeg is a tool for working with parsing expression grammars (PEGs). It is
 built with three primary goals in mind:
 
@@ -27,13 +23,10 @@ heavily inspired by LPeg.
 * [x] Parse non-string data structures (via interface).
 * [x] Incremental matching.
 * [x] Incremental AST/captures.
-    * [x] Better incremental parsing algorithm.
+    * [x] Logarithmic incremental parsing algorithm.
 * [x] Support for an extended PEG syntax.
 * [x] Syntax highlighting example.
 * [ ] Polish, documentation, and examples.
-* [ ] Parallel parsing.
-* [ ] Creation of a large bundle of PEGs for common programming languages.
-* [ ] Compilation of VM code to native code (JIT or static compilation TBD).
 * [ ] Additional niceties (TBD).
     * [x] Error recovery.
     * [x] Grammar tree visualizer.
