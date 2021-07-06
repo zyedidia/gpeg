@@ -25,6 +25,16 @@ func Check(p Pattern, c isa.Checker) Pattern {
 
 var memoId = 0
 
+// MemoId marks a pattern as memoizable with a particular ID.
+func MemoId(p Pattern, id int) Pattern {
+	m := &MemoNode{
+		Patt: p,
+		Id:   id,
+	}
+	memoId = max(memoId, id) + 1
+	return m
+}
+
 // Memo marks a pattern as memoizable.
 func Memo(p Pattern) Pattern {
 	m := &MemoNode{

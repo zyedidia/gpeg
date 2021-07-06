@@ -307,7 +307,7 @@ loop:
 				if ment.Length() == -1 {
 					goto fail
 				}
-				st.pushMemo(stackMemo{
+				st.pushMemoTree(stackMemo{
 					id:    id,
 					pos:   src.Pos(),
 					count: ment.Count(),
@@ -320,7 +320,7 @@ loop:
 				src.Peek()
 				ip = int(lbl)
 			} else {
-				st.pushMemo(stackMemo{
+				st.pushMemoTree(stackMemo{
 					id:  id,
 					pos: src.Pos(),
 				})
@@ -328,13 +328,13 @@ loop:
 			}
 		case opMemoTreeClose:
 			id := decodeI16(idata[ip+2:])
-			for p := st.peek(); p != nil && p.stype == stMemo && p.memo.id == id; p = st.peek() {
+			for p := st.peek(); p != nil && p.stype == stMemoTree && p.memo.id == id; p = st.peek() {
 				st.pop(true)
 			}
 			ip += szMemoTreeClose
 		case opMemoTreeInsert:
 			ent := st.peek()
-			if ent == nil || ent.stype != stMemo {
+			if ent == nil || ent.stype != stMemoTree {
 				panic("no memo entry on stack")
 			}
 			mlen := src.Pos() - ent.memo.pos
@@ -348,7 +348,7 @@ loop:
 				top := st.peekn(seen)
 				next := st.peekn(seen + 1)
 
-				if top == nil || next == nil || top.stype != stMemo || next.stype != stMemo {
+				if top == nil || next == nil || top.stype != stMemoTree || next.stype != stMemoTree {
 					break
 				}
 

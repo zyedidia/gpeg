@@ -36,6 +36,7 @@ const (
 	stRet = iota
 	stBtrack
 	stMemo
+	stMemoTree
 	stCapt
 	stCheck
 )
@@ -140,6 +141,13 @@ func (s *stack) pushBacktrack(b stackBacktrack) {
 func (s *stack) pushMemo(m stackMemo) {
 	s.push(stackEntry{
 		stype: stMemo,
+		memo:  m,
+	})
+}
+
+func (s *stack) pushMemoTree(m stackMemo) {
+	s.push(stackEntry{
+		stype: stMemoTree,
 		memo:  m,
 	})
 }
