@@ -12,8 +12,8 @@ import (
 	"github.com/zyedidia/gpeg/isa"
 )
 
-// VMCode is the representation of VM bytecode.
-type VMCode struct {
+// Code is the representation of VM bytecode.
+type Code struct {
 	data code
 }
 
@@ -30,7 +30,7 @@ type code struct {
 }
 
 // Size returns the size of the encoded instructions.
-func (c *VMCode) Size() int {
+func (c *Code) Size() int {
 	return len(c.data.Insns)
 }
 
@@ -38,8 +38,8 @@ func init() {
 	gob.Register(isa.MapChecker{})
 }
 
-// ToBytes serializes and compresses this VMCode.
-func (c *VMCode) ToBytes() ([]byte, error) {
+// ToBytes serializes and compresses this Code.
+func (c *Code) ToBytes() ([]byte, error) {
 	var buf bytes.Buffer
 	fz := gzip.NewWriter(&buf)
 	enc := gob.NewEncoder(fz)
@@ -48,38 +48,38 @@ func (c *VMCode) ToBytes() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-// FromBytes loads a VMCode from a compressed and serialized object.
-func FromBytes(b []byte) (VMCode, error) {
+// FromBytes loads a Code from a compressed and serialized object.
+func FromBytes(b []byte) (Code, error) {
 	var c code
 	fz, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {
-		return VMCode{}, err
+		return Code{}, err
 	}
 	dec := gob.NewDecoder(fz)
 	err = dec.Decode(&c)
 	fz.Close()
-	return VMCode{
+	return Code{
 		data: c,
 	}, err
 }
 
-// ToJson returns this VMCode serialized to JSON form.
-func (c *VMCode) ToJson() ([]byte, error) {
+// ToJson returns this Code serialized to JSON form.
+func (c *Code) ToJson() ([]byte, error) {
 	return json.Marshal(c.data)
 }
 
-// FromJson returns a VMCode loaded from JSON form.
-func FromJson(b []byte) (VMCode, error) {
+// FromJson returns a Code loaded from JSON form.
+func FromJson(b []byte) (Code, error) {
 	var c code
 	err := json.Unmarshal(b, &c)
-	return VMCode{
+	return Code{
 		data: c,
 	}, err
 }
 
 // Encode transforms a program into VM bytecode.
-func Encode(insns isa.Program) VMCode {
-	code := VMCode{
+func Encode(insns isa.Program) Code {
+	code := Code{
 		data: code{
 			Sets:  make([]charset.Set, 0),
 			Insns: make([]byte, 0),
@@ -277,7 +277,7 @@ func encodeBool(b bool) []byte {
 // Adds the set to the code's list of charsets, and returns the index it was
 // added at. If there are duplicate charsets, this may not actually insert
 // the new charset.
-func addSet(code *VMCode, set charset.Set) uint {
+func addSet(code *Code, set charset.Set) uint {
 	for i, s := range code.data.Sets {
 		if set == s {
 			return uint(i)
@@ -288,7 +288,7 @@ func addSet(code *VMCode, set charset.Set) uint {
 	return uint(len(code.data.Sets) - 1)
 }
 
-func addError(code *VMCode, msg string) uint {
+func addError(code *Code, msg string) uint {
 	for i, s := range code.data.Errors {
 		if msg == s {
 			return uint(i)
@@ -299,7 +299,7 @@ func addError(code *VMCode, msg string) uint {
 	return uint(len(code.data.Errors) - 1)
 }
 
-func addChecker(code *VMCode, checker isa.Checker) uint {
+func addChecker(code *Code, checker isa.Checker) uint {
 	code.data.Checkers = append(code.data.Checkers, checker)
 	return uint(len(code.data.Checkers) - 1)
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/zyedidia/gpeg/vm"
 )
 
-var parser vm.VMCode
+var parser vm.Code
 
 func init() {
 	prog := pattern.MustCompile(pattern.Grammar("Pattern", grammar))
