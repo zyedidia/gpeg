@@ -23,7 +23,7 @@ func randint(min, max int) int {
 }
 
 func TestTree(t *testing.T) {
-	it := &lazy.Tree{}
+	it := &lazy.Array{}
 	ia := &lazylog.Tree{}
 
 	const (
@@ -32,7 +32,7 @@ func TestTree(t *testing.T) {
 		opRemoveAndShift
 		opPos
 
-		nops     = 3000
+		nops     = 300000
 		maxidx   = 10
 		maxid    = 10
 		maxshamt = 50

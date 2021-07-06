@@ -199,7 +199,7 @@ func (n *node) remove(key key) *node {
 			// replace values with smallest node of the right sub-tree
 			rightMinNode := n.right.findSmallest()
 			n.key = rightMinNode.key
-			n.interval = rightMinNode.interval
+			*n.interval = *rightMinNode.interval
 			n.interval.n = rightMinNode
 			n.tstamp = rightMinNode.tstamp
 			// delete smallest node that we replaced
