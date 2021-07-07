@@ -30,5 +30,5 @@ func (i *interval) String() string {
 
 // returns true if i1 overlaps with the interval [low:high)
 func overlaps(i1 interval, low, high int) bool {
-	return i1.Low() < high && i1.High() > low
+	return i1.Low() <= high && i1.High() >= low
 }

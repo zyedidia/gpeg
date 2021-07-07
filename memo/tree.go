@@ -35,6 +35,8 @@ func (t *TreeTable) Put(id, start, length, examined, count int, captures []*Capt
 		return
 	}
 
+	examined = max(examined, length)
+
 	e := &Entry{
 		length:   length,
 		count:    count,
@@ -52,4 +54,11 @@ func (t *TreeTable) ApplyEdit(e Edit) {
 	}
 	amt := e.Len - (e.End - e.Start)
 	t.Map.RemoveAndShift(low, high, amt)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

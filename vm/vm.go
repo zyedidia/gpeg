@@ -75,7 +75,7 @@ func (vm *Code) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, int
 		if intrvl != nil {
 			capt = nil
 		}
-		mexam := src.Furthest() - pos + 1
+		mexam := max(src.Furthest(), src.Pos()) - pos + 1
 		memtbl.Put(id, pos, mlen, mexam, count, capt)
 	}
 

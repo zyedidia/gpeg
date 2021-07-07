@@ -103,3 +103,43 @@ func size(insn isa.Insn) uint {
 
 	return sz
 }
+
+var names = map[byte]string{
+	opChar:             "Char",
+	opJump:             "Jump",
+	opChoice:           "Choice",
+	opCall:             "Call",
+	opCommit:           "Commit",
+	opReturn:           "Return",
+	opFail:             "Fail",
+	opSet:              "Set",
+	opAny:              "Any",
+	opPartialCommit:    "PartialCommit",
+	opSpan:             "Span",
+	opBackCommit:       "BackCommit",
+	opFailTwice:        "FailTwice",
+	opTestChar:         "TestChar",
+	opTestCharNoChoice: "TestCharNoChoice",
+	opTestSet:          "TestSet",
+	opTestSetNoChoice:  "TestSetNoChoice",
+	opTestAny:          "TestAny",
+	opEnd:              "End",
+	opNop:              "Nop",
+	opCaptureBegin:     "CaptureBegin",
+	opCaptureLate:      "CaptureLate",
+	opCaptureEnd:       "CaptureEnd",
+	opCaptureFull:      "CaptureFull",
+	opCheckBegin:       "CheckBegin",
+	opCheckEnd:         "CheckEnd",
+	opMemoOpen:         "MemoOpen",
+	opMemoClose:        "MemoClose",
+	opMemoTreeOpen:     "MemoTreeOpen",
+	opMemoTreeInsert:   "MemoTreeInsert",
+	opMemoTree:         "MemoTree",
+	opMemoTreeClose:    "MemoTreeClose",
+	opError:            "Error",
+}
+
+func opstr(op byte) string {
+	return names[op]
+}

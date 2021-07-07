@@ -244,7 +244,7 @@ func (n *node) removeOverlaps(low, high int) *node {
 
 	n.applyShifts()
 
-	if low >= n.max {
+	if low > n.max {
 		return n
 	}
 
@@ -261,7 +261,7 @@ func (n *node) removeOverlaps(low, high int) *node {
 	}
 
 	if len(n.interval.ins) == 0 {
-		doright := high > n.key.pos
+		doright := high >= n.key.pos
 		n = n.remove(n.key)
 		if doright {
 			return n.removeOverlaps(low, high)
@@ -269,7 +269,7 @@ func (n *node) removeOverlaps(low, high int) *node {
 		return n
 	}
 
-	if high <= n.key.pos {
+	if high < n.key.pos {
 		return n
 	}
 	n.right = n.right.removeOverlaps(low, high)
