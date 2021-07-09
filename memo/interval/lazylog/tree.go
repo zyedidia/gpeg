@@ -4,7 +4,7 @@
 package lazylog
 
 import (
-	intervalpkg "github.com/zyedidia/gpeg/memo/interval"
+	intval "github.com/zyedidia/gpeg/memo/interval"
 )
 
 // ShiftThreshold is the number of shifts to accumulate before applying all
@@ -52,8 +52,8 @@ type Tree struct {
 // Adds the given interval to the tree. An id should also be given to the
 // interval to uniquely identify it if any other intervals begin at the same
 // location.
-func (t *Tree) Add(id, low, high int, value intervalpkg.Value) intervalpkg.Pos {
-	var loc intervalpkg.Pos
+func (t *Tree) Add(id, low, high int, value intval.Value) intval.Pos {
+	var loc intval.Pos
 	t.root, loc = t.root.add(t, key{
 		pos: low,
 		id:  id,
@@ -67,7 +67,7 @@ func (t *Tree) Add(id, low, high int, value intervalpkg.Value) intervalpkg.Pos {
 
 // Search for the interval starting at pos with the given id. Returns nil if no
 // such interval exists.
-func (t *Tree) FindLargest(id, pos int) intervalpkg.Value {
+func (t *Tree) FindLargest(id, pos int) intval.Value {
 	n := t.root.search(key{
 		pos: pos,
 		id:  id,
@@ -94,6 +94,11 @@ func (t *Tree) RemoveAndShift(low, high, amt int) {
 	if amt != 0 {
 		t.shift(low, amt)
 	}
+}
+
+func (t *Tree) AllValues() []intval.Value {
+	var vals []intval.Value
+	return t.root.allvals(vals)
 }
 
 // Shift all intervals in the tree after idx by amt. The shift idx should not
@@ -279,6 +284,22 @@ func (n *node) removeOverlaps(low, high int) *node {
 	}
 	n.right = n.right.removeOverlaps(low, high)
 	return n
+}
+
+func (n *node) allvals(vals []intval.Value) []intval.Value {
+	if n == nil {
+		return vals
+	}
+
+	vals = append(vals, n.left.allvals(vals)...)
+
+	for _, in := range n.interval.ins {
+		vals = append(vals, in.value)
+	}
+
+	vals = append(vals, n.right.allvals(vals)...)
+
+	return vals
 }
 
 func (n *node) getHeight() int {

@@ -21,6 +21,8 @@ type Map interface {
 	// Removes all values with intervals that overlap [low, high) and then
 	// performs a shift of size amt at idx.
 	RemoveAndShift(low, high, amt int)
+	// AllValues returns all values in the tree.
+	AllValues() []Value
 	// Returns the number of values in the tree.
 	Size() int
 }

@@ -11,6 +11,7 @@ import (
 // examined a non-zero number of characters).
 type Entry struct {
 	length   int
+	examined int
 	count    int
 	captures []*Capture
 	pos      interval.Pos
@@ -21,6 +22,11 @@ func (e *Entry) setPos(pos interval.Pos) {
 	for i := range e.captures {
 		e.captures[i].setMEnt(e)
 	}
+}
+
+// Pos returns this entry's starting position.
+func (e *Entry) Pos() int {
+	return e.pos.Pos()
 }
 
 // Length returns the number of characters memoized by this entry.
@@ -36,4 +42,8 @@ func (e *Entry) Captures() []*Capture {
 
 func (e *Entry) Count() int {
 	return e.count
+}
+
+func (e *Entry) Examined() int {
+	return e.examined
 }

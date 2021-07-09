@@ -39,6 +39,7 @@ func (t *TreeTable) Put(id, start, length, examined, count int, captures []*Capt
 
 	e := &Entry{
 		length:   length,
+		examined: examined,
 		count:    count,
 		captures: captures,
 	}
@@ -55,6 +56,15 @@ func (t *TreeTable) ApplyEdit(e Edit) {
 	amt := e.Len - (e.End - e.Start)
 
 	t.Map.RemoveAndShift(low, high, amt)
+}
+
+func (t *TreeTable) AllValues() []*Entry {
+	vals := t.Map.AllValues()
+	entries := make([]*Entry, len(vals))
+	for i, v := range vals {
+		entries[i] = v.(*Entry)
+	}
+	return entries
 }
 
 func max(a, b int) int {

@@ -18,10 +18,7 @@ type Table interface {
 	// shifts entries that are to the right of the edit as necessary.
 	ApplyEdit(Edit)
 
-	// Overlaps returns all entries that overlap with the given interval
-	// [low:high) where the interval of an entry is defined as
-	// [start:start+examined).
-	// Overlaps(low, high int) []*Entry
+	AllValues() []*Entry
 
 	// Size returns the number of entries in the table.
 	Size() int
