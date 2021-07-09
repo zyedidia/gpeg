@@ -17,3 +17,4 @@ gpeg
 /benchmarks/apply_gpeg
 /benchmarks/fullparse
 /benchmarks/reparse
+/bench/bench
