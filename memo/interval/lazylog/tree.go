@@ -73,6 +73,10 @@ func (t *Tree) FindLargest(id, pos int) intervalpkg.Value {
 		id:  id,
 	})
 	if n != nil {
+		if len(n.interval.ins) == 0 {
+			return nil
+		}
+
 		max := 0
 		for i, in := range n.interval.ins[1:] {
 			if in.length() > n.interval.ins[max].length() {
@@ -198,9 +202,10 @@ func (n *node) remove(key key) *node {
 			// node to delete found with both children;
 			// replace values with smallest node of the right sub-tree
 			rightMinNode := n.right.findSmallest()
+
 			n.key = rightMinNode.key
-			*n.interval = *rightMinNode.interval
-			n.interval.n = rightMinNode
+			copy(n.interval.ins, rightMinNode.interval.ins)
+			n.interval.n = n
 			n.tstamp = rightMinNode.tstamp
 			// delete smallest node that we replaced
 			n.right = n.right.remove(rightMinNode.key)

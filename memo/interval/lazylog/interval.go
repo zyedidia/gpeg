@@ -19,11 +19,6 @@ func (i *interval) length() int {
 	return i.High() - i.Low()
 }
 
-func (i *interval) Shift(amt int) {
-	i.low += amt
-	i.high += amt
-}
-
 func (i *interval) String() string {
 	return fmt.Sprintf("[%d, %d)", i.low, i.high)
 }

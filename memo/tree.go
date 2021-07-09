@@ -53,6 +53,7 @@ func (t *TreeTable) ApplyEdit(e Edit) {
 		high = low + 1
 	}
 	amt := e.Len - (e.End - e.Start)
+
 	t.Map.RemoveAndShift(low, high, amt)
 }
 

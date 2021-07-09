@@ -36,6 +36,16 @@ func EditToEdits(e Edit) []Edit {
 	return edits
 }
 
+func ToSingleEdits(edits []Edit) []Edit {
+	single := make([]Edit, 0)
+
+	for _, e := range edits {
+		single = append(single, EditToEdits(e)...)
+	}
+
+	return single
+}
+
 // strategies for generating edits to a Java file:
 // * insert newline at start of line
 // * change contents of comment
@@ -107,8 +117,6 @@ func GenerateEdits(data []byte, nedits int) []Edit {
 				End:   ch.Start() + ch.Len(),
 				Text:  nil,
 			}
-		case EditChangeComment:
-			continue
 		case EditRemoveComment:
 			candidates := make([]*memo.Capture, 0)
 			it := ast.ChildIterator(0)
@@ -123,7 +131,7 @@ func GenerateEdits(data []byte, nedits int) []Edit {
 			ch := candidates[rand.Intn(len(candidates))]
 			line, _ := r.LineColAt(ch.Start())
 			e = Edit{
-				Start: r.OffsetAt(line, 0),
+				Start: ch.Start(),
 				End:   r.OffsetAt(line+1, 0),
 				Text:  nil,
 			}
@@ -161,7 +169,7 @@ func GenerateEdits(data []byte, nedits int) []Edit {
 				End:   ch.Start() + ch.Len(),
 				Text:  []byte("protected"),
 			}
-		case EditChangeString:
+		default:
 			continue
 		}
 
