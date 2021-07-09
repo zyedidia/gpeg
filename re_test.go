@@ -54,7 +54,7 @@ func TestJava(t *testing.T) {
 	}
 	p := re.MustCompile(string(peg))
 
-	java, err := ioutil.ReadFile("testdata/test.java")
+	java, err := ioutil.ReadFile("testdata/ScriptRuntime.java")
 	if err != nil {
 		t.Error(err)
 	}

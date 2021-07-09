@@ -38,7 +38,7 @@ func TestIncrementalJava(t *testing.T) {
 	prog := pattern.MustCompile(p)
 	code := vm.Encode(prog)
 
-	r := linerope.New(java, &linerope.DefaultOptions)
+	r := linerope.New(java)
 
 	for _, e := range edits {
 		start := e.Start

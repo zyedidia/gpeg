@@ -78,7 +78,7 @@ var editTypes = []EditType{
 }
 
 func GenerateEdits(data []byte, nedits int) []Edit {
-	r := linerope.New(data, &linerope.DefaultOptions)
+	r := linerope.New(data)
 	edits := make([]Edit, 0, nedits)
 
 	prog := p.MustCompile(grammar)

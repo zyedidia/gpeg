@@ -42,13 +42,18 @@ type Node struct {
 	length      int
 	llength     loc
 	left, right *Node
-	opts        *Options
+	opts        Options
 }
 
 // New returns a new rope node from the given byte slice. The underlying
 // data is not copied so the user should ensure that it is okay to insert and
 // delete from the input slice.
-func New(b []byte, opts *Options) *Node {
+func New(b []byte) *Node {
+	return NewWithOpts(b, DefaultOptions)
+}
+
+// NewWithOpts constructs a rope with the given options.
+func NewWithOpts(b []byte, opts Options) *Node {
 	// We build the tree from the bottom up for extra efficiency. This avoids
 	// counting duplicate newlines a logarithmic number of times (for each
 	// level of the tree).
@@ -142,8 +147,8 @@ func (n *Node) adjust() {
 	case tLeaf:
 		if n.length > n.opts.SplitLen {
 			divide := n.length / 2
-			n.left = New(n.value[:divide], n.opts)
-			n.right = New(n.value[divide:], n.opts)
+			n.left = NewWithOpts(n.value[:divide], n.opts)
+			n.right = NewWithOpts(n.value[divide:], n.opts)
 			n.value = nil
 			n.kind = tNode
 			n.length = n.left.length + n.right.length
@@ -339,7 +344,7 @@ func (n *Node) At(pos int) byte {
 func (n *Node) SplitAt(i int) (*Node, *Node) {
 	switch n.kind {
 	case tLeaf:
-		return New(n.value[:i], n.opts), New(n.value[i:], n.opts)
+		return NewWithOpts(n.value[:i], n.opts), NewWithOpts(n.value[i:], n.opts)
 	default: // case tNode
 		m := n.left.length
 		if i == m {
