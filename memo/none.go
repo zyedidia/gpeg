@@ -12,3 +12,4 @@ func (t NoneTable) Put(id, start, length, examined, count int, captures []*Captu
 func (t NoneTable) ApplyEdit(e Edit)                                                {}
 func (t NoneTable) Overlaps(low, high int) []*Entry                                 { return nil }
 func (t NoneTable) Size() int                                                       { return 0 }
+func (t NoneTable) AllValues() []*Entry                                             { return nil }

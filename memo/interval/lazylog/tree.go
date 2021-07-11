@@ -291,13 +291,13 @@ func (n *node) allvals(vals []intval.Value) []intval.Value {
 		return vals
 	}
 
-	vals = append(vals, n.left.allvals(vals)...)
+	vals = n.left.allvals(vals)
 
 	for _, in := range n.interval.ins {
 		vals = append(vals, in.value)
 	}
 
-	vals = append(vals, n.right.allvals(vals)...)
+	vals = n.right.allvals(vals)
 
 	return vals
 }

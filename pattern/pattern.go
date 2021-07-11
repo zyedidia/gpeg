@@ -188,6 +188,16 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 	}
 }
 
+func CapGrammar(start string, nonterms map[string]Pattern) Pattern {
+	m := make(map[string]Pattern)
+	id := 0
+	for k, v := range nonterms {
+		m[k] = Cap(v, id)
+		id++
+	}
+	return Grammar(start, m)
+}
+
 // Error is a pattern that throws an error with the given message.
 func Error(msg string, recovery Pattern) Pattern {
 	return &ErrorNode{
