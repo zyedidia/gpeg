@@ -355,7 +355,7 @@ loop:
 				seen++
 				accum += top.memo.count
 
-				if accum <= next.memo.count {
+				if accum < next.memo.count {
 					continue
 				}
 

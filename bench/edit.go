@@ -164,10 +164,15 @@ func GenerateEdits(data []byte, nedits int) []Edit {
 				continue
 			}
 			ch := candidates[rand.Intn(len(candidates))]
+			modifiers := []string{
+				"protected",
+				"public",
+				"private",
+			}
 			e = Edit{
 				Start: ch.Start(),
 				End:   ch.Start() + ch.Len(),
-				Text:  []byte("protected"),
+				Text:  []byte(modifiers[rand.Intn(len(modifiers))]),
 			}
 		default:
 			continue
