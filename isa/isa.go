@@ -474,7 +474,7 @@ func (i Error) String() string {
 
 // String returns the string representation of this instruction.
 func (i Empty) String() string {
-	return fmt.Sprintf("Empty %v", i.Op)
+	return fmt.Sprintf("Empty %s", emptyToString(i.Op))
 }
 
 // String returns the string representation of the program.
@@ -498,4 +498,22 @@ func (p Program) String() string {
 	}
 	s += "\n"
 	return s
+}
+
+func emptyToString(op syntax.EmptyOp) string {
+	switch op {
+	case syntax.EmptyBeginLine:
+		return "BeginLine"
+	case syntax.EmptyEndLine:
+		return "EndLine"
+	case syntax.EmptyBeginText:
+		return "BeginText"
+	case syntax.EmptyEndText:
+		return "EndText"
+	case syntax.EmptyWordBoundary:
+		return "WordBoundary"
+	case syntax.EmptyNoWordBoundary:
+		return "NoWordBoundary"
+	}
+	return "Unknown"
 }

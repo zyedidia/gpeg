@@ -98,5 +98,27 @@ func FromRegexp(s string, flags syntax.Flags) (p.Pattern, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !verify(re) {
+		return nil, fmt.Errorf("invalid regexp (repeat not supported)")
+	}
 	return p.Search(p.Cap(convert(re), 0)), nil
+}
+
+func verify(e *syntax.Regexp) bool {
+	switch e.Op {
+	case syntax.OpEmptyMatch, syntax.OpLiteral, syntax.OpCharClass,
+		syntax.OpAnyChar, syntax.OpAnyCharNotNL, syntax.OpBeginLine,
+		syntax.OpEndLine, syntax.OpBeginText, syntax.OpEndText,
+		syntax.OpWordBoundary, syntax.OpNoWordBoundary:
+		return true
+	case syntax.OpConcat, syntax.OpAlternate:
+		yes := true
+		for _, s := range e.Sub {
+			yes = yes && verify(s)
+		}
+		return yes
+	case syntax.OpCapture, syntax.OpStar, syntax.OpPlus, syntax.OpQuest:
+		return verify(e.Sub[0])
+	}
+	return false
 }
