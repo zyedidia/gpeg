@@ -86,6 +86,28 @@ func TestCharClass(t *testing.T) {
 	check(peg, tests, t)
 }
 
+func TestEmptyOp(t *testing.T) {
+	peg, err := rxconv.FromRegexp("^foo", syntax.Perl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []PatternTest{
+		{"foohello", 3},
+		{" foo ", -1},
+	}
+	check(peg, tests, t)
+
+	peg, err = rxconv.FromRegexp("\\bfoo\\b", syntax.Perl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests = []PatternTest{
+		{"foohello", -1},
+		{" foo ", 4},
+	}
+	check(peg, tests, t)
+}
+
 func min(a, b int) int {
 	if a < b {
 		return a

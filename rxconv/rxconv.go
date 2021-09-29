@@ -73,6 +73,18 @@ func pi(e *syntax.Regexp, k p.Pattern) p.Pattern {
 		return pi(e.Sub[0], star(e.Sub[0], k))
 	case syntax.OpQuest:
 		return p.Or(pi(e.Sub[0], k), k)
+	case syntax.OpBeginLine:
+		return p.Concat(p.EmptyOp(syntax.EmptyBeginLine), k)
+	case syntax.OpEndLine:
+		return p.Concat(p.EmptyOp(syntax.EmptyEndLine), k)
+	case syntax.OpBeginText:
+		return p.Concat(p.EmptyOp(syntax.EmptyBeginText), k)
+	case syntax.OpEndText:
+		return p.Concat(p.EmptyOp(syntax.EmptyEndText), k)
+	case syntax.OpWordBoundary:
+		return p.Concat(p.EmptyOp(syntax.EmptyWordBoundary), k)
+	case syntax.OpNoWordBoundary:
+		return p.Concat(p.EmptyOp(syntax.EmptyNoWordBoundary), k)
 	}
 	panic(fmt.Sprintf("unimplemented %s", e.Op))
 }
