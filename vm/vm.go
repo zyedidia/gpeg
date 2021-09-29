@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"regexp/syntax"
 
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/input"
@@ -167,6 +168,24 @@ loop:
 		case opFailTwice:
 			st.pop(false)
 			goto fail
+		case opEmpty:
+			op := syntax.EmptyOp(decodeU8(idata[ip+1:]))
+			r1, r2 := rune(-1), rune(-1)
+			// TODO: PeekBefore may cause problems with incremental parsing
+			b1, ok := src.PeekBefore()
+			if ok {
+				r1 = rune(b1)
+			}
+			b2, ok := src.Peek()
+			if ok {
+				r2 = rune(b2)
+			}
+			sat := syntax.EmptyOpContext(r1, r2)
+			if (sat & op) != 0 {
+				ip += szEmpty
+			} else {
+				goto fail
+			}
 		case opTestChar:
 			b := decodeU8(idata[ip+2:])
 			lbl := decodeU24(idata[ip+3:])

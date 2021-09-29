@@ -353,6 +353,15 @@ func (p *SearchNode) Compile() (isa.Program, error) {
 }
 
 // Compile this node.
+func (p *EmptyOpNode) Compile() (isa.Program, error) {
+	return isa.Program{
+		isa.Empty{
+			Op: p.Op,
+		},
+	}, nil
+}
+
+// Compile this node.
 func (p *GrammarNode) Compile() (isa.Program, error) {
 	p.Inline()
 

@@ -1,6 +1,8 @@
 package pattern
 
 import (
+	"regexp/syntax"
+
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
 )
@@ -109,6 +111,11 @@ type DotNode struct {
 type ErrorNode struct {
 	Message string
 	Recover Pattern
+}
+
+// EmptyOpNode is a node that performs a zero-width assertion.
+type EmptyOpNode struct {
+	Op syntax.EmptyOp
 }
 
 // EmtpyNode represents the empty pattern.

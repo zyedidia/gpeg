@@ -34,7 +34,10 @@ func check(p Pattern, tests []PatternTest, t *testing.T) {
 }
 
 func TestConcat(t *testing.T) {
-	p := Concat(Literal("ana"), Literal("hi"))
+	p := Concat(
+		Literal("ana"),
+		Literal("hi"),
+	)
 
 	tests := []PatternTest{
 		{"ana", -1},
@@ -212,7 +215,11 @@ func TestUnionSet(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
-	p := Search(Literal("ana"))
+	p := Search(
+		Concat(
+			Literal("ana"),
+		),
+	)
 	tests := []PatternTest{
 		{"hello ana hello", 9},
 		{"hello", -1},

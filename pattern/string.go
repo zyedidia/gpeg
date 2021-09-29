@@ -39,6 +39,8 @@ func Prettify(p Pattern) string {
 		return fmt.Sprintf("check(%s)", Prettify(Get(t.Patt)))
 	case *ErrorNode:
 		return fmt.Sprintf("err(%s, %s)", t.Message, Prettify(Get(t.Recover)))
+	case *EmptyOpNode:
+		return fmt.Sprintf("empty(%v)", t.Op)
 	case *GrammarNode:
 		s := fmt.Sprintf("%s\n", t.Start)
 		t.Inline()

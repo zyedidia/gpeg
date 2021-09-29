@@ -3,6 +3,7 @@ package isa
 
 import (
 	"fmt"
+	"regexp/syntax"
 	"strconv"
 
 	"github.com/zyedidia/gpeg/charset"
@@ -133,6 +134,13 @@ type BackCommit struct {
 // FailTwice pops an entry off the stack and sets the instruction pointer to
 // the fail state.
 type FailTwice struct {
+	basic
+}
+
+// Empty makes a zero-width assertion according to the Op option. We use the
+// same zero-width assertions that are supported by Go's regexp package.
+type Empty struct {
+	Op syntax.EmptyOp
 	basic
 }
 
@@ -464,6 +472,11 @@ func (i Error) String() string {
 	return fmt.Sprintf("Error %s", strconv.QuoteToASCII(i.Message))
 }
 
+// String returns the string representation of this instruction.
+func (i Empty) String() string {
+	return fmt.Sprintf("Empty %v", i.Op)
+}
+
 // String returns the string representation of the program.
 func (p Program) String() string {
 	s := ""
@@ -474,7 +487,7 @@ func (p Program) String() string {
 			continue
 		case Label:
 			if _, ok := last.(Label); ok {
-				s += "\rL...:"
+				s += fmt.Sprintf("\n%v:", insn)
 			} else {
 				s += fmt.Sprintf("%v:", insn)
 			}

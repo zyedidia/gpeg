@@ -19,6 +19,7 @@ const (
 	opSpan
 	opBackCommit
 	opFailTwice
+	opEmpty
 	opTestChar
 	opTestCharNoChoice
 	opTestSet
@@ -53,6 +54,7 @@ const (
 	szFailTwice      = 2
 	szEnd            = 2
 	szNop            = 0
+	szEmpty          = 2
 	szCaptureBegin   = 4
 	szCaptureLate    = 4
 	szCaptureEnd     = 2
@@ -138,6 +140,7 @@ var names = map[byte]string{
 	opMemoTree:         "MemoTree",
 	opMemoTreeClose:    "MemoTreeClose",
 	opError:            "Error",
+	opEmpty:            "Empty",
 }
 
 func opstr(op byte) string {

@@ -16,6 +16,7 @@ type Input struct {
 
 	// cached data.
 	chunk [bufsz]byte
+	b     [1]byte
 	// size of the cache.
 	nchunk int
 
@@ -52,6 +53,17 @@ func (i *Input) Peek() (byte, bool) {
 	}
 
 	return i.chunk[i.coff], i.nchunk != 0
+}
+
+func (i *Input) PeekBefore() (byte, bool) {
+	if i.base+i.coff-1 < 0 {
+		return 0, false
+	}
+	if i.coff >= 1 {
+		return i.chunk[i.coff-1], i.nchunk != 0
+	}
+	n, _ := i.r.ReadAt(i.b[:], int64(i.base+i.coff-1))
+	return i.b[0], n == 1
 }
 
 // SeekTo moves the current read position to the desired read position. Returns

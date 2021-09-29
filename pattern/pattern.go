@@ -3,6 +3,8 @@
 package pattern
 
 import (
+	"regexp/syntax"
+
 	"github.com/zyedidia/gpeg/charset"
 	"github.com/zyedidia/gpeg/isa"
 )
@@ -166,6 +168,12 @@ func And(p Pattern) Pattern {
 func Search(p Pattern) Pattern {
 	return &SearchNode{
 		Patt: p,
+	}
+}
+
+func EmptyOp(op syntax.EmptyOp) Pattern {
+	return &EmptyOpNode{
+		Op: op,
 	}
 }
 

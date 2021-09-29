@@ -143,6 +143,9 @@ func Encode(insns isa.Program) Code {
 			args = encodeLabel(labels[t.Lbl])
 		case isa.FailTwice:
 			op = opFailTwice
+		case isa.Empty:
+			op = opEmpty
+			args = []byte{uint8(t.Op)}
 		case isa.TestChar:
 			op = opTestChar
 			args = append([]byte{t.Byte}, encodeLabel(labels[t.Lbl])...)
