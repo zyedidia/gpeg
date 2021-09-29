@@ -26,9 +26,17 @@ func Get(p Pattern) Pattern {
 			return t.Inlined
 		}
 	case *AltNode:
+		l, r := Get(t.Left), Get(t.Right)
+		if n, emptyL := l.(*EmptyNode); emptyL {
+			return n
+		}
+		if _, emptyR := r.(*EmptyNode); emptyR {
+			return Get(Optional(l))
+		}
+
 		// Combine the left and right sides of an alternation into a class node
 		// if possible.
-		set, ok := combine(t.Left, t.Right)
+		set, ok := combine(l, r)
 		if ok {
 			return &ClassNode{Chars: set}
 		}
@@ -40,10 +48,18 @@ func Get(p Pattern) Pattern {
 			return star
 		}
 	case *SeqNode:
+		// optimize use of empty: `a ""` and `"" a` are just `a`.
+		l, r := Get(t.Left), Get(t.Right)
+		if _, emptyR := r.(*EmptyNode); emptyR {
+			return l
+		}
+		if _, emptyL := l.(*EmptyNode); emptyL {
+			return r
+		}
+
 		// This optimizes patterns like `![a-z] .`. Instead of using a not
 		// predicate in this case, we can just complement the set and use a
 		// class node.
-		l, r := Get(t.Left), Get(t.Right)
 		nn, okl := l.(*NotNode)
 		if !okl {
 			break

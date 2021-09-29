@@ -1,11 +1,9 @@
 package gpeg
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/zyedidia/gpeg/bench"
 	"github.com/zyedidia/gpeg/input/linerope"
@@ -47,15 +45,15 @@ func TestIncrementalJava(t *testing.T) {
 		r.Remove(start, end)
 		r.Insert(start, []byte(e.Text))
 
-		st := time.Now()
+		// st := time.Now()
 		tbl.ApplyEdit(memo.Edit{
 			Start: start,
 			End:   end,
 			Len:   len(e.Text),
 		})
 
-		match, off, _, _ := code.Exec(r, tbl)
-		fmt.Println("reparse", time.Since(st), match, off)
+		code.Exec(r, tbl)
+		// fmt.Println("reparse", time.Since(st), match, off)
 		// st = time.Now()
 		// nmatch, noff, _, _ := code.Exec(r, memo.NoneTable{})
 		// fmt.Println("full parse", time.Since(st))
