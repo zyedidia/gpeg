@@ -400,7 +400,13 @@ loop:
 
 			ip += szMemoTree
 		case opCheckBegin:
-			st.pushCheck(stackRet(src.Pos()))
+			id := decodeI16(idata[ip+2:])
+			flag := decodeI16(idata[ip+4:])
+			st.pushCheck(stackMemo{
+				id:    id,
+				count: int(flag),
+				pos:   src.Pos(),
+			})
 			ip += szCheckBegin
 		case opCheckEnd:
 			ent := st.pop(true)
@@ -410,8 +416,13 @@ loop:
 			checkid := decodeU24(idata[ip+1:])
 			checker := vm.data.Checkers[checkid]
 
-			if !checker.Check(src.Slice(int(ent.ret), src.Pos())) {
+			id := int(ent.memo.id)
+			flag := ent.memo.count
+			n := checker.Check(src.Slice(int(ent.memo.pos), src.Pos()), src, id, flag)
+			if n == -1 {
 				goto fail
+			} else {
+				src.Advance(n)
 			}
 
 			ip += szCheckEnd

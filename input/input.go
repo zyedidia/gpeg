@@ -103,6 +103,10 @@ func (i *Input) Advance(n int) bool {
 	return true
 }
 
+func (i *Input) ReadAt(b []byte, pos int64) (n int, err error) {
+	return i.r.ReadAt(b, pos)
+}
+
 // Slice returns a slice of the reader corresponding to the range [low:high).
 func (i *Input) Slice(low, high int) []byte {
 	return Slice(i.r, low, high)

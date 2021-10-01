@@ -270,6 +270,8 @@ type CaptureFull struct {
 
 // CheckBegin marks the beginning position for a checker.
 type CheckBegin struct {
+	Id   int
+	Flag int
 	basic
 }
 

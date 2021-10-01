@@ -61,8 +61,9 @@ type MemoNode struct {
 
 // CheckNode marks a pattern to be checker by a certain checker.
 type CheckNode struct {
-	Patt    Pattern
-	Checker isa.Checker
+	Patt     Pattern
+	Checker  isa.Checker
+	Id, Flag int
 }
 
 // GrammarNode represents a grammar of non-terminals and their associated

@@ -25,6 +25,15 @@ func Check(p Pattern, c isa.Checker) Pattern {
 	}
 }
 
+func CheckFlags(p Pattern, c isa.Checker, id, flag int) Pattern {
+	return &CheckNode{
+		Patt:    p,
+		Checker: c,
+		Id:      id,
+		Flag:    flag,
+	}
+}
+
 var memoId = 0
 
 // MemoId marks a pattern as memoizable with a particular ID.

@@ -189,6 +189,7 @@ func Encode(insns isa.Program) Code {
 			args = encodeI16(int(t.Id))
 		case isa.CheckBegin:
 			op = opCheckBegin
+			args = append(encodeI16(t.Id), encodeI16(t.Flag)...)
 		case isa.CheckEnd:
 			op = opCheckEnd
 			args = encodeU24(addChecker(&code, t.Checker))

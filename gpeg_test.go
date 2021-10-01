@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/zyedidia/gpeg/charset"
+	"github.com/zyedidia/gpeg/input"
+	"github.com/zyedidia/gpeg/isa"
 	"github.com/zyedidia/gpeg/memo"
 	. "github.com/zyedidia/gpeg/pattern"
 	"github.com/zyedidia/gpeg/vm"
@@ -52,12 +54,15 @@ func TestConcat(t *testing.T) {
 type uint8Checker struct{}
 
 // only allows integers between 0 and 256
-func (uint8Checker) Check(b []byte) bool {
+func (uint8Checker) Check(b []byte, src *input.Input, id, flag int) int {
 	i, err := strconv.Atoi(string(b))
 	if err != nil {
-		return false
+		return -1
 	}
-	return i >= 0 && i < 256
+	if i >= 0 && i < 256 {
+		return 0
+	}
+	return -1
 }
 
 func TestChecker(t *testing.T) {
@@ -254,6 +259,25 @@ func TestArithmeticGrammar(t *testing.T) {
 		{"24*5+3", 6},
 		{"word 5*3", -1},
 		{"10*(43", 2},
+	}
+	check(p, tests, t)
+}
+
+func TestBackReference(t *testing.T) {
+	word := Plus(Literal("/"))
+	br := isa.NewBackRef()
+	p := Concat(
+		CheckFlags(word, br, 0, int(isa.RefDef)),
+		Star(Concat(
+			Not(CheckFlags(&EmptyNode{}, br, 0, int(isa.RefUse))),
+			Any(1),
+		)),
+		CheckFlags(&EmptyNode{}, br, 0, int(isa.RefUse)),
+	)
+	tests := []PatternTest{
+		{"/// hello world ///", 19},
+		{"// hello world //", 17},
+		{"/// hello world //", -1},
 	}
 	check(p, tests, t)
 }

@@ -305,7 +305,10 @@ func (p *CheckNode) Compile() (isa.Program, error) {
 	L1 := isa.NewLabel()
 	sub, err := Get(p.Patt).Compile()
 	code := make(isa.Program, 0, len(sub)+3)
-	code = append(code, isa.CheckBegin{})
+	code = append(code, isa.CheckBegin{
+		Id:   p.Id,
+		Flag: p.Flag,
+	})
 	code = append(code, sub...)
 	code = append(code, isa.CheckEnd{Checker: p.Checker})
 	code = append(code, L1)

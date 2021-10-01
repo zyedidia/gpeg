@@ -159,9 +159,9 @@ func (s *stack) pushCapt(m stackMemo) {
 	})
 }
 
-func (s *stack) pushCheck(r stackRet) {
+func (s *stack) pushCheck(m stackMemo) {
 	s.push(stackEntry{
 		stype: stCheck,
-		ret:   r,
+		memo:  m,
 	})
 }

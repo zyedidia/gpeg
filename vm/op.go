@@ -63,7 +63,7 @@ const (
 	szMemoTreeInsert = 2
 	szMemoTree       = 2
 	szMemoTreeClose  = 4
-	szCheckBegin     = 2
+	szCheckBegin     = 6
 	szCheckEnd       = 4
 	szError          = 4
 
@@ -89,7 +89,7 @@ func size(insn isa.Insn) uint {
 	switch insn.(type) {
 	case isa.Label, isa.Nop:
 		return 0
-	case isa.JumpType:
+	case isa.JumpType, isa.CheckBegin:
 		sz += 4
 	default:
 		sz += 2
@@ -99,7 +99,7 @@ func size(insn isa.Insn) uint {
 	switch insn.(type) {
 	case isa.MemoOpen, isa.MemoTreeOpen, isa.MemoTreeClose, isa.CaptureBegin, isa.CaptureLate,
 		isa.CaptureFull, isa.TestChar, isa.TestCharNoChoice, isa.TestSet,
-		isa.TestSetNoChoice, isa.TestAny, isa.Error, isa.CheckEnd:
+		isa.TestSetNoChoice, isa.TestAny, isa.Error, isa.CheckBegin, isa.CheckEnd:
 		sz += 2
 	}
 
