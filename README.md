@@ -56,7 +56,7 @@ heavily inspired by LPeg.
 * Dubroy, Patrick, and Alessandro Warth. "Incremental packrat parsing."
   Proceedings of the 10th ACM SIGPLAN International Conference on Software
   Language Engineering. 2017.
-* Marcelo Oikawa, Roberto Ierusalimschy, Ana Lucia de Moura. "Converting regexes to Parsing Expression Grammars." [Link](http://www.inf.puc-rio.br/~roberto/docs/ry10-01.pdf).
   [Link](https://ohmlang.github.io/pubs/sle2017/incremental-packrat-parsing.pdf).
+* Marcelo Oikawa, Roberto Ierusalimschy, Ana Lucia de Moura. "Converting regexes to Parsing Expression Grammars." [Link](http://www.inf.puc-rio.br/~roberto/docs/ry10-01.pdf).
 * [Tree Sitter](https://tree-sitter.github.io/tree-sitter/).
 
