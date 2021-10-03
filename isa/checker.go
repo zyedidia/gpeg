@@ -38,22 +38,22 @@ const (
 )
 
 type BackReference struct {
-	symbols map[int]string
+	Symbols map[int]string
 }
 
 func NewBackRef() *BackReference {
 	return &BackReference{
-		symbols: make(map[int]string),
+		Symbols: make(map[int]string),
 	}
 }
 
 func (r *BackReference) Check(b []byte, src *input.Input, id, flag int) int {
 	switch RefKind(flag) {
 	case RefDef:
-		r.symbols[id] = string(b)
+		r.Symbols[id] = string(b)
 		return 0
 	case RefUse:
-		back := r.symbols[id]
+		back := r.Symbols[id]
 		buf := make([]byte, len(back))
 		n, _ := src.ReadAt(buf, int64(src.Pos()))
 		if n == len(buf) && string(buf) == back {

@@ -36,6 +36,7 @@ func (c *Code) Size() int {
 
 func init() {
 	gob.Register(isa.MapChecker{})
+	gob.Register(isa.BackReference{})
 }
 
 // ToBytes serializes and compresses this Code.
