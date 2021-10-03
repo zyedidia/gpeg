@@ -138,7 +138,7 @@ func (n *node) add(key key, high int, value interval.Value, parent *node) (*node
 			key: key,
 			max: high,
 			iv: &ivalues{
-				ivs: []ivalue{ivalue{
+				ivs: []ivalue{{
 					interval: Interval{key.pos, high},
 					value:    value,
 				}},

@@ -1,5 +1,9 @@
 # GPeg
 
+[![Documentation](https://godoc.org/github.com/zyedidia/gpeg?status.svg)](http://godoc.org/github.com/zyedidia/gpeg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zyedidia/gpeg)](https://goreportcard.com/report/github.com/zyedidia/gpeg)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/zyedidia/gpeg/blob/master/LICENSE)
+
 GPeg is a tool for working with parsing expression grammars (PEGs). It is
 built with three primary goals in mind:
 
@@ -14,25 +18,23 @@ built with three primary goals in mind:
 GPeg uses the same general parsing techniques as Lua's LPeg library and is
 heavily inspired by LPeg.
 
-# Roadmap
+# Features
 
-* [x] Parsing virtual machine.
-* [x] Pattern compiler with optimizations.
-* [x] Support for original PEG syntax.
-* [x] AST generation/captures.
-* [x] Parse non-string data structures (via interface).
-* [x] Incremental matching.
-* [x] Incremental AST/captures.
-    * [x] Logarithmic incremental parsing algorithm.
-* [x] Support for an extended PEG syntax.
-* [x] Syntax highlighting example.
-* [ ] Polish, documentation, and examples.
-* [ ] Additional niceties (TBD).
-    * [x] Error recovery.
-    * [x] Grammar tree visualizer.
-    * [x] AST visualizer.
-    * [x] Memoization table visualizer.
-    * [ ] Support for left recursion.
+* Fast incremental parsing.
+* Parsing virtual machine (parsers can be dynamically generated).
+* Pattern compiler with optimizations.
+* Support for the original PEG syntax with some extensions.
+* Parse more complex string data structures (via ReaderAt interface).
+* Support for back-references (context-sensitivity).
+* Can convert most Go regular expressions to PEGs (see the `rxconv` package).
+* Basic error recovery.
+* Syntax highlighting library ([zyedidia/flare](https://github.com/zyedidia/flare)).
+* Tools for visualizing grammars, ASTs, and memo tables ([zyedidia/gpeg-extra](https://github.com/zyedidia/gpeg-extra)).
+
+# Publications
+
+* Zachary Yedidia and Stephen Chong. "Fast Incremental PEG Parsing." Proceedings of the 14th ACM SIGPLAN International Conference on Software Language Engineering (SLE), October 2021. [Link](https://zyedidia.github.io/preprints/gpeg_sle21.pdf).
+* Zachary Yedidia. "Incremental PEG Parsing." Bachelor's thesis. [Link](https://zyedidia.github.io/notes/yedidia_thesis.pdf).
 
 # Related work
 
@@ -54,5 +56,7 @@ heavily inspired by LPeg.
 * Dubroy, Patrick, and Alessandro Warth. "Incremental packrat parsing."
   Proceedings of the 10th ACM SIGPLAN International Conference on Software
   Language Engineering. 2017.
+* Marcelo Oikawa, Roberto Ierusalimschy, Ana Lucia de Moura. "Converting regexes to Parsing Expression Grammars." [Link](http://www.inf.puc-rio.br/~roberto/docs/ry10-01.pdf).
   [Link](https://ohmlang.github.io/pubs/sle2017/incremental-packrat-parsing.pdf).
 * [Tree Sitter](https://tree-sitter.github.io/tree-sitter/).
+

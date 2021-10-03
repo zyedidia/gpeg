@@ -27,11 +27,11 @@ func TestCaptures(t *testing.T) {
 	_, _, ast, _ := code.Exec(r, memo.NoneTable{})
 
 	expect := [][2]int{
-		[2]int{0, 2},
-		[2]int{3, 2},
-		[2]int{6, 2},
-		[2]int{9, 2},
-		[2]int{12, 1},
+		{0, 2},
+		{3, 2},
+		{6, 2},
+		{9, 2},
+		{12, 1},
 	}
 
 	it := ast.ChildIterator(0)

@@ -39,12 +39,7 @@ const datasz = 5000
 
 func data() (*linerope.Node, *basicText) {
 	data := randbytes(datasz)
-	r := linerope.New(data, &linerope.Options{
-		SplitLen:       4,
-		JoinLen:        2,
-		RebalanceRatio: 1.2,
-		LineSep:        []byte{'\n'},
-	})
+	r := linerope.New(data)
 	b := newBasicText(data)
 	return r, b
 }

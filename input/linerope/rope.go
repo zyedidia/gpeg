@@ -167,7 +167,7 @@ func (n *Node) adjust() {
 }
 
 // Value returns the elements of this node concatenated into a slice. May
-// return the underyling slice without copying, so do not modify the returned
+// return the underlying slice without copying, so do not modify the returned
 // slice.
 func (n *Node) Value() []byte {
 	switch n.kind {
