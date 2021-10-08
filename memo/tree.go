@@ -55,7 +55,9 @@ func (t *TreeTable) ApplyEdit(e Edit) {
 	}
 	amt := e.Len - (e.End - e.Start)
 
+	t.lock.Lock()
 	t.Map.RemoveAndShift(low, high, amt)
+	t.lock.Unlock()
 }
 
 func (t *TreeTable) AllValues() []*Entry {
