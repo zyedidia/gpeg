@@ -3,7 +3,6 @@
 main/
 todo.txt
 capt.txt
-testdata/
 bench/bench
 gpeg
 !cmd/gpeg
@@ -18,3 +17,8 @@ gpeg
 /benchmarks/fullparse
 /benchmarks/reparse
 /bench/bench
+testdata/*
+!testdata/ScriptRuntime.java
+!testdata/bible.txt
+!testdata/test.java
+!testdata/test.json
