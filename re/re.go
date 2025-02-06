@@ -21,69 +21,73 @@ func init() {
 	parser = vm.Encode(prog)
 }
 
-func compile(root *memo.Capture, s string) pattern.Pattern {
+func compile(root *memo.Capture, s string, capg bool, ids map[string]int) pattern.Pattern {
 	var p pattern.Pattern
 	switch root.Id() {
 	case idPattern:
-		p = compile(root.Child(0), s)
+		p = compile(root.Child(0), s, capg, ids)
 	case idGrammar:
 		nonterms := make(map[string]pattern.Pattern)
 		var first string
 		it := root.ChildIterator(0)
 		for c := it(); c != nil; c = it() {
-			k, v := compileDef(c, s)
+			k, v := compileDef(c, s, capg, ids)
 			if first == "" {
 				first = k
 			}
 			nonterms[k] = v
 		}
-		p = pattern.Grammar(first, nonterms)
+		if capg {
+			p = pattern.CapGrammar(first, nonterms, ids)
+		} else {
+			p = pattern.Grammar(first, nonterms)
+		}
 	case idExpression:
 		alternations := make([]pattern.Pattern, 0, root.NumChildren())
 		it := root.ChildIterator(0)
 		for c := it(); c != nil; c = it() {
-			alternations = append(alternations, compile(c, s))
+			alternations = append(alternations, compile(c, s, capg, ids))
 		}
 		p = pattern.Or(alternations...)
 	case idSequence:
 		concats := make([]pattern.Pattern, 0, root.NumChildren())
 		it := root.ChildIterator(0)
 		for c := it(); c != nil; c = it() {
-			concats = append(concats, compile(c, s))
+			concats = append(concats, compile(c, s, capg, ids))
 		}
 		p = pattern.Concat(concats...)
 	case idPrefix:
 		c := root.Child(0)
 		switch c.Id() {
 		case idAND:
-			p = pattern.And(compile(root.Child(1), s))
+			p = pattern.And(compile(root.Child(1), s, capg, ids))
 		case idNOT:
-			p = pattern.Not(compile(root.Child(1), s))
+			p = pattern.Not(compile(root.Child(1), s, capg, ids))
 		default:
-			p = compile(root.Child(0), s)
+			p = compile(root.Child(0), s, capg, ids)
 		}
 	case idSuffix:
 		if root.NumChildren() == 2 {
 			c := root.Child(1)
 			switch c.Id() {
 			case idQUESTION:
-				p = pattern.Optional(compile(root.Child(0), s))
+				p = pattern.Optional(compile(root.Child(0), s, capg, ids))
 			case idSTAR:
-				p = pattern.Star(compile(root.Child(0), s))
+				p = pattern.Star(compile(root.Child(0), s, capg, ids))
 			case idPLUS:
-				p = pattern.Plus(compile(root.Child(0), s))
+				p = pattern.Plus(compile(root.Child(0), s, capg, ids))
 			}
 		} else {
-			p = compile(root.Child(0), s)
+			p = compile(root.Child(0), s, capg, ids)
 		}
 	case idPrimary:
 		switch root.Child(0).Id() {
 		case idIdentifier, idLiteral, idClass:
-			p = compile(root.Child(0), s)
+			p = compile(root.Child(0), s, capg, ids)
 		case idOPEN:
-			p = compile(root.Child(1), s)
+			p = compile(root.Child(1), s, capg, ids)
 		case idBRACEPO:
-			p = pattern.Memo(compile(root.Child(1), s))
+			p = pattern.Memo(compile(root.Child(1), s, capg, ids))
 		case idDOT:
 			p = pattern.Any(1)
 		}
@@ -159,10 +163,10 @@ func parseId(root *memo.Capture, s string) string {
 	return ident.String()
 }
 
-func compileDef(root *memo.Capture, s string) (string, pattern.Pattern) {
+func compileDef(root *memo.Capture, s string, capg bool, ids map[string]int) (string, pattern.Pattern) {
 	id := root.Child(0)
 	exp := root.Child(1)
-	return parseId(id, s), compile(exp, s)
+	return parseId(id, s), compile(exp, s, capg, ids)
 }
 
 func compileSet(root *memo.Capture, s string) charset.Set {
@@ -186,11 +190,31 @@ func Compile(s string) (pattern.Pattern, error) {
 		return nil, fmt.Errorf("Invalid PEG: failed at %d", n)
 	}
 
-	return compile(ast.Child(0), s), nil
+	return compile(ast.Child(0), s, false, nil), nil
 }
 
 func MustCompile(s string) pattern.Pattern {
 	p, err := Compile(s)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+func CompileCap(s string, ids map[string]int) (pattern.Pattern, error) {
+	match, n, ast, errs := parser.Exec(strings.NewReader(s), memo.NoneTable{})
+	if len(errs) != 0 {
+		return nil, errs[0]
+	}
+	if !match {
+		return nil, fmt.Errorf("Invalid PEG: failed at %d", n)
+	}
+
+	return compile(ast.Child(0), s, true, ids), nil
+}
+
+func MustCompileCap(s string, ids map[string]int) pattern.Pattern {
+	p, err := CompileCap(s, ids)
 	if err != nil {
 		panic(err)
 	}

@@ -205,11 +205,14 @@ func Grammar(start string, nonterms map[string]Pattern) Pattern {
 	}
 }
 
-func CapGrammar(start string, nonterms map[string]Pattern) Pattern {
+// CapGrammar builds a grammar, but all values are automatically captured. The
+// capture IDs are returned in the 'ids' map.
+func CapGrammar(start string, nonterms map[string]Pattern, ids map[string]int) Pattern {
 	m := make(map[string]Pattern)
 	id := 0
 	for k, v := range nonterms {
 		m[k] = Cap(v, id)
+		ids[k] = id
 		id++
 	}
 	return Grammar(start, m)
