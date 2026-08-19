@@ -25,5 +25,10 @@ func (i *interval) String() string {
 
 // returns true if i1 overlaps with the interval [low:high)
 func overlaps(i1 interval, low, high int) bool {
-	return i1.Low() <= high && i1.High() >= low
+	// Half-open overlap: an interval that merely touches [low, high) does
+	// not overlap it. Entries are stored with their examined extent (one
+	// past the furthest byte read), so an entry ending exactly at low
+	// never read the edited bytes and stays valid, and one starting
+	// exactly at high is simply shifted.
+	return i1.Low() < high && i1.High() > low
 }

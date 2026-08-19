@@ -209,8 +209,16 @@ func (n *node) remove(key key) *node {
 			rightMinNode := n.right.findSmallest()
 
 			n.key = rightMinNode.key
-			copy(n.interval.ins, rightMinNode.interval.ins)
+			// Swap the interval objects rather than copying their
+			// contents: the builtin copy fills only min(len(dst),
+			// len(src)) entries, so when this node's ins had been
+			// emptied (removeOverlaps deleting an exhausted node), the
+			// successor's intervals were silently dropped. Swapping also
+			// keeps caller-held lazyInterval handles attached to the
+			// surviving data.
+			n.interval, rightMinNode.interval = rightMinNode.interval, n.interval
 			n.interval.n = n
+			rightMinNode.interval.n = rightMinNode
 			n.tstamp = rightMinNode.tstamp
 			// delete smallest node that we replaced
 			n.right = n.right.remove(rightMinNode.key)
@@ -411,16 +419,19 @@ func (n *node) applyShift(s *shift) {
 }
 
 // applyShifts is called on every node visit, almost always with nothing to
-// do; the up-to-date check lives here so it inlines, with the actual work
-// in applyShiftsSlow.
+// do; only the emptiness check lives here so it reliably inlines (the
+// two-condition version exceeded the inlining budget), with the timestamp
+// check and actual work in applyShiftsSlow.
 func (n *node) applyShifts() {
-	if len(n.tree.shifts) == 0 || n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
-		return
+	if len(n.tree.shifts) != 0 {
+		n.applyShiftsSlow()
 	}
-	n.applyShiftsSlow()
 }
 
 func (n *node) applyShiftsSlow() {
+	if n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
+		return
+	}
 	// optimization: search backwards to find the starting point. Alternatively
 	// we could binary search? not sure which is faster.
 	var j int
