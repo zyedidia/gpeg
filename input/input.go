@@ -3,6 +3,8 @@ package input
 
 import (
 	"io"
+
+	"github.com/zyedidia/gpeg/charset"
 )
 
 const bufsz = 4096
@@ -88,19 +90,44 @@ func (i *Input) SeekTo(pos int) bool {
 // was successful (n chars were successfully skipped) and false otherwise. Note
 // that even if Advance returns true the next call to Peek may return false if
 // the advance went to the exact end of the data.
+// The refill is split out so this hot path stays inlinable.
 func (i *Input) Advance(n int) bool {
 	if i.nchunk == 0 {
 		return false
 	}
 
 	i.coff += n
-	if i.coff > i.nchunk {
-		i.refill(i.base + i.coff)
-		return false
-	} else if i.coff == i.nchunk {
-		i.refill(i.base + i.coff)
+	if i.coff >= i.nchunk {
+		return i.advanceSlow()
 	}
 	return true
+}
+
+func (i *Input) advanceSlow() bool {
+	over := i.coff > i.nchunk
+	i.refill(i.base + i.coff)
+	return !over
+}
+
+// Span advances past the longest run of bytes contained in set, reading
+// directly from the buffered chunk. It is equivalent to (but much faster
+// than) a Peek/Has/Advance(1) loop, including how the furthest-read marker
+// advances: the byte that stops the span (or the end of the data) counts
+// as examined.
+func (i *Input) Span(set *charset.Set) {
+	for {
+		for i.coff < i.nchunk && set.Has(i.chunk[i.coff]) {
+			i.coff++
+		}
+		if pos := i.base + i.coff; pos > i.furthest {
+			i.furthest = pos
+		}
+		if i.coff < i.nchunk || i.nchunk == 0 {
+			return
+		}
+		// Chunk exhausted mid-span: refill and continue.
+		i.refill(i.base + i.coff)
+	}
 }
 
 func (i *Input) ReadAt(b []byte, pos int64) (n int, err error) {
@@ -108,7 +135,14 @@ func (i *Input) ReadAt(b []byte, pos int64) (n int, err error) {
 }
 
 // Slice returns a slice of the reader corresponding to the range [low:high).
+// When the range lies within the buffered chunk, the returned slice aliases
+// the buffer without allocating; it is only valid until the next operation
+// on the Input. (Checkers receive their matched text through this: they
+// must copy anything they retain, as the built-in ones do.)
 func (i *Input) Slice(low, high int) []byte {
+	if low >= i.base && high <= i.base+i.nchunk {
+		return i.chunk[low-i.base : high-i.base]
+	}
 	return Slice(i.r, low, high)
 }
 

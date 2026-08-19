@@ -22,8 +22,8 @@ func (s *stack) propCapt() {
 		return
 	}
 
-	top := s.entries[len(s.entries)-1]
-	if top.capt != nil && len(top.capt) > 0 {
+	top := &s.entries[len(s.entries)-1]
+	if len(top.capt) > 0 {
 		if len(s.entries) == 1 {
 			s.capt = append(s.capt, top.capt...)
 		} else {
@@ -96,6 +96,22 @@ func (s *stack) push(ent stackEntry) {
 	s.entries = append(s.entries, ent)
 }
 
+// grow extends the stack by one entry in place and returns a pointer to
+// it. Pushes write only the fields their entry type uses (plus a capt
+// reset, since the slot may be reused): a full stackEntry literal would
+// zero and copy ~80 bytes per push, which shows up heavily on weaker
+// machines (duffcopy/duffzero), and pushes are the hottest stack
+// operation. Readers always dispatch on stype before touching a field, so
+// stale unrelated fields in a reused slot are never observed.
+func (s *stack) grow() *stackEntry {
+	if len(s.entries) == cap(s.entries) {
+		s.entries = append(s.entries, stackEntry{})
+	} else {
+		s.entries = s.entries[:len(s.entries)+1]
+	}
+	return &s.entries[len(s.entries)-1]
+}
+
 // propagate marks whether captures should be propagated up the stack.
 func (s *stack) pop(propagate bool) *stackEntry {
 	if len(s.entries) == 0 {
@@ -125,43 +141,43 @@ func (s *stack) peekn(n int) *stackEntry {
 }
 
 func (s *stack) pushRet(r stackRet) {
-	s.push(stackEntry{
-		stype: stRet,
-		ret:   r,
-	})
+	e := s.grow()
+	e.stype = stRet
+	e.ret = r
+	e.capt = nil
 }
 
 func (s *stack) pushBacktrack(b stackBacktrack) {
-	s.push(stackEntry{
-		stype:  stBtrack,
-		btrack: b,
-	})
+	e := s.grow()
+	e.stype = stBtrack
+	e.btrack = b
+	e.capt = nil
 }
 
 func (s *stack) pushMemo(m stackMemo) {
-	s.push(stackEntry{
-		stype: stMemo,
-		memo:  m,
-	})
+	e := s.grow()
+	e.stype = stMemo
+	e.memo = m
+	e.capt = nil
 }
 
 func (s *stack) pushMemoTree(m stackMemo) {
-	s.push(stackEntry{
-		stype: stMemoTree,
-		memo:  m,
-	})
+	e := s.grow()
+	e.stype = stMemoTree
+	e.memo = m
+	e.capt = nil
 }
 
 func (s *stack) pushCapt(m stackMemo) {
-	s.push(stackEntry{
-		stype: stCapt,
-		memo:  m,
-	})
+	e := s.grow()
+	e.stype = stCapt
+	e.memo = m
+	e.capt = nil
 }
 
 func (s *stack) pushCheck(m stackMemo) {
-	s.push(stackEntry{
-		stype: stCheck,
-		memo:  m,
-	})
+	e := s.grow()
+	e.stype = stCheck
+	e.memo = m
+	e.capt = nil
 }

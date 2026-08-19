@@ -410,12 +410,17 @@ func (n *node) applyShift(s *shift) {
 	n.updateMax()
 }
 
+// applyShifts is called on every node visit, almost always with nothing to
+// do; the up-to-date check lives here so it inlines, with the actual work
+// in applyShiftsSlow.
 func (n *node) applyShifts() {
-	// optimization: first check if we are completely up-to-date and if so
-	// there is nothing to do.
 	if len(n.tree.shifts) == 0 || n.tstamp >= n.tree.shifts[len(n.tree.shifts)-1].tstamp {
 		return
 	}
+	n.applyShiftsSlow()
+}
+
+func (n *node) applyShiftsSlow() {
 	// optimization: search backwards to find the starting point. Alternatively
 	// we could binary search? not sure which is faster.
 	var j int

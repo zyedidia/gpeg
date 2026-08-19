@@ -15,6 +15,9 @@ import (
 // Code is the representation of VM bytecode.
 type Code struct {
 	data code
+	// prog is the pre-decoded instruction list actually executed (built
+	// from data.Insns by predecode; not serialized).
+	prog []insn
 }
 
 type code struct {
@@ -59,9 +62,11 @@ func FromBytes(b []byte) (Code, error) {
 	dec := gob.NewDecoder(fz)
 	err = dec.Decode(&c)
 	fz.Close()
-	return Code{
-		data: c,
-	}, err
+	cd := Code{data: c}
+	if err == nil {
+		cd.predecode()
+	}
+	return cd, err
 }
 
 // ToJson returns this Code serialized to JSON form.
@@ -73,9 +78,11 @@ func (c *Code) ToJson() ([]byte, error) {
 func FromJson(b []byte) (Code, error) {
 	var c code
 	err := json.Unmarshal(b, &c)
-	return Code{
-		data: c,
-	}, err
+	cd := Code{data: c}
+	if err == nil {
+		cd.predecode()
+	}
+	return cd, err
 }
 
 // Encode transforms a program into VM bytecode.
@@ -215,6 +222,7 @@ func Encode(insns isa.Program) Code {
 	}
 	code.data.Insns = append(code.data.Insns, opEnd, 0)
 
+	code.predecode()
 	return code
 }
 

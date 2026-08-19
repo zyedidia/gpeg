@@ -52,9 +52,12 @@ func (vm *Code) ExecInterval(r io.ReaderAt, memtbl memo.Table, intrvl *Interval)
 }
 
 func (vm *Code) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, intrvl *Interval) (bool, int, *memo.Capture, []ParseError) {
-	idata := vm.data.Insns
+	if vm.prog == nil {
+		vm.predecode()
+	}
+	prog := vm.prog
 
-	if ip < 0 || ip >= len(idata) {
+	if ip < 0 || ip >= len(prog) {
 		return true, 0, memo.NewCaptureDummy(0, 0, nil), nil
 	}
 
@@ -64,12 +67,17 @@ func (vm *Code) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, int
 		caprange = *intrvl
 		// Apply an edit that clears all memoized entries in the interval
 		// we are capturing. This ensures that we find all captures in the
-		// requested interval.
-		memtbl.ApplyEdit(memo.Edit{
-			Start: intrvl.Low,
-			End:   intrvl.High,
-			Len:   intrvl.High - intrvl.Low,
-		})
+		// requested interval. An empty interval (used for capture-less
+		// memo-filling passes) is skipped: the edit would be a no-op, but
+		// recording it stamps a shift that every later memo access pays
+		// to examine.
+		if intrvl.High > intrvl.Low {
+			memtbl.ApplyEdit(memo.Edit{
+				Start: intrvl.Low,
+				End:   intrvl.High,
+				Len:   intrvl.High - intrvl.Low,
+			})
+		}
 	}
 
 	memoize := func(id, pos, mlen, count int, capt []*memo.Capture) {
@@ -85,32 +93,27 @@ func (vm *Code) exec(ip int, st *stack, src *input.Input, memtbl memo.Table, int
 
 loop:
 	for {
-		op := idata[ip]
-		switch op {
+		in := &prog[ip]
+		switch in.op {
 		case opChar:
-			b := decodeU8(idata[ip+1:])
-			in, ok := src.Peek()
-			if ok && b == in {
+			b, ok := src.Peek()
+			if ok && byte(in.a) == b {
 				src.Advance(1)
-				ip += szChar
+				ip++
 			} else {
 				goto fail
 			}
 		case opJump:
-			lbl := decodeU24(idata[ip+1:])
-			ip = int(lbl)
+			ip = int(in.a)
 		case opChoice:
-			lbl := decodeU24(idata[ip+1:])
-			st.pushBacktrack(stackBacktrack{int(lbl), src.Pos()})
-			ip += szChoice
+			st.pushBacktrack(stackBacktrack{int(in.a), src.Pos()})
+			ip++
 		case opCall:
-			lbl := decodeU24(idata[ip+1:])
-			st.pushRet(stackRet(ip + szCall))
-			ip = int(lbl)
+			st.pushRet(stackRet(ip + 1))
+			ip = int(in.a)
 		case opCommit:
-			lbl := decodeU24(idata[ip+1:])
 			st.pop(true)
-			ip = int(lbl)
+			ip = int(in.a)
 		case opReturn:
 			ent := st.pop(true)
 			if ent != nil && ent.stype == stRet {
@@ -121,47 +124,37 @@ loop:
 		case opFail:
 			goto fail
 		case opSet:
-			set := decodeSet(idata[ip+1:], vm.data.Sets)
-			in, ok := src.Peek()
-			if ok && set.Has(in) {
+			b, ok := src.Peek()
+			if ok && in.set.Has(b) {
 				src.Advance(1)
-				ip += szSet
+				ip++
 			} else {
 				goto fail
 			}
 		case opAny:
-			n := decodeU8(idata[ip+1:])
-			ok := src.Advance(int(n))
-			if ok {
-				ip += szAny
+			if src.Advance(int(in.a)) {
+				ip++
 			} else {
 				goto fail
 			}
 		case opPartialCommit:
-			lbl := decodeU24(idata[ip+1:])
 			ent := st.peek()
 			if ent != nil && ent.stype == stBtrack {
 				ent.btrack.off = src.Pos()
 				st.propCapt()
 				ent.capt = nil
-				ip = int(lbl)
+				ip = int(in.a)
 			} else {
 				panic("PartialCommit failed")
 			}
 		case opSpan:
-			set := decodeSet(idata[ip+1:], vm.data.Sets)
-			in, ok := src.Peek()
-			for ok && set.Has(in) {
-				src.Advance(1)
-				in, ok = src.Peek()
-			}
-			ip += szSpan
+			src.Span(in.set)
+			ip++
 		case opBackCommit:
-			lbl := decodeU24(idata[ip+1:])
 			ent := st.pop(true)
 			if ent != nil && ent.stype == stBtrack {
 				src.SeekTo(ent.btrack.off)
-				ip = int(lbl)
+				ip = int(in.a)
 			} else {
 				panic("BackCommit failed")
 			}
@@ -169,7 +162,7 @@ loop:
 			st.pop(false)
 			goto fail
 		case opEmpty:
-			op := syntax.EmptyOp(decodeU8(idata[ip+1:]))
+			op := syntax.EmptyOp(in.a)
 			r1, r2 := rune(-1), rune(-1)
 			// TODO: PeekBefore may cause problems with incremental parsing
 			b1, ok := src.PeekBefore()
@@ -182,91 +175,76 @@ loop:
 			}
 			sat := syntax.EmptyOpContext(r1, r2)
 			if (sat & op) != 0 {
-				ip += szEmpty
+				ip++
 			} else {
 				goto fail
 			}
 		case opTestChar:
-			b := decodeU8(idata[ip+2:])
-			lbl := decodeU24(idata[ip+3:])
-			in, ok := src.Peek()
-			if ok && in == b {
-				st.pushBacktrack(stackBacktrack{int(lbl), src.Pos()})
+			b, ok := src.Peek()
+			if ok && b == byte(in.b) {
+				st.pushBacktrack(stackBacktrack{int(in.a), src.Pos()})
 				src.Advance(1)
-				ip += szTestChar
+				ip++
 			} else {
-				ip = int(lbl)
+				ip = int(in.a)
 			}
 		case opTestCharNoChoice:
-			b := decodeU8(idata[ip+2:])
-			in, ok := src.Peek()
-			if ok && in == b {
+			b, ok := src.Peek()
+			if ok && b == byte(in.b) {
 				src.Advance(1)
-				ip += szTestCharNoChoice
+				ip++
 			} else {
-				lbl := decodeU24(idata[ip+3:])
-				ip = int(lbl)
+				ip = int(in.a)
 			}
 		case opTestSet:
-			lbl := decodeU24(idata[ip+3:])
-			set := decodeSet(idata[ip+2:], vm.data.Sets)
-			in, ok := src.Peek()
-			if ok && set.Has(in) {
-				st.pushBacktrack(stackBacktrack{int(lbl), src.Pos()})
+			b, ok := src.Peek()
+			if ok && in.set.Has(b) {
+				st.pushBacktrack(stackBacktrack{int(in.a), src.Pos()})
 				src.Advance(1)
-				ip += szTestSet
+				ip++
 			} else {
-				ip = int(lbl)
+				ip = int(in.a)
 			}
 		case opTestSetNoChoice:
-			set := decodeSet(idata[ip+2:], vm.data.Sets)
-			in, ok := src.Peek()
-			if ok && set.Has(in) {
+			b, ok := src.Peek()
+			if ok && in.set.Has(b) {
 				src.Advance(1)
-				ip += szTestSetNoChoice
+				ip++
 			} else {
-				lbl := decodeU24(idata[ip+3:])
-				ip = int(lbl)
+				ip = int(in.a)
 			}
 		case opTestAny:
-			n := decodeU8(idata[ip+2:])
-			lbl := decodeU24(idata[ip+3:])
-			ent := stackBacktrack{int(lbl), src.Pos()}
-			ok := src.Advance(int(n))
-			if ok {
+			ent := stackBacktrack{int(in.a), src.Pos()}
+			if src.Advance(int(in.b)) {
 				st.pushBacktrack(ent)
-				ip += szTestAny
+				ip++
 			} else {
-				ip = int(lbl)
+				ip = int(in.a)
 			}
 		case opCaptureBegin:
-			id := decodeI16(idata[ip+2:])
 			st.pushCapt(stackMemo{
-				id:  id,
+				id:  int16(in.a),
 				pos: src.Pos(),
 			})
-			ip += szCaptureBegin
+			ip++
 		case opCaptureLate:
-			back := decodeU8(idata[ip+1:])
-			id := decodeI16(idata[ip+2:])
 			st.pushCapt(stackMemo{
-				id:  id,
-				pos: src.Pos() - int(back),
+				id:  int16(in.a),
+				pos: src.Pos() - int(in.b),
 			})
-			ip += szCaptureLate
+			ip++
 		case opCaptureFull:
-			back := int(decodeU8(idata[ip+1:]))
-			id := decodeI16(idata[ip+2:])
+			back := int(in.b)
 			pos := src.Pos()
 
 			if overlaps(intrvl, pos-back, pos) {
 				caprange.Low = min(caprange.Low, pos-back)
 				caprange.High = max(caprange.High, pos)
-				capt := memo.NewCaptureNode(int(id), pos-back, back, nil)
+				capt := memo.NewCaptureNode(int(in.a), pos-back, back, nil)
 				st.addCapt(capt)
 			}
 
-			ip += szCaptureFull
+			ip++
 		case opCaptureEnd:
 			ent := st.pop(false)
 
@@ -281,16 +259,12 @@ loop:
 				capt := memo.NewCaptureNode(int(ent.memo.id), ent.memo.pos, end-ent.memo.pos, ent.capt)
 				st.addCapt(capt)
 			}
-			ip += szCaptureEnd
+			ip++
 		case opEnd:
-			fail := decodeU8(idata[ip+1:])
-			success = fail != 1
+			success = in.a != 1
 			break loop
 		case opMemoOpen:
-			lbl := decodeU24(idata[ip+1:])
-			id := decodeI16(idata[ip+4:])
-
-			ment, ok := memtbl.Get(int(id), src.Pos())
+			ment, ok := memtbl.Get(int(in.b), src.Pos())
 			if ok {
 				if ment.Length() == -1 {
 					goto fail
@@ -300,13 +274,13 @@ loop:
 					st.addCapt(capt...)
 				}
 				src.Advance(ment.Length())
-				ip = int(lbl)
+				ip = int(in.a)
 			} else {
 				st.pushMemo(stackMemo{
-					id:  id,
+					id:  int16(in.b),
 					pos: src.Pos(),
 				})
-				ip += szMemoOpen
+				ip++
 			}
 		case opMemoClose:
 			ent := st.pop(true)
@@ -316,18 +290,15 @@ loop:
 			} else {
 				panic("memo close failed")
 			}
-			ip += szMemoClose
+			ip++
 		case opMemoTreeOpen:
-			lbl := decodeU24(idata[ip+1:])
-			id := decodeI16(idata[ip+4:])
-
-			ment, ok := memtbl.Get(int(id), src.Pos())
+			ment, ok := memtbl.Get(int(in.b), src.Pos())
 			if ok {
 				if ment.Length() == -1 {
 					goto fail
 				}
 				st.pushMemoTree(stackMemo{
-					id:    id,
+					id:    int16(in.b),
 					pos:   src.Pos(),
 					count: ment.Count(),
 				})
@@ -337,20 +308,20 @@ loop:
 				}
 				src.Advance(ment.Length())
 				src.Peek()
-				ip = int(lbl)
+				ip = int(in.a)
 			} else {
 				st.pushMemoTree(stackMemo{
-					id:  id,
+					id:  int16(in.b),
 					pos: src.Pos(),
 				})
-				ip += szMemoTreeOpen
+				ip++
 			}
 		case opMemoTreeClose:
-			id := decodeI16(idata[ip+2:])
+			id := int16(in.a)
 			for p := st.peek(); p != nil && p.stype == stMemoTree && p.memo.id == id; p = st.peek() {
 				st.pop(true)
 			}
-			ip += szMemoTreeClose
+			ip++
 		case opMemoTreeInsert:
 			ent := st.peek()
 			if ent == nil || ent.stype != stMemoTree {
@@ -359,7 +330,7 @@ loop:
 			mlen := src.Pos() - ent.memo.pos
 			ent.memo.count++
 			memoize(int(ent.memo.id), ent.memo.pos, mlen, ent.memo.count, ent.capt)
-			ip += szMemoTreeInsert
+			ip++
 		case opMemoTree:
 			seen := 0
 			accum := 0
@@ -398,23 +369,20 @@ loop:
 				seen = 0
 			}
 
-			ip += szMemoTree
+			ip++
 		case opCheckBegin:
-			id := decodeI16(idata[ip+2:])
-			flag := decodeI16(idata[ip+4:])
 			st.pushCheck(stackMemo{
-				id:    id,
-				count: int(flag),
+				id:    int16(in.a),
+				count: int(in.b),
 				pos:   src.Pos(),
 			})
-			ip += szCheckBegin
+			ip++
 		case opCheckEnd:
 			ent := st.pop(true)
 			if ent == nil || ent.stype != stCheck {
 				panic("check end needs check stack entry")
 			}
-			checkid := decodeU24(idata[ip+1:])
-			checker := vm.data.Checkers[checkid]
+			checker := vm.data.Checkers[int(in.a)]
 
 			id := int(ent.memo.id)
 			flag := ent.memo.count
@@ -425,15 +393,14 @@ loop:
 				src.Advance(n)
 			}
 
-			ip += szCheckEnd
+			ip++
 		case opError:
-			errid := decodeU24(idata[ip+1:])
-			msg := vm.data.Errors[errid]
+			msg := vm.data.Errors[int(in.a)]
 			errs = append(errs, ParseError{
 				Pos:     src.Pos(),
 				Message: msg,
 			})
-			ip += szError
+			ip++
 		default:
 			panic("Invalid opcode")
 		}
@@ -492,9 +459,12 @@ func decodeU24(b []byte) uint32 {
 	return i
 }
 
-func decodeSet(b []byte, sets []charset.Set) charset.Set {
+// decodeSet returns a pointer into the code's set table: sets are 32
+// bytes, and set instructions are hot enough that copying one per
+// execution is measurable.
+func decodeSet(b []byte, sets []charset.Set) *charset.Set {
 	i := decodeU8(b)
-	return sets[i]
+	return &sets[i]
 }
 
 func overlaps(i *Interval, low2, high2 int) bool {
